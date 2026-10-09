@@ -1,0 +1,7 @@
+# Optional profile overlay passed with --profile.
+# The default configuration already selects local Ollama.
+[model]
+provider = "ollama"
+temperature = 0.0
+timeout_seconds = 60
+# Populate chat_model, embedding_model and context_window after approval.

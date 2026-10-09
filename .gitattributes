@@ -1,0 +1,4 @@
+* text=auto eol=lf
+# Preserve the provided source document byte-for-byte.
+TechDocQA_Requirements_v2.md -text
+*.pdf binary

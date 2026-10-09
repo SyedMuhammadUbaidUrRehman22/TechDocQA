@@ -1,0 +1,28 @@
+[build-system]
+requires = ["setuptools>=77,<83"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "techdocqa"
+version = "0.1.0"
+description = "Foundation for source-grounded technical documentation question answering"
+readme = "README.md"
+requires-python = ">=3.11,<3.14"
+dependencies = [
+  "langchain>=1,<2",
+  "langchain-ollama>=1,<2",
+  "pydantic>=2,<3",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8,<10"]
+
+[project.scripts]
+techdocqa = "techdocqa.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q --basetemp=.pytest_tmp"

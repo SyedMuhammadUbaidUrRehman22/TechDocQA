@@ -1,0 +1,38 @@
+# Relative paths resolve against this file's directory.
+framework = "langchain"
+allowed_directories = ["../data/corpus"]
+data_directory = "../data"
+
+[model]
+provider = "ollama"
+# Chat and embedding models are intentionally unselected.
+temperature = 0.0
+timeout_seconds = 60
+# Set chat_model, embedding_model and context_window after model selection.
+
+[ingestion]
+max_file_bytes = 20971520
+max_pages = 500
+parse_timeout_seconds = 60
+min_text_characters = 100
+
+[chunking]
+size = 1000
+overlap = 150
+minimum = 100
+unit = "characters"
+
+[retrieval]
+mode = "vector"
+candidate_depth = 20
+top_k = 5
+bm25_k1 = 1.2
+bm25_b = 0.75
+rrf_k = 60
+rerank = false
+rerank_max_candidates = 20
+# Sufficiency thresholds and calibration ID remain unset until evaluation.
+
+[answering]
+max_question_characters = 1000
+strict_citations = true
