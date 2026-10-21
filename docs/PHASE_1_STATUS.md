@@ -1,5 +1,7 @@
 # Phase 1 foundation checkpoint
 
+Current review: 2026-10-21. **Foundation verified; Phase 1 remains partially complete.** Corpus, hardware, budget and reviewer gates remain open; models were deliberately deferred. Phase 2 has subsequently implemented the identified validation gaps and registration slice; see [actual Phase 2 evidence](PHASE_2_STATUS.md). The setup and review evidence below is historical, not a claim that its former defects remain unfixed.
+
 User approval: roadmap Phase 1 approved, LangChain selected, open source model to be decided later; publish foundation to the specified GitHub repository. This is interpreted as roadmap Phase 1, not priority P1 enhancement implementation.
 
 ## Established files
@@ -33,3 +35,14 @@ Executed on Windows with Python 3.13.3:
 - Checked all original FR titles, priority/dependency declarations and AC lines still match traceability, and local README/docs/deployment/dataset links resolve. Original source hash remains `48EF8D3069F90C0D33A3F736CC3F3DD685734C2A59B4CEEABCCA5FC625869B59`.
 
 Python 3.11/3.12 and non-Windows installations are not verified. No ingestion, provider integration, benchmark, model quality, retrieval performance, API cost or hardware sufficiency is claimed. Git push is verified separately against the remote commit after committing these files.
+
+## Review on 2026-10-21
+
+- Reran the existing foundation suite in `.venv`: **13 passed**. Both existing environments pass `pip check` and `config-check`, and both frozen package inventories still equal the exact lock. No fresh installation was performed; the second environment's test suite was not rerun in this review.
+- Confirmed that the draft manifest contains **0 documents and 0 technologies**. No DS-05 ingestion/parser fixtures exist yet. Corpus selection and licenses/hashes are unfinished Phase 1 work; synthetic fixtures belong to Phases 2–3. Model deferral is intentional. Hardware/budget and reviewer choices remain needed before their integration/evaluation gates.
+- Reproduced a settings gap: an empty string in `allowed_directories` is accepted and resolves to the configuration directory. Reject blank entries before ingestion safety is implemented.
+- Reproduced a CLI gap: invalid arguments use argparse usage text/exit 2 rather than section 8.4 JSON, and can echo argument values. Extend sanitized standard errors when adding ingest/status. Existing configuration-error redaction tests do not cover argument errors.
+- Registry lifecycle, source-key collisions and provisional registration versus normalized duplicate versions (Q-02/Q-04/Q-05) remain unsettled. The Phase 2 plan lists concrete contracts and verification before registry coding.
+- All 24 FRs and 111 AC lines are intact, and all AC lines match traceability. The requirements file already has an uncommitted table-row line-break edit, preserved by this review. Its current working SHA-256 is `D458DDB2175D507004806738D3F87DE41405D40D39676B52995E07DB3D479949`; the original source hash above describes the earlier checkpoint.
+
+This review produces a Phase 2 plan and documentation corrections. It does not fix the application gaps or implement registration, and it does not reverify remote publication. The next implementation slice is registry/registration/local safety; complete corpus selection in parallel without claiming all of Phase 1 is done.

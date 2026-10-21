@@ -59,7 +59,8 @@ OCR for scanned PDFs (detected and reported only); multi-turn conversation; non-
 | **Source key** | Canonical identity of a source: normalized URL, or file name plus optional logical name. Same source key means versions of one document. |
 | **raw_hash** | SHA-256 of the original bytes (fast exact re-ingestion check). |
 | **content_hash** | SHA-256 of the *normalized text* (FR-04). The authoritative hash for change detection. |
-| **Document version** | Immutable snapshot of a source key with a given `content_hash`. One version per source key is `active`; earlier ones are `superseded`. |
+| **Document version** | Immutable snapshot of a source key with a given `content_hash`. One version per source key is `active`; earlier ones are `superseded`. 
+|
 | **chunk_key** | `SHA-256(chunk_text) + chunking_config_id + embedding_model_id`. The **idempotency key** for embeddings and index entries (FR-11, FR-12, FR-20). |
 | **chunking_config_id** | Hash of splitter type, size, overlap, and unit (characters or tokens). |
 | **Retrieval configuration** | Retriever mode, candidate depth, fusion parameters, reranker (or none), final top-k, and thresholds. It has a stable ID recorded in every QA response and evaluation run. |

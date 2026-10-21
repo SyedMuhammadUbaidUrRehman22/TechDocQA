@@ -1,12 +1,12 @@
 # TechDocQA implementation roadmap
 
-Status: proposed for approval, 2026-10-09. Source: [requirements](../TechDocQA_Requirements_v2.md), contents Revision 3. Current task ends at planning: no phase below is implemented. Source release stages and priorities are preserved. Each phase is small enough to verify before moving to dependents; introducing an early slice does not complete a whole FR.
+Status: roadmap proposed 2026-10-09; implementation checkpoint 2026-10-21. Source: [requirements](../TechDocQA_Requirements_v2.md), contents Revision 3. Phase 1 foundation, Phase 2 registration/local safety and the selected Phase 3A online HTML slice are implemented. Phase 1 corpus/hardware/budget/reviewer gates and the rest of Phase 3 onward remain open. Source release stages and priorities are preserved; an early slice does not complete a whole FR.
 
-Current checkpoint: roadmap Phase 1 foundation is approved and being established with LangChain; open source model selection is explicitly deferred. Corpus/hardware/reviewer decisions remain open. This supersedes the original planning-only task status above for foundation work only; see [Phase 1 status](PHASE_1_STATUS.md). Priority P1 enhancements in phases 9–10 are not implemented by this approval.
+Current checkpoint: [Phase 3A](PHASE_3A_STATUS.md) adds explicitly approved online HTML fetching/extraction, provenance and provisional candidates without changing Phase 2 local registration. This early, user-selected optional URL slice does not complete Phase 3 or the remaining Phase 12 features. Corpus/hardware/budget/reviewer decisions remain open; models, search and QA remain deferred. See [contract boundaries](PHASE_3A_PLAN.md) and [development log](../DEVELOPMENT_LOG.md).
 
 All future test paths are proposed in [traceability](requirements_traceability.md). See [repository structure](REPOSITORY_STRUCTURE.md) for component paths and [decisions](DECISIONS.md) for D/Q gates. Default tests run offline with mocks. Real provider/model/human benchmarks are separate recorded gates and never substituted by mock results.
 
-## Phase 0 — Planning (current task)
+## Phase 0 — Planning (completed)
 
 - Objective: inspect the full source and repository; produce a consistent design without application implementation.
 - FRs: planning coverage of FR-01–FR-24, C-01–C-07, DS-01–DS-06, NFR-01–NFR-11; no FR marked implemented.
@@ -28,13 +28,21 @@ All future test paths are proposed in [traceability](requirements_traceability.m
 
 ## Phase 2 — Registry, registration and local safety
 
+Detailed sequence, prerequisite decisions, acceptance boundaries and tests: [Phase 2 plan](PHASE_2_PLAN.md). This means roadmap Phase 2, not priority P2 optional scope.
+
+Implementation checkpoint: registration, SQLite history/runs/attempts, local limits/containment, PDF page preflight, sanitized JSON errors and ingest/status/list/history are implemented. Current offline acceptance evidence is in [PHASE_2_STATUS.md](PHASE_2_STATUS.md). Raw-byte duplicate candidates remain separate from normalized finalization; no complete FR-02/05/20/22/23 claim. The Phase 1 corpus gate remains open independently.
+
 - Objective: bounded per-file registration and traceable run/status records.
 - FRs: FR-01 (local), FR-02 registration, FR-20 registration/history, FR-22 ingest/status slices, FR-23 local limits/paths/secrets slice.
 - Files: registry.py, ingestion/safety.py, initial pipeline.py, cli.py, schemas.py; test_ingest.py, test_registry.py, test_status.py, test_safety.py, test_cli.py and DS-05 synthetic fixtures.
-- Dependencies: phase 1 and approved Q-02/04/05 state/source/attempt policy; max file/page/time defaults retained.
+- Dependencies: Phase 1 package foundation; Q-02/04/05 state/source/attempt contracts resolved under the user's Phase 2 implementation instruction, with Q-06 registration boundary recorded. Max file/page/time defaults retained. Corpus selection remains open but does not block synthetic registration tests.
 - Verification: AC-01.1–01.5; relevant AC-02.1/02.2; run counts/error redaction; invalid signatures/formats, missing/oversized paths, allowlist traversal and page bounds before full parsing. Enforce actual parser timeout when extraction lands next phase.
 - Done: valid inputs register, batch failures isolate, required metadata/history persists, errors match section 8.4 and secrets remain absent. No claim of complete processing FRs yet.
 - Risks: pre-registration failures need nullable document ID/run association; .pdf signature/page count is validation, not complete PDF safety. CLI is partial until phase 8.
+
+## Phase 3A — Controlled online HTML ingestion
+
+User-selected early URL slice of FR-01/FR-23, with online HTML extraction and FR-02/FR-20/FR-22 integration. The TOML catalog selects finite official Kafka/Airflow pages; four other approved sources start disabled. DNS/IP-pinned HTTPS fetching precedes local LangChain loading in a bounded worker. Existing SQLite JSON columns retain URL identity, raw/text snapshots and per-retrieval provenance; schema version 1 and local keys remain unchanged. No normalized versions, chunks or indexes are created. See [plan](PHASE_3A_PLAN.md), [implemented decisions](DECISIONS.md#phase-3a-online-contracts-2026-10-21) and [verification](PHASE_3A_STATUS.md).
 
 ## Phase 3 — Parsing, normalization and versioning
 
@@ -138,4 +146,4 @@ All future test paths are proposed in [traceability](requirements_traceability.m
 
 ## Recommended next action
 
-Review/approve this plan and unresolved source semantics, then begin phase 1. Packaging, validated settings, dataset specification and a verified dependency lock make subsequent ingestion/index work testable without building the whole application. The current task installs nothing, downloads no models and accesses no provider service.
+Continue the remainder of Phase 3 from [Phase 3A](PHASE_3A_STATUS.md) and the [loader/metadata plan](LANGCHAIN_INGESTION_PLAN.md): local PDF/Markdown/TXT loading, normalization and finalized normalized-version decisions remain unimplemented. Retain online code spans and snapshot provenance. Settle remaining Q-10/Q-11 details for local formats. Complete corpus selection and hardware/budget/reviewer gates; models remain deferred to Phases 5/7.

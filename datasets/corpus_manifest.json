@@ -3,5 +3,10 @@
   "status": "draft",
   "dataset_id": null,
   "technologies": [],
-  "documents": []
+  "documents": [],
+  "online_candidates": {
+    "status": "unfrozen_runtime_projection",
+    "manifest_path": "../data/online/corpus_manifest.json",
+    "catalog_path": "../config/default.toml"
+  }
 }

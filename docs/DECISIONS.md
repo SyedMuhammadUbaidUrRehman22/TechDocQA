@@ -2,7 +2,54 @@
 
 Status: proposed for review, 2026-10-09. Nothing in this document authorizes application implementation. Source: [requirements, contents Revision 3](../TechDocQA_Requirements_v2.md). Requirements and their defaults remain authoritative; engineering recommendations below are not additional FRs.
 
-Current approval update: the user approved roadmap Phase 1 foundation and selected LangChain, with an open source model to be decided later. Local Ollama configuration is established with no selected model. The dedicated project repository and push to the specified GitHub repository are authorized. Remaining decisions are not silently marked approved; see [Phase 1 checkpoint](PHASE_1_STATUS.md). The original proposal below is retained as the design/decision history.
+Current update, 2026-10-21: the user explicitly requested Phase 2 implementation, including resolution of registry semantics without another approval round. LangChain remains selected and models remain deferred. SQLite registration and local safety are implemented; the contracts below resolve D-06, Q-02/Q-04/Q-05 and the registration boundary of Q-06. Other later-phase decisions remain open. See [Phase 2 checkpoint](PHASE_2_STATUS.md). The original proposal below is design history, not a claim that all proposed components exist.
+
+## Implemented Phase 2 contracts (2026-10-21)
+
+SQLite schema version 1 uses standard-library `sqlite3`, foreign keys, checked values, unique source keys and `(document_id, raw_hash)` uniqueness. Transactions cover each success and its attempt/event/counters; failures are recorded in a separate transaction after rollback. An application ID/schema version prevents overwriting an unrelated or newer database. SQLite writer contention produces retryable `REGISTRY_BUSY` after the configured connection wait (default 5 seconds).
+
+Source identity is the compact JSON pair `[normalized_filename, logical_name_or_null]`. Metadata and filename normalization applies Unicode NFC; Windows filename identity follows `os.path.normcase`. The source binds to a private canonical location. An equal filename/logical name at another location returns `SOURCE_KEY_COLLISION`; supply a logical name to register it separately. Canonical paths enforce safety and location binding, rather than redefining source keys. In-root symlink aliases resolve to the same source. Moving a file to another location is an explicit collision, not an automatic new version.
+
+`document_id` identifies the source. `version_id` reserves a stable **provisional byte-registration** identity. `raw_hash` is SHA-256 of the exact bytes read; `content_hash` is always null until Phase 3 normalization. `attempt_id` identifies each attempted input, and `run_id` groups attempts. Different byte hashes create linked provisional registrations, not finalized content versions. The latest registration pointer identifies the last successfully requested byte candidate; returning to a previously registered byte hash reuses that candidate. It does not implement version restore or change an active finalized version.
+
+| Input / event | Implemented result |
+|---|---|
+| Same source, unchanged bytes | Reuse document/version IDs and original snapshot metadata, `deduplicated=true`, one `DUPLICATE_SKIPPED` event; run `skipped` increases. |
+| Same source, changed bytes | Same document, new provisional version ID/raw hash and predecessor link, `CHANGED_BYTES_REGISTERED`; old registrations are not superseded based on raw bytes. |
+| Different source, identical bytes | New document and registration, `duplicate_of` references a byte-identical document. This is a provisional byte match, not authoritative normalized deduplication. No indexing occurs. |
+| Same filename in different directories | Explicit `SOURCE_KEY_COLLISION` unless disambiguated with a logical name. |
+| Validation/transaction failure | Persist an attempt error; no partial document/registration writes. Retrying unchanged valid input is safe. |
+| Later failure of a provisional registration | `registered -> failed`, timestamped failure event; other registrations are untouched. Retry reuses the failed byte candidate, `failed -> registered`, `RETRY_REGISTERED`. |
+| Mixed batch | Commit successes individually; every expanded input has an outcome/index. Any failed input makes CLI exit 1. All failed -> `failed`; mixed -> `completed_with_errors`; all success/duplicates -> `completed`. |
+| Interrupted process | An OS registration lock releases on exit. On the next registration, unresolved attempts in orphaned runs become retryable `RUN_INTERRUPTED`, counters/status finalize, and reruns reuse committed registrations. A live run's lock returns `REGISTRY_BUSY` and prevents orphan recovery. |
+
+Processing status retains the source vocabulary. Phase 2 writes `registered` and `failed`; `finalized=false` and `is_active=false` are separate eligibility fields. Registration is not retrieval eligibility. No normalized version or searchable source is claimed active. Full extraction statuses and normalization finalization are later work.
+
+Q-06 policy for Phase 3: a failure before a normalized change is established must not supersede an existing finalized version. Once normalization confirms changed content, the new finalized version becomes active and the old one is superseded in one registry transaction, as FR-05 requires. A subsequent indexing failure does not silently reactivate the old version; retrieval will require both active eligibility and indexed processing state. Normalized duplicates must map their provisional registration to the existing finalized version while preserving attempt history and creating no additional finalized version. These finalization operations are not implemented in Phase 2.
+
+Registration retains title/technology/category/version label/language/source URL/license, byte format/size and PDF page count. Explicit title wins, otherwise filename; format titles/sections/pages are loader work. URL credentials, query strings and fragments are removed before persistence; known credential fields/environment secret values are masked in metadata and recorded failures. Private absolute paths support collision checking but are omitted from CLI records/errors. No file body is stored in SQLite. Phase 3 must read a verified snapshot or recheck the source's raw hash before loading mutable local files.
+
+Default CLI output is JSON, also selectable with `--json` before or after the command. Batch outcomes use input indices (directory members sorted by casefolded filename then filename); paths are omitted. Fatal/argument errors are section 8.4 JSON on stderr. Exit codes: 0 success/help/version, 1 configuration/registration/registry failure or partial batch, 2 invalid CLI syntax. Directory expansion is one level; nested/empty directories have explicit outcomes. Missing configured directories are allowed at configuration time and never created as input roots; inaccessible/existing nondirectory roots make configuration fail safely.
+
+PDF metadata preflight uses pinned `pypdf` in an isolated, time-bounded subprocess. It checks structure/encryption/page count without text extraction or PDF action execution. Text loading must still use LangChain in Phase 3; see [format/metadata preparation](LANGCHAIN_INGESTION_PLAN.md).
+
+## Phase 3A online contracts (2026-10-21)
+
+The user explicitly selected controlled online ingestion before the remaining P0 pipeline. FR-01/FR-23 URL controls remain optional P2 in the authoritative requirements; this phase implements only that selected slice. No requirement text or Phase 2 local identity/lifecycle contract is amended.
+
+The single approved-source catalog lives in the existing TOML settings. Initial URLs must be an enabled source's entry or explicit page; redirects can only enter that source's declared HTTPS host/path scopes. Kafka's `/documentation/` currently contains a client-side redirect, so its one default page is the explicitly selected official `/43/getting-started/introduction/`. The worker never follows HTML/JavaScript redirects or discovers links. Future catalog activation needs configuration changes only. Policy links remain unverified usage references.
+
+Network access belongs to TechDocQA's urllib3 layer, not WebBaseLoader. Every hop/retry resolves and rejects nonpublic/mixed DNS answers, then connects to one validated IP with the original hostname for certificate verification, SNI and Host. Proxies, automatic redirects/retries and decompression are disabled. Sequential requests, per-host spacing, finite retries, connection/read timeouts, response bounds and a terminating overall worker deadline cover network and parsing. Unknown/unsafe inputs and diagnostics use the existing sanitized errors.
+
+LangChain BSHTMLLoader consumes a cleaned local HTML representation. BeautifulSoup removes declared chrome, preserves decoded technical/code text, captures heading paths and half-open code offsets, and applies explicit HTTP charset decoding when supplied. The original fetched bytes remain immutable. Whole-page extracted text has its own hash/path; FR-04 normalization and authoritative `content_hash` are deliberately absent. Library versions and an effective configuration hash are retained.
+
+Registry API gap: Phase 2 had only local path-bound keys and no retrieval/provenance fields. The minimal extension is optional typed `online` context in existing registration metadata and attempt-result JSON, plus an optional `online` parameter to `register`/`fail_attempt`. An online key and location binding are the normalized requested URL; redirect destination remains separate `final_url`. URL identity never depends on downloaded filenames or an untrusted HTML canonical tag. Local filename/logical-name keys and all existing identifiers stay unchanged. No tables, schema constraints, application ID or schema version change; no migration mechanism existed or was introduced.
+
+Unchanged raw bytes reuse a provisional version and preserve original registration metadata; every retrieval attempt retains its own timestamp/context. Changed bytes create a linked provisional candidate without overwriting previous snapshots or activating/superseding versions. A fetch/extraction failure preserves its attempt and any completed fetched snapshot, with no phantom successful registration. Full FR-03 failure statuses for local parsing and full FR-05 finalization remain later work. New readers accept existing Phase 2 records. Downgrading to the earlier reader after adding online JSON records is unsupported because it does not recognize the new metadata fields.
+
+Snapshots use complete-file atomic hard-link publication at content-addressed paths under private ignored runtime data. Existing bytes are verified and never overwritten. Registry transactions remain authoritative; a crash may leave unreferenced complete snapshots, not a partially committed document. Runtime corpus manifests are atomically exported projections of existing registry versions/attempts in the existing manifest shape. Manifest export failure preserves successful registrations, emits a warning and makes the CLI exit 1; the projection can be regenerated from the registry. The committed reference manifest stays draft, with no automatically promoted online pages.
+
+The selected `langchain-community==0.4.2` loader is compatible with the existing lock but is [archived upstream](https://github.com/langchain-ai/langchain-community/issues/674). It is retained behind the thin adapter to meet the approved framework-loader direction; its actual HTML parser is maintained BeautifulSoup. Reassess a maintained standalone LangChain HTML integration before broader deployment. No paid scraping service or model dependency is added.
 
 ## Initial inspection
 
@@ -32,7 +79,7 @@ PATH resolves Python to Python39/python.exe, python3 to a WindowsApps executable
 
 ## Unresolved source issues
 
-These are discrepancies or missing acceptance details, not changes to requirements. Proposed resolutions remain pending approval. IDs Q-01 through Q-16 are engineering discussion IDs, not FRs.
+These are discrepancies or missing acceptance details, not changes to requirements. The Phase 2 contract above resolves the registration decisions; the original proposals below remain history and gates for unimplemented phases. IDs Q-01 through Q-16 are engineering discussion IDs, not FRs.
 
 | ID | Issue / affected requirements | Proposed resolution and implementation gate |
 |---|---|---|

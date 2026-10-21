@@ -1,0 +1,29 @@
+# Development log
+
+## 2026-10-21 — Phase 2 local registration implementation
+
+Implemented from the Revision 3 requirements, current roadmap/SDD, Phase 1 checkpoint and Phase 2 plan. No prior development log existed; earlier foundation evidence remains in [PHASE_1_STATUS.md](docs/PHASE_1_STATUS.md).
+
+- Fixed blank/whitespace allowed-directory and storage paths. Valid paths are stripped/canonicalized against the base TOML file; absent input roots are allowed during setup, while existing nondirectories or inaccessible configured paths fail safely.
+- Replaced raw argparse diagnostics with section 8.4 JSON without argument/value interpolation. Preserved config-check/help/version behavior.
+- Added checked SQLite schema version 1, repeatable initialization, foreign keys, unique source/byte registrations, per-file transactions, histories, run/attempt counters, explicit contention errors and process-death recovery under an OS lock.
+- Implemented byte-only supported-format registration, actual-byte SHA-256, containment/open-handle checks, symlink/junction/race defenses, bounded reads and signature/archive/empty/size checks. PDF structural preflight enforces page bounds and terminates timed-out workers; isolated Python startup prevents document-directory module imports.
+- Added JSON `ingest`, `status`, `list`, `history` operations and partial-batch failure reporting. Source URL/license/version metadata survives registration and is suitable for later framework `Document.metadata` propagation.
+- Resolved registration identity/lifecycle/duplicate semantics in [DECISIONS.md](docs/DECISIONS.md). Byte candidates remain provisional with null normalized hash and inactive eligibility. Exact repeats reuse IDs; changed bytes link candidates; normalized content identity and supersession belong to Phase 3.
+- Inspected the actual dependency set before adding pypdf 6.21.1; no LangChain loader, vector, NLP or model package was added. Planned framework loaders/splitters and metadata propagation in [LANGCHAIN_INGESTION_PLAN.md](docs/LANGCHAIN_INGESTION_PLAN.md).
+
+Verification commands, final results, acceptance mapping and remaining gates are recorded in [PHASE_2_STATUS.md](docs/PHASE_2_STATUS.md). No model call, benchmark, corpus download or extraction is claimed. Existing user edits to the requirements document are preserved.
+
+## 2026-10-21 — Interrupted work resumed and verified
+
+Recovered the existing Phase 2 implementation without changing application code. Added the missing Phase 2 checkpoint and completed its acceptance/remaining-work mapping. The development environment passed all 85 tests; a newly created `.venv-phase2-resume-verify` installed the lock and editable package successfully and also passed all 85 tests, with no skips. Both environments passed `pip check`, matched all 49 locked packages exactly, and ran the installed configuration-check entry point successfully.
+
+Checked 61 local documentation links, 24 original FR headings and 111 verbatim acceptance criteria. The requirements hash remains unchanged from the prior review; its pre-existing table-formatting/trailing-space edit remains preserved. No provider/model operation, corpus acquisition, Phase 3 implementation or remote publication was performed.
+
+## 2026-10-21 — Phase 3A controlled online documentation ingestion
+
+Inspected requirements, existing contracts/loader plan and all affected callers before implementing the selected optional URL slice. Added the single TOML catalog (Kafka/Airflow enabled; PostgreSQL/Spark/Redis/Docker disabled), public DNS/IP-pinned HTTPS fetches with bounded isolated processing, LangChain HTML extraction preserving code/structure, immutable raw/text snapshots and existing-registry URL candidates/retrieval provenance. Existing local identities, schema version and provisional eligibility are preserved. Added existing-command online CLI modes and an unfrozen runtime manifest projection; reference corpus requirements remain open.
+
+Final clean-install offline suite: **160 passed, 2 skipped, 0 failed** (one upstream loader deprecation warning). Explicit final live smoke: **2 passed**, Kafka and Airflow, 75 offline cases deselected. Clean installation, 67-package exact lock, `pip check`, installed configuration CLI and wheel build passed. The original 85 Phase 2 tests remain covered. Plan/conflicts, exact commands, architecture, source activation, security/dependency limitations and remaining course gates are recorded in [PHASE_3A_STATUS.md](docs/PHASE_3A_STATUS.md).
+
+Final document checks verified 78 local links, all 24 FR headings/111 AC lines and the unchanged requirements hash. All 49 Phase 2 dependency pins are retained. Full `git diff --check` reports only the preserved pre-existing requirements-table whitespace; the remaining changes and all new files pass whitespace checks.

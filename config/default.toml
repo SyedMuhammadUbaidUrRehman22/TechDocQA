@@ -36,3 +36,75 @@ rerank_max_candidates = 20
 [answering]
 max_question_characters = 1000
 strict_citations = true
+
+[online]
+max_pages_per_run = 10
+connect_timeout_seconds = 5
+read_timeout_seconds = 10
+retries = 2
+max_redirects = 3
+request_interval_seconds = 1
+
+[[online.sources]]
+source_id = "apache_kafka"
+technology = "Apache Kafka"
+title = "Apache Kafka official documentation"
+entry_url = "https://kafka.apache.org/documentation/"
+scopes = ["https://kafka.apache.org/documentation/", "https://kafka.apache.org/43/"]
+# The entry is a client-side redirect page; fetch one explicitly selected page.
+pages = ["https://kafka.apache.org/43/getting-started/introduction/"]
+enabled = true
+usage_policy_url = "https://www.apache.org/licenses/"
+usage_status = "unverified"
+
+[[online.sources]]
+source_id = "apache_airflow"
+technology = "Apache Airflow"
+title = "Apache Airflow official documentation"
+entry_url = "https://airflow.apache.org/docs/apache-airflow/stable/"
+scopes = ["https://airflow.apache.org/docs/apache-airflow/stable/"]
+pages = ["https://airflow.apache.org/docs/apache-airflow/stable/"]
+enabled = true
+usage_policy_url = "https://www.apache.org/licenses/"
+usage_status = "unverified"
+
+[[online.sources]]
+source_id = "postgresql"
+technology = "PostgreSQL"
+title = "PostgreSQL official documentation"
+entry_url = "https://www.postgresql.org/docs/current/"
+scopes = ["https://www.postgresql.org/docs/current/"]
+pages = ["https://www.postgresql.org/docs/current/"]
+enabled = false
+usage_status = "unverified"
+
+[[online.sources]]
+source_id = "apache_spark"
+technology = "Apache Spark"
+title = "Apache Spark official documentation"
+entry_url = "https://spark.apache.org/docs/latest/"
+scopes = ["https://spark.apache.org/docs/latest/"]
+pages = ["https://spark.apache.org/docs/latest/"]
+enabled = false
+usage_policy_url = "https://www.apache.org/licenses/"
+usage_status = "unverified"
+
+[[online.sources]]
+source_id = "redis"
+technology = "Redis"
+title = "Redis official documentation"
+entry_url = "https://redis.io/docs/latest/"
+scopes = ["https://redis.io/docs/latest/"]
+pages = ["https://redis.io/docs/latest/"]
+enabled = false
+usage_status = "unverified"
+
+[[online.sources]]
+source_id = "docker"
+technology = "Docker"
+title = "Docker official documentation"
+entry_url = "https://docs.docker.com/"
+scopes = ["https://docs.docker.com/"]
+pages = ["https://docs.docker.com/"]
+enabled = false
+usage_status = "unverified"

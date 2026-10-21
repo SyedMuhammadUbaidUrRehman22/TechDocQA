@@ -2,7 +2,9 @@
 
 Status: proposal, 2026-10-09. Source: [requirements](../TechDocQA_Requirements_v2.md), contents Revision 3. Only the five planning documents are created now. Paths below are future components, not claims that code exists. Add a module when its roadmap phase needs it; responsibilities may share a small module until size warrants separation.
 
-Current checkpoint: the original tree below remains the target. Phase 1 now adds packaging, settings.py, schemas.py, a configuration-only cli.py, tests, local config/profile, draft manifest and setup/verification documentation. Remaining ingestion/processing/indexing/retrieval/answering/evaluation modules have not been created. No large empty module tree is introduced; see [Phase 1 checkpoint](PHASE_1_STATUS.md).
+Current checkpoint, 2026-10-21: Phase 2 adds `registry.py`, `errors.py`, `privacy.py`, `ingestion/{pipeline,safety,pdf_check}.py`, registration schemas, CLI operations and offline ingestion/registry/safety/CLI tests with generated fixtures. `DEVELOPMENT_LOG.md`, `docs/PHASE_2_STATUS.md` and `docs/LANGCHAIN_INGESTION_PLAN.md` record evidence and the loader boundary. Remaining loaders/normalization/processing/indexing/retrieval/answering/evaluation modules are not created. The tree below remains the later target; no empty module tree is introduced.
+
+Phase 3A adds `ingestion/urls.py` (syntax/scope policy), `fetching.py` (pinned HTTPS), `html.py` (LangChain extraction adapter), `online_worker.py` (isolated bounded processing) and `online.py` (catalog selection/snapshots/registry/manifest coordination). Catalog entries use the existing `config/default.toml`; no second source catalog exists. `tests/test_online.py` contains mocked offline and opt-in live tests. `data/online/{snapshots,extracted}` and its generated corpus-manifest projection remain ignored runtime artifacts. See [Phase 3A checkpoint](PHASE_3A_STATUS.md).
 
 ```text
 TechDocQA/

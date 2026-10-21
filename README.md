@@ -3,7 +3,7 @@ TechDocQA is a domain-specific RAG project for answering software and data engin
 
 ## Current status
 
-Roadmap Phase 1 foundation is established: an installable Python package, constrained dependencies, validated configuration, initial request/error contracts, a configuration-check CLI and offline tests. **Document ingestion, indexes, retrieval, model calls, answering and benchmarks are not implemented.** No FR is claimed complete by the foundation.
+Phase 3A adds bounded online HTML ingestion for explicit official Kafka/Airflow pages using LangChain, immutable snapshots, extraction/provenance and the existing SQLite registry. Phase 2 local registration still behaves as before. Online extraction does not normalize/finalize versions, split, index, retrieve or call models. See [Phase 3A evidence and limits](docs/PHASE_3A_STATUS.md) and [Phase 2 acceptance evidence](docs/PHASE_2_STATUS.md).
 
 LangChain is approved. An open source model will be selected later; Ollama is the configured local serving profile and both chat/embedding model names remain unset. The original source still specifies OpenAI/Ollama portability, so OpenAI support remains a later requirement pending clarification if the project becomes local-only. No model weights or provider service are required for foundation tests.
 
@@ -21,11 +21,59 @@ py -3.13 -m venv .venv
 
 `config-check` validates settings without contacting providers. `config-check --require-models` intentionally fails while model names/context window are unset; it never verifies connectivity or model quality. TOML settings are in [config/default.toml](config/default.toml). TECHDOCQA_CHAT_MODEL and TECHDOCQA_EMBEDDING_MODEL override the model names; context_window must be selected in TOML. Relative paths resolve against the base configuration file.
 
-Keep credentials out of TOML, logs and version control. Local runtime data and virtual environments are ignored. Dependencies for parsing, vector storage, NLP and reranking will be added only in their implementation phases.
+Keep credentials out of TOML, logs and version control. Local runtime data and virtual environments are ignored. Phase 3A uses LangChain's pinned `BSHTMLLoader`, BeautifulSoup, urllib3 and certifi. The archived loader package is a documented maintenance limitation; its network client is never used. Vector, NLP and reranking integrations remain later work.
+
+## Registration commands
+
+Put permitted local files under `data/corpus`, or configure other allowed directories. Missing input roots are not created by registration. Blank roots are invalid. Paths outside the configured roots, including symlink/junction escapes, are rejected. The default limits are 20 MiB per file, 500 PDF pages and 60 seconds for PDF structural preflight.
+
+```powershell
+.\.venv\Scripts\techdocqa.exe ingest .\data\corpus\kafka.md --technology Kafka --version-label 3.9 --license Apache-2.0 --source-url https://example.org/docs --json
+.\.venv\Scripts\techdocqa.exe ingest .\data\corpus --json
+.\.venv\Scripts\techdocqa.exe list --json
+.\.venv\Scripts\techdocqa.exe status --document-id doc_ID --json
+.\.venv\Scripts\techdocqa.exe status --run-id run_ID --json
+.\.venv\Scripts\techdocqa.exe status --status registered --json
+.\.venv\Scripts\techdocqa.exe history doc_ID --json
+```
+
+Use IDs returned by `ingest`; `doc_ID`/`run_ID` illustrate their positions. Each command accepts `--config` and `--profile`, like `config-check`. Output is JSON by default; `--json` also works before the command. `ingest` accepts multiple paths and expands directories one level in sorted order. Every input has an outcome/index; nested/empty directories are explicit failures. A mixed batch preserves its successes and exits 1. Fatal errors are JSON on stderr; invalid CLI syntax exits 2 without echoing argument values. Success/help/version exit 0.
+
+An unchanged source reuses its document/version IDs and increments the run's skipped count. Changed bytes reserve a linked **provisional** registration; `content_hash` stays null, `finalized` and `is_active` stay false until Phase 3 normalization. Equal filenames at different locations require an explicit `--logical-name` to avoid a source-key collision. Identical bytes under different names keep separate document IDs with a provisional `duplicate_of` link. Repeated metadata does not overwrite the original registration snapshot.
+
+The registry is `data/registry.sqlite3` under the configured data directory. After a crashed registration, the next ingestion marks pending orphan attempts `RUN_INTERRUPTED` and safely reuses already committed registrations. Private paths are omitted from CLI records/errors; source URL credentials/query strings/fragments are removed before persistence. Licensing declarations are retained but not independently verified.
+
+## Controlled online ingestion
+
+The single source catalog is `[[online.sources]]` in [config/default.toml](config/default.toml). Kafka and Airflow are enabled; PostgreSQL, Spark, Redis and Docker are catalogued but disabled. There is no crawling, sitemap expansion, page-link discovery or JavaScript execution. Kafka's redirect-only entry is retained, while its default page is the explicitly configured official 4.3 introduction.
+
+```powershell
+.\.venv\Scripts\techdocqa.exe ingest --source apache_kafka --json
+.\.venv\Scripts\techdocqa.exe ingest --source apache_airflow --json
+.\.venv\Scripts\techdocqa.exe ingest --source apache_kafka --source apache_airflow --json
+.\.venv\Scripts\techdocqa.exe ingest --url https://airflow.apache.org/docs/apache-airflow/stable/ --json
+```
+
+Repeat `--source` or `--url` for a finite batch (10 pages by default, configurable up to 20). Choose one selection mode per invocation; online technology/URL identity comes from the catalog, so do not combine online mode with local paths, `--logical-name`, `--technology` or `--source-url`. Existing title/category/version/license/language options still apply. `status`, `list` and `history` expose online provenance through the same registry. Partial batches exit 1 and retain successes.
+
+Only enabled entry points and explicitly listed pages can be requested. Every redirect must remain in that source's declared HTTPS host/path scopes. The fetcher validates all DNS addresses, pins the connection to a public address with original-host TLS/SNI, rejects URL credentials/queries/ambiguous encoded paths and disables automatic redirects, proxies, decompression and library retries. It uses sequential requests, conservative pacing, bounded application retries, connection/read timeouts and an overall fetch/extraction deadline. See [network policy and limitations](docs/PHASE_3A_STATUS.md#network-and-storage-policy).
+
+Raw HTML and whole-page extracted text live under ignored `data/online`; their byte/text hashes stay distinct. Code spans and heading paths retain structure. Registrations remain provisional and unsearchable. Repeated identical snapshots reuse IDs and preserve a fresh retrieval attempt; changed bytes create a linked candidate. Normalized deduplication remains later work. The generated `data/online/corpus_manifest.json` is an unfrozen registry projection, not the reference corpus. Usage-policy references remain unverified and do not grant redistribution permission.
+
+To add a source, add one TOML entry with a stable `source_id`, technology/title, HTTPS entry URL, explicit scopes and page list, and usage status/reference; set `enabled=true` after review. Activating an existing disabled source requires only that configuration change. No adapter change is needed. Custom configs must contain their own approved catalog. Keep `data_directory` private and on a filesystem supporting atomic hard-link snapshot publication.
+
+The default suite blocks outbound sockets and sets `TECHDOCQA_OFFLINE=1` for workers. The optional live smoke is explicit:
+
+```powershell
+.\.venv\Scripts\python.exe -m pytest
+.\.venv\Scripts\python.exe -m pytest tests/test_online.py -m live --live --basetemp=.tmp/phase3a-live
+```
+
+Set `TECHDOCQA_OFFLINE=1` yourself to disable worker fetching outside tests. Live smoke snapshots are temporary ignored test data. No provider key, model or Ollama server is needed.
 
 ## Source and plan
 
-The source filename says v2, but its contents identify **Revision 3**; those contents remain authoritative and unchanged.
+The source filename says v2, but its contents identify **Revision 3**; those contents remain authoritative. The Phase 1 review records an existing local table-formatting edit; the requirement and acceptance-criterion text is unchanged.
 
 - [Functional requirements](TechDocQA_Requirements_v2.md)
 - [Traceability: all 24 FRs and 111 original acceptance criteria](docs/requirements_traceability.md)
@@ -34,7 +82,13 @@ The source filename says v2, but its contents identify **Revision 3**; those con
 - [Decisions and unresolved source questions](docs/DECISIONS.md)
 - [Implementation roadmap](docs/IMPLEMENTATION_ROADMAP.md)
 - [Phase 1 checkpoint](docs/PHASE_1_STATUS.md)
+- [Phase 2 plan and incomplete-work review](docs/PHASE_2_PLAN.md)
+- [Phase 2 implementation checkpoint](docs/PHASE_2_STATUS.md)
+- [Phase 3A plan and contract boundaries](docs/PHASE_3A_PLAN.md)
+- [Phase 3A implementation checkpoint](docs/PHASE_3A_STATUS.md)
+- [Development log](DEVELOPMENT_LOG.md)
+- [LangChain loaders, corpus formats and metadata plan](docs/LANGCHAIN_INGESTION_PLAN.md)
 - [Local development setup](deployment/local_setup.md)
 - [Corpus preparation](datasets/README.md)
 
-The corpus manifest is a draft, not evaluation data. Corpus documents/licenses, reference hardware, budget, reviewer, exact models and model performance remain unverified. Next is Phase 2 registry/registration/safety work, after resolving the recorded identity/status questions and corpus selection gates.
+The reference corpus manifest remains draft with zero selected documents, so Phase 1 still has open gates. Online HTML smoke snapshots do not satisfy the 15–30 document, 3–5 technology, <=50 MB or Markdown/PDF/TXT format requirements. Next is the rest of Phase 3: local framework loading, normalization and finalized versioning. Hardware, budget, reviewer and model selection remain deferred.

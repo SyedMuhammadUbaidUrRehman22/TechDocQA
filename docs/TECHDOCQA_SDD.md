@@ -2,7 +2,7 @@
 
 Status: proposed, 2026-10-09. Primary source: [TechDocQA_Requirements_v2.md](../TechDocQA_Requirements_v2.md), whose contents identify **Revision 3**. [Traceability](requirements_traceability.md) preserves all original FR titles, priorities, dependencies and acceptance criteria. [Decisions](DECISIONS.md) distinguishes engineering proposals and unresolved questions from source requirements. No implementation or measured performance is claimed.
 
-Current checkpoint: Phase 1 packaging/settings/request-error contracts and configuration-check tooling are established under user approval. LangChain is selected; open source model choice remains deferred. The rest of this SDD remains proposed architecture, not working pipeline behavior. See [verification and remaining gates](PHASE_1_STATUS.md).
+Current checkpoint, 2026-10-21: Phase 2 local registration is preserved. [Phase 3A](PHASE_3A_STATUS.md) adds approved finite online HTML fetches, isolated LangChain extraction, content-addressed snapshots and URL/retrieval provenance through the existing registry. [Phase 2 contracts](DECISIONS.md#implemented-phase-2-contracts-2026-10-21) still govern local keys and provisional eligibility; [online contracts](DECISIONS.md#phase-3a-online-contracts-2026-10-21) document the additive JSON/API extension without a SQL migration. Local framework parsing, normalization/finalized versioning, splitting/indexing/retrieval/QA/evaluation remain future work; models remain deferred.
 
 ## 1. Overview and scope
 
@@ -96,6 +96,10 @@ Proposed additions required by FR prose but missing from schemas: QA `sources`, 
 
 ## 5. Ingestion and processing lifecycle
 
+Phase 2 implementation: `ingestion/pipeline.py` expands one directory level and persists one outcome per input. `ingestion/safety.py` checks canonical allowed boundaries against the opened handle, signatures, bytes and PDF page bounds; `pdf_check.py` only inspects PDF structure in an isolated subprocess. A registry OS lock permits one registration runner, so a new runner can safely mark abandoned attempts `RUN_INTERRUPTED`. SQLite transactions isolate each file. The settled Q-02/Q-04/Q-05/Q-06 registration contracts in DECISIONS supersede the historical unresolved wording below for this slice.
+
+Phase 3A online path: TOML catalog -> explicit selection/URL scopes -> isolated worker -> public DNS/IP-pinned HTTPS fetch -> local LangChain BSHTMLLoader with structure/code adapter -> immutable raw/text snapshots -> existing provisional registry/attempts -> JSON CLI and derived runtime manifest. No loader performs an independent fetch. The worker deadline includes DNS, redirects/retries, reading and extraction. Failed pages remain isolated. Future chunks will derive from the retained extracted text/code spans and source provenance.
+
 Resolve allowed local paths, validate readability/format/signature, reject archives and oversized files before parsing. Default bounds: 20 MB, 500 PDF pages, 60 s parsing. A lightweight PDF page-count inspection precedes full extraction; cancellation/timeouts must actually terminate bounded parser work (a local worker subprocess may be necessary, not a service).
 
 Create a timestamped run/attempt, compute raw_hash, capture metadata and register source. Raw matches can short-circuit only when source eligibility and processing configuration permit it: withdrawal/reactivation and config changes must not be mistaken for ordinary duplicates. Framework loaders extract text/structure; <100 non-whitespace characters yields extraction_failed/NO_TEXT_EXTRACTED. Normalize deterministically and compute authoritative content_hash, then resolve same-source duplicate/new version or differently named duplicate_of. Log one dedup decision per attempt. Provisional registration/version identity needs Q-05 approval.
@@ -103,6 +107,8 @@ Create a timestamped run/attempt, compute raw_hash, capture metadata and registe
 The source processing sequence is registered -> extracting -> normalized -> chunked -> embedded -> indexed, with extraction_failed/failed exits and timestamped history. Superseded/withdrawn and active eligibility semantics need Q-02 approval. P0 changed content is fully processed; P2 incremental cross-version reuse is separate. Unchanged indexed work is idempotent. New chunking/model profiles trigger explicit reprocessing/rebuild, not unnoticed mixing of artifacts.
 
 ## 6. Metadata and persistence
+
+Implemented Phase 2 tables are `documents`, `registrations`, `runs`, `attempts` and `events`. Registrations reserve a provisional `version_id`, retain raw hashes/metadata and predecessor/byte-duplicate relationships, and keep `content_hash=null`, `finalized=false`, `is_active=false`. No text body or disk snapshot is stored by this phase. Phase 3 must snapshot or verify bytes before framework loading and finalize normalized versions; chunk/embedding/entity/config tables remain unimplemented. Public records omit private paths and include sanitized source URL/license metadata. The later target below is not a claim that those tables or snapshots exist.
 
 Proposed SQLite entities: documents/source keys; immutable versions; ingestion attempts/runs; status history/failures/decisions; chunk occurrences; embedding keys/profile metadata; occurrence-to-embedding/index associations; P1 entities/keyphrases/category assignments; retrieval configurations/calibration run references. These are table responsibilities, not a mandatory ORM model hierarchy.
 
