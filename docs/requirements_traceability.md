@@ -24,6 +24,18 @@ Configuration/path blank-entry and CLI redaction regressions are covered in `tes
 
 Existing SQLite integration tests cover provisional URL identity, immutable snapshots, unchanged/changed bytes and preserved histories, per-retrieval context, mixed batch counts (FR-20 slice), provenance/manifest metadata (FR-02 slice), and standard CLI argument/JSON behavior (AC-22.2). These are not full normalized FR-05, indexed FR-20.4, full CLI or corpus acceptance claims. Two opt-in live official-page tests are reported separately from the offline suite in the checkpoint.
 
+## Implemented acceptance slices — Phase 3B
+
+The earlier Phase 2/3A tables describe those historical boundaries. [Phase 3B evidence](PHASE_3B_STATUS.md) now covers the remaining Phase 3 implementation:
+
+| Source AC / slice | Executed synthetic coverage | Boundary |
+|---|---|---|
+| AC-02.4 and title precedence | `test_loaders.py`: Markdown H1, HTML title, PDF metadata and explicit user override | Chunk/vector propagation AC-02.3/02.5 remains Phase 4/5. |
+| AC-03.1–03.5 | `test_loaders.py`, `test_normalization.py`, `test_online.py`: known PDF sentences/pages, HTML chrome/code, Markdown hierarchy/fences, image-only failure, Latin-1 and structured decode errors | No OCR or real reference-corpus quality claim. |
+| AC-04.1–04.4 | `test_normalization.py`: technical/code preservation, ten-page repeated edge removal, idempotence, vocabulary-supported hyphenation; LF/NFC/whitespace and malformed spans | Code takes precedence over prose LF/NFC; PDF page-edge and unmarked-code limits are explicit in decisions. |
+| FR-05 document-layer AC-05.1–05.5 | `test_versioning.py`, `test_online.py`: exact/normalized duplicates, changed content, separate sources, active supersession, metadata-only repeat, history and decisions | No chunks/embeddings/index entries exist; their count/lifecycle acceptance portions remain Phase 4/5. |
+| FR-20 processing slice / FR-23 parser deadline | `test_versioning.py`: failures, rollback, process death before/after finalization, SQL/OS/process contention, bounded worker and CLI JSON | Indexed rerun, full CLI, model safety and complete secret/privacy gates remain later. |
+
 ## Interpretation and proposed implementation mapping
 
 Declared dependencies are reproduced verbatim in each source record. The additional sequencing dependencies in this table are engineering observations, not amendments. This original table retains the proposed full-component mapping; the executed Phase 2 slices above identify which tests actually exist and pass. Other test paths remain future targets. See [SDD](TECHDOCQA_SDD.md) for C-01–C-07, DS-01–DS-06 and NFR-01–NFR-11 and [decisions](DECISIONS.md) for Q identifiers.

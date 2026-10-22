@@ -51,7 +51,9 @@ def make_parser() -> argparse.ArgumentParser:
     listing.add_argument("--status", choices=get_args(ProcessingStatus))
     history = commands.add_parser("history", help="show a source's byte registrations and event history")
     history.add_argument("document_id")
-    for command in (check, ingest, status, listing, history):
+    processing = commands.add_parser("process", help="offline normalization/finalization of registered versions (default: latest candidates)")
+    processing.add_argument("version_ids", nargs="*")
+    for command in (check, ingest, status, listing, history, processing):
         command.add_argument("--config", type=Path, default=Path("config/default.toml"))
         command.add_argument("--profile", type=Path)
         command.add_argument("--json", action="store_true", default=argparse.SUPPRESS,
@@ -95,6 +97,11 @@ def main(argv: list[str] | None = None) -> int:
             except ValidationError:
                 raise TechDocQAError("INVALID_METADATA", "Registration metadata is invalid.", stage="arguments") from None
         with Registry(Path(settings.data_directory) / "registry.sqlite3") as registry:
+            if args.command == "process":
+                from techdocqa.ingestion.processing import process_versions
+                result = process_versions(args.version_ids, settings, registry)
+                print(result.model_dump_json())
+                return 1 if result.run.failed or result.warnings else 0
             if args.command == "ingest":
                 if args.source or args.url:
                     from techdocqa.ingestion.online import ingest_online

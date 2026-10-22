@@ -3,7 +3,7 @@ TechDocQA is a domain-specific RAG project for answering software and data engin
 
 ## Current status
 
-Phase 3A adds bounded online HTML ingestion for explicit official Kafka/Airflow pages using LangChain, immutable snapshots, extraction/provenance and the existing SQLite registry. Phase 2 local registration still behaves as before. Online extraction does not normalize/finalize versions, split, index, retrieve or call models. See [Phase 3A evidence and limits](docs/PHASE_3A_STATUS.md) and [Phase 2 acceptance evidence](docs/PHASE_2_STATUS.md).
+Phase 3B adds deterministic normalization and transactional document-version finalization for local Markdown/HTML/TXT/PDF and Phase 3A's saved online extractions. `ingest` retains registration behavior; `process` completes the offline document layer. The catalog and secured online fetching remain intact. No splitting, indexing, retrieval or model calls are implemented. See [Phase 3B evidence and limits](docs/PHASE_3B_STATUS.md), [Phase 3A evidence](docs/PHASE_3A_STATUS.md) and [Phase 2 evidence](docs/PHASE_2_STATUS.md).
 
 LangChain is approved. An open source model will be selected later; Ollama is the configured local serving profile and both chat/embedding model names remain unset. The original source still specifies OpenAI/Ollama portability, so OpenAI support remains a later requirement pending clarification if the project becomes local-only. No model weights or provider service are required for foundation tests.
 
@@ -58,7 +58,7 @@ Repeat `--source` or `--url` for a finite batch (10 pages by default, configurab
 
 Only enabled entry points and explicitly listed pages can be requested. Every redirect must remain in that source's declared HTTPS host/path scopes. The fetcher validates all DNS addresses, pins the connection to a public address with original-host TLS/SNI, rejects URL credentials/queries/ambiguous encoded paths and disables automatic redirects, proxies, decompression and library retries. It uses sequential requests, conservative pacing, bounded application retries, connection/read timeouts and an overall fetch/extraction deadline. See [network policy and limitations](docs/PHASE_3A_STATUS.md#network-and-storage-policy).
 
-Raw HTML and whole-page extracted text live under ignored `data/online`; their byte/text hashes stay distinct. Code spans and heading paths retain structure. Registrations remain provisional and unsearchable. Repeated identical snapshots reuse IDs and preserve a fresh retrieval attempt; changed bytes create a linked candidate. Normalized deduplication remains later work. The generated `data/online/corpus_manifest.json` is an unfrozen registry projection, not the reference corpus. Usage-policy references remain unverified and do not grant redistribution permission.
+Raw HTML and whole-page extracted text live under ignored `data/online`; their byte/text hashes stay distinct. Code spans and heading paths retain structure. `ingest` registrations remain provisional until `process` runs. Repeated identical snapshots reuse IDs and preserve a fresh retrieval attempt; changed bytes create a linked candidate. Processing resolves normalized duplicates and finalizes changed content. The generated `data/online/corpus_manifest.json` is an unfrozen registry projection, not the reference corpus. Usage-policy references remain unverified and do not grant redistribution permission.
 
 To add a source, add one TOML entry with a stable `source_id`, technology/title, HTTPS entry URL, explicit scopes and page list, and usage status/reference; set `enabled=true` after review. Activating an existing disabled source requires only that configuration change. No adapter change is needed. Custom configs must contain their own approved catalog. Keep `data_directory` private and on a filesystem supporting atomic hard-link snapshot publication.
 
@@ -70,6 +70,23 @@ The default suite blocks outbound sockets and sets `TECHDOCQA_OFFLINE=1` for wor
 ```
 
 Set `TECHDOCQA_OFFLINE=1` yourself to disable worker fetching outside tests. Live smoke snapshots are temporary ignored test data. No provider key, model or Ollama server is needed.
+
+## Offline normalization and finalization
+
+After local registration or an online fetch/extraction, process the returned provisional version ID, or omit IDs to process the latest candidate of every registered source:
+
+```powershell
+.\.venv\Scripts\techdocqa.exe process ver_ID --json
+.\.venv\Scripts\techdocqa.exe process --json
+```
+
+`process` accepts the same `--config`/`--profile` flags and never fetches a URL or contacts a provider. Local sources must still match their registered bytes at first processing; afterward verified immutable snapshots support offline reruns. PDF parsing and normalization run inside a terminating worker using the configured deadline. Processing runs expose `stage=normalization` with the existing outcomes/results/errors and exit rules. Online manifest-export warnings exit 1 without discarding committed versions.
+
+Prose uses LF, Unicode NFC and conservative whitespace cleanup. Headings, paragraphs, lists and Markdown hard breaks retain structure. Explicit HTML code, Markdown fences, inline backticks and indented code remain verbatim, including code Unicode and newlines. PDF page-edge boilerplate and vocabulary-supported line-break hyphenation use documented deterministic rules. See the complete [normalization/hash/version policy](docs/DECISIONS.md#phase-3b-normalization-and-finalization-2026-10-22).
+
+`raw_hash` always hashes original bytes. `content_hash` hashes UTF-8 normalized text (ordered PDF pages joined by two LF characters); metadata is separate. Changed normalized text finalizes the new candidate and supersedes the previous active version atomically. Equivalent normalized text resolves to the existing finalized version; the byte candidate and its source provenance/history stay available without an extra finalized version. Different sources retain distinct identities and authoritative `duplicate_of` links. Failed processing retains the prior active version; the next run recovers interrupted attempts.
+
+`status`/`list` still show the latest requested byte candidate, which can be failed or a nonfinalized duplicate. A duplicate's `processing.resolved_version_id` identifies its finalized content version; `history` exposes all candidates and active flags. `normalized` means eligible for later processing, not indexed/searchable. Finalized files remain private under `data/processing` and local byte snapshots under `data/local`; no document bodies enter SQLite. The schema and dependencies are unchanged. Older application readers cannot read the new metadata fields.
 
 ## Source and plan
 
@@ -86,9 +103,10 @@ The source filename says v2, but its contents identify **Revision 3**; those con
 - [Phase 2 implementation checkpoint](docs/PHASE_2_STATUS.md)
 - [Phase 3A plan and contract boundaries](docs/PHASE_3A_PLAN.md)
 - [Phase 3A implementation checkpoint](docs/PHASE_3A_STATUS.md)
+- [Phase 3B implementation checkpoint](docs/PHASE_3B_STATUS.md)
 - [Development log](DEVELOPMENT_LOG.md)
 - [LangChain loaders, corpus formats and metadata plan](docs/LANGCHAIN_INGESTION_PLAN.md)
 - [Local development setup](deployment/local_setup.md)
 - [Corpus preparation](datasets/README.md)
 
-The reference corpus manifest remains draft with zero selected documents, so Phase 1 still has open gates. Online HTML smoke snapshots do not satisfy the 15–30 document, 3–5 technology, <=50 MB or Markdown/PDF/TXT format requirements. Next is the rest of Phase 3: local framework loading, normalization and finalized versioning. Hardware, budget, reviewer and model selection remain deferred.
+The reference corpus manifest remains draft with zero selected documents, so Phase 1 still has open gates. Online HTML smoke snapshots do not satisfy the 15–30 document, 3–5 technology, <=50 MB or Markdown/PDF/TXT format requirements. Next is Phase 4 segmentation/framework chunking. Hardware, budget, reviewer and model selection remain deferred.

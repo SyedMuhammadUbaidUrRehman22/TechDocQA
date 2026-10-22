@@ -431,6 +431,65 @@ def test_corrupt_existing_snapshot_is_not_overwritten(tmp_path):
     assert caught.value.response.error.code == "SNAPSHOT_MISMATCH" and path.read_bytes() == b"corrupt"
 
 
+def test_offline_finalization_reuses_phase3a_extraction_without_fetch(online_settings, registry, network, inline_worker, monkeypatch):
+    from techdocqa.ingestion.processing import finalized_documents, process_versions
+    network[0].append(Response())
+    first = online.ingest_online(["apache_kafka"], [], online_settings, registry).outcomes[0]
+    def forbidden(*args, **kwargs):
+        raise AssertionError("Finalization must not fetch or extract the HTML again")
+    monkeypatch.setattr(fetching.SafeFetcher, "fetch", forbidden)
+    monkeypatch.setattr("techdocqa.ingestion.html.extract_html", forbidden)
+    result = process_versions([first.result.version_id], online_settings, registry)
+    assert result.run.processed == 1, result.model_dump_json()
+    record = registry.get_document(first.result.document_id)
+    assert record.online.retrieval_id == first.online.retrieval_id and record.online.snapshot_id == first.online.snapshot_id
+    assert record.online.normalized_hash == record.content_hash and record.finalized and record.is_active
+    docs = finalized_documents(record.version_id, online_settings, registry)
+    assert CODE in docs[0].page_content
+    assert docs[0].metadata["online"]["canonical_url"] == first.online.canonical_url
+    assert docs[0].metadata["headings"][1]["section_path"] == ["Consumers", "Settings"]
+    manifest = json.loads((Path(online_settings.data_directory) / result.manifest_path).read_text())
+    assert manifest["documents"][0]["content_hash"] == record.content_hash and len(network[2]) == 1
+
+
+def test_changed_html_chrome_same_content_keeps_snapshots_without_duplicate_version(online_settings, registry, network, inline_worker):
+    from techdocqa.ingestion.processing import process_versions
+    bodies = [HTML, HTML.replace(b"NAV_MARKER", b"DIFFERENT_NAV_MARKER")]
+    identifiers = []
+    for body in bodies:
+        network[0].append(Response(body))
+        candidate = online.ingest_online(["apache_kafka"], [], online_settings, registry).outcomes[0].result
+        identifiers.append(candidate.version_id)
+        result = process_versions([candidate.version_id], online_settings, registry)
+        assert result.run.failed == 0
+    assert identifiers[0] != identifiers[1] and result.run.skipped == 1
+    assert result.outcomes[0].result.version_id == identifiers[0]
+    records = registry.history(candidate.document_id)["registrations"]
+    assert sum(record["finalized"] for record in records) == 1
+    assert records[0]["online"]["snapshot_path"] != records[1]["online"]["snapshot_path"]
+    assert records[1]["processing"]["resolved_version_id"] == identifiers[0]
+
+
+def test_fetch_failure_after_finalization_keeps_active_version(online_settings, registry, network, inline_worker):
+    from techdocqa.ingestion.processing import process_versions
+    network[0].append(Response())
+    candidate = online.ingest_online(["apache_kafka"], [], online_settings, registry).outcomes[0].result
+    process_versions([candidate.version_id], online_settings, registry)
+    network[0].append(Response(status=404))
+    failed = online.ingest_online(["apache_kafka"], [], online_settings, registry)
+    assert failed.run.failed == 1 and registry.get_version(candidate.version_id).is_active
+
+
+def test_corrupt_saved_extraction_does_not_finalize(online_settings, registry, network, inline_worker):
+    from techdocqa.ingestion.processing import process_versions
+    network[0].append(Response())
+    candidate = online.ingest_online(["apache_kafka"], [], online_settings, registry).outcomes[0]
+    (Path(online_settings.data_directory) / candidate.online.extracted_path).write_bytes(b"corrupt")
+    result = process_versions([candidate.result.version_id], online_settings, registry)
+    assert result.run.failed == 1 and result.outcomes[0].error.code == "SNAPSHOT_MISMATCH"
+    assert not registry.get_version(candidate.result.version_id).finalized
+
+
 @pytest.mark.live
 @pytest.mark.parametrize("source_id", ["apache_kafka", "apache_airflow"])
 def test_live_official_documentation_smoke(source_id, online_settings, registry):

@@ -13,7 +13,7 @@ from techdocqa.ingestion.safety import ValidatedSource
 from techdocqa.privacy import safe_text
 from techdocqa.schemas import (
     AttemptOutcome, BatchResult, DocumentRecord, ErrorDetail, RegistrationMetadata,
-    OnlineProvenance, RegistrationResult, RunSummary,
+    OnlineProvenance, ProcessingProvenance, RegistrationResult, RunSummary,
 )
 
 APPLICATION_ID = 0x54445141
@@ -200,13 +200,15 @@ class Registry:
                     fcntl.flock(lock.fileno(), fcntl.LOCK_UN)
             lock.close()
 
-    def start_run(self, input_count: int) -> tuple[str, list[str]]:
+    def start_run(self, input_count: int, *, stage: str = "registration") -> tuple[str, list[str]]:
         run_id = new_id("run")
         attempts = [new_id("att") for _ in range(input_count)]
         with self.transaction():
             self.execute("INSERT INTO runs(run_id,status,started_at) VALUES (?,'running',?)", (run_id, utc_now()))
             for index, attempt_id in enumerate(attempts):
                 self.execute("INSERT INTO attempts(attempt_id,run_id,input_index) VALUES (?,?,?)", (attempt_id, run_id, index))
+            if stage == "normalization":
+                self.event(run_id=run_id, decision="PROCESSING_RUN_STARTED", reason="Offline candidate processing.", stage=stage)
         return run_id, attempts
 
     def pending_attempt(self, attempt_id: str):
@@ -255,14 +257,17 @@ class Registry:
                 self.execute("INSERT INTO documents(document_id,source_key,source_path,filename,created_at) VALUES (?,?,?,?,?)",
                              (document_id, source_key, source_path, filename, now))
             existing = self.execute("SELECT * FROM registrations WHERE document_id=? AND raw_hash=?", (document_id, source.raw_hash)).fetchone()
-            deduplicated = existing is not None and existing["status"] == "registered"
+            deduplicated = existing is not None and (existing["status"] == "registered" or existing["finalized"]
+                or json.loads(existing["metadata_json"]).get("processing", {}).get("resolved_version_id"))
+            deduplicated = bool(deduplicated)
             if existing:
                 version_id, duplicate_of = existing["version_id"], existing["duplicate_of"]
                 decision = "DUPLICATE_SKIPPED" if deduplicated else "RETRY_REGISTERED"
                 reason = "Unchanged bytes; existing registration metadata retained." if deduplicated else "Retry reused the existing byte registration."
-                if existing["status"] not in {"registered", "failed", "extraction_failed"}:
+                if not deduplicated and existing["status"] not in {"failed", "extraction_failed"}:
                     raise TechDocQAError("INVALID_STATE", "This processing state requires the later ingestion pipeline.", document_id=document_id)
-                self.execute("UPDATE registrations SET status='registered' WHERE version_id=?", (version_id,))
+                if not existing["finalized"] and existing["status"] != "normalized":
+                    self.execute("UPDATE registrations SET status='registered' WHERE version_id=?", (version_id,))
             else:
                 version_id = new_id("ver")
                 match = self.execute("SELECT document_id FROM registrations WHERE raw_hash=? AND document_id<>? ORDER BY ingested_at,version_id LIMIT 1", (source.raw_hash, document_id)).fetchone()
@@ -271,6 +276,7 @@ class Registry:
                 sequence = self.execute("SELECT COALESCE(MAX(sequence),0)+1 FROM registrations WHERE document_id=?", (document_id,)).fetchone()[0]
                 stored_metadata = metadata.model_copy(update={"title": metadata.title or filename})
                 metadata_values = stored_metadata.model_dump()
+                metadata_values["title_explicit"] = metadata.title is not None
                 if online is not None:
                     metadata_values["online"] = online.model_dump()
                 self.execute("""INSERT INTO registrations(version_id,document_id,run_id,raw_hash,doc_type,size_bytes,page_count,status,ingested_at,metadata_json,previous_version_id,duplicate_of,sequence)
@@ -280,7 +286,9 @@ class Registry:
                 decision = "CHANGED_BYTES_REGISTERED" if previous else "REGISTERED"
                 reason = "New byte registration; normalized identity remains undecided."
             self.execute("UPDATE documents SET current_version_id=? WHERE document_id=?", (version_id, document_id))
-            result = RegistrationResult(document_id=document_id, version_id=version_id, status="registered",
+            state = self.execute("SELECT status,finalized,is_active FROM registrations WHERE version_id=?", (version_id,)).fetchone()
+            result = RegistrationResult(document_id=document_id, version_id=version_id, status=state["status"],
+                                        finalized=bool(state["finalized"]), is_active=bool(state["is_active"]),
                                         deduplicated=deduplicated, duplicate_of=duplicate_of, run_id=run_id)
             result_values = result.model_dump()
             if online is not None:
@@ -292,7 +300,7 @@ class Registry:
             else:
                 self.execute("UPDATE runs SET processed=processed+1 WHERE run_id=?", (run_id,))
             self.event(run_id=run_id, attempt_id=attempt_id, document_id=document_id, version_id=version_id,
-                       status="registered", decision=decision, reason=reason)
+                       status=result.status, decision=decision, reason=reason)
         return result
 
     def fail_attempt(self, attempt_id: str, error: ErrorDetail, *, online: OnlineProvenance | None = None):
@@ -302,8 +310,86 @@ class Registry:
             context = json.dumps({"online": online.model_dump()}) if online is not None else None
             self.execute("UPDATE attempts SET status='failed',error_json=?,result_json=? WHERE attempt_id=?", (error.model_dump_json(), context, attempt_id))
             self.execute("UPDATE runs SET failed=failed+1 WHERE run_id=?", (attempt["run_id"],))
-            self.event(run_id=attempt["run_id"], attempt_id=attempt_id, decision="REGISTRATION_FAILED",
+            if attempt["version_id"]:
+                status = "extraction_failed" if error.stage == "extraction" else "failed"
+                self.execute("UPDATE registrations SET status=? WHERE version_id=? AND finalized=0 AND status='extracting'",
+                             (status, attempt["version_id"]))
+            self.event(run_id=attempt["run_id"], attempt_id=attempt_id,
+                       document_id=attempt["document_id"], version_id=attempt["version_id"],
+                       decision="PROCESSING_FAILED" if attempt["version_id"] else "REGISTRATION_FAILED",
                        reason=error.message, stage=error.stage, error=error)
+
+    def get_version(self, version_id: str) -> DocumentRecord:
+        row = self.execute("""SELECT r.*,d.source_key,d.filename FROM registrations r JOIN documents d USING(document_id)
+                              WHERE version_id=?""", (version_id,)).fetchone()
+        if row is None:
+            raise TechDocQAError("NOT_FOUND", "Registration was not found.", stage="registry")
+        return self.document_record(row)
+
+    def begin_processing(self, version_id: str, attempt_id: str):
+        with self.transaction():
+            attempt = self.pending_attempt(attempt_id)
+            record = self.get_version(version_id)
+            current = self.execute("SELECT current_version_id FROM documents WHERE document_id=?", (record.document_id,)).fetchone()[0]
+            if not record.finalized and current != version_id:
+                raise TechDocQAError("STALE_CANDIDATE", "Only the latest byte candidate can be finalized.", stage="normalization", document_id=record.document_id)
+            self.execute("UPDATE attempts SET document_id=?,version_id=? WHERE attempt_id=?", (record.document_id, version_id, attempt_id))
+            if not record.finalized and not (record.processing and record.processing.resolved_version_id):
+                self.execute("UPDATE registrations SET status='extracting' WHERE version_id=?", (version_id,))
+            self.event(run_id=attempt["run_id"], attempt_id=attempt_id, document_id=record.document_id,
+                       version_id=version_id, decision="PROCESSING_STARTED", reason="Candidate processing started.", stage="normalization")
+
+    def finalize(self, version_id: str, processing: ProcessingProvenance, attempt_id: str) -> RegistrationResult:
+        """Caller verifies immutable artifacts first; lifecycle, outcome and counts commit together."""
+        with self.transaction():
+            attempt = self.pending_attempt(attempt_id)
+            candidate = self.get_version(version_id)
+            if attempt["version_id"] != version_id:
+                raise TechDocQAError("INVALID_STATE", "Attempt does not own this candidate.", stage="registry")
+            current = self.execute("SELECT current_version_id FROM documents WHERE document_id=?", (candidate.document_id,)).fetchone()[0]
+            if not candidate.finalized and current != version_id:
+                raise TechDocQAError("STALE_CANDIDATE", "A newer byte candidate exists.", stage="normalization")
+            match = self.execute("""SELECT version_id FROM registrations WHERE document_id=? AND content_hash=? AND finalized=1
+                                    ORDER BY sequence LIMIT 1""", (candidate.document_id, processing.normalized_hash)).fetchone()
+            duplicate = match is not None
+            if candidate.finalized and (match is None or match[0] != version_id):
+                raise TechDocQAError("SNAPSHOT_MISMATCH", "Finalized content cannot be changed.", stage="storage")
+            resolved = match[0] if match else version_id
+            if not candidate.finalized:
+                if candidate.status not in {"extracting", "normalized"}:
+                    raise TechDocQAError("INVALID_STATE", "Candidate is not ready for finalization.", stage="registry")
+                values = json.loads(self.execute("SELECT metadata_json FROM registrations WHERE version_id=?", (version_id,)).fetchone()[0])
+                values["processing"] = processing.model_copy(update={"resolved_version_id": resolved}).model_dump()
+                if candidate.online:
+                    values["online"].update(normalized_path=processing.normalized_path, normalized_hash=processing.normalized_hash)
+                if processing.original_title and (candidate.title_explicit is False or (
+                        candidate.title_explicit is None and candidate.title == candidate.filename)):
+                    values["title"] = safe_text(processing.original_title)[:1000]
+                if duplicate:
+                    self.execute("UPDATE registrations SET status='normalized',metadata_json=? WHERE version_id=?", (json.dumps(values), version_id))
+                else:
+                    other = self.execute("""SELECT document_id FROM registrations WHERE content_hash=? AND finalized=1 AND document_id<>?
+                                            ORDER BY ingested_at,version_id LIMIT 1""", (processing.normalized_hash, candidate.document_id)).fetchone()
+                    self.execute("UPDATE registrations SET is_active=0,status='superseded' WHERE document_id=? AND is_active=1", (candidate.document_id,))
+                    self.execute("""UPDATE registrations SET status='normalized',finalized=1,is_active=1,content_hash=?,metadata_json=?,duplicate_of=?
+                                    WHERE version_id=?""", (processing.normalized_hash, json.dumps(values), other[0] if other else None, version_id))
+            target = self.get_version(resolved)
+            result = RegistrationResult(document_id=target.document_id, version_id=target.version_id, status=target.status,
+                deduplicated=duplicate, duplicate_of=target.duplicate_of, run_id=attempt["run_id"],
+                finalized=target.finalized, is_active=target.is_active)
+            context = result.model_dump()
+            if candidate.online:
+                context["online"] = candidate.online.model_copy(update={"normalized_path": processing.normalized_path,
+                                                                       "normalized_hash": processing.normalized_hash}).model_dump()
+            self.execute("UPDATE attempts SET status=?,result_json=? WHERE attempt_id=?",
+                         ("skipped" if duplicate else "processed", json.dumps(context), attempt_id))
+            self.execute("UPDATE runs SET skipped=skipped+?,processed=processed+? WHERE run_id=?",
+                         (int(duplicate), int(not duplicate), attempt["run_id"]))
+            self.event(run_id=attempt["run_id"], attempt_id=attempt_id, document_id=candidate.document_id,
+                       version_id=version_id, status=target.status, decision="DUPLICATE_SKIPPED" if duplicate else "VERSION_FINALIZED",
+                       reason="Normalized content resolves to an existing version; no reactivation." if duplicate else "Validated normalized content finalized atomically.",
+                       stage="normalization")
+        return result
 
     def fail_registration(self, version_id: str):
         """Record a later processing failure without superseding another registration."""
@@ -355,7 +441,8 @@ class Registry:
                 error=ErrorDetail.model_validate_json(attempt["error_json"]) if attempt["error_json"] else None,
                 online=OnlineProvenance.model_validate(online_values) if online_values is not None else None,
             ))
-        return BatchResult(run=RunSummary(**dict(row)), outcomes=outcomes)
+        processing = self.execute("SELECT 1 FROM events WHERE run_id=? AND decision='PROCESSING_RUN_STARTED' LIMIT 1", (run_id,)).fetchone()
+        return BatchResult(run=RunSummary(**dict(row), stage="normalization" if processing else "registration"), outcomes=outcomes)
 
     def document_record(self, row) -> DocumentRecord:
         values = dict(row)

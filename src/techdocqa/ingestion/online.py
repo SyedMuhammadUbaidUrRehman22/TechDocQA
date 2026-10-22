@@ -62,9 +62,9 @@ def run_page_worker(source: OnlineSource, url: str, settings: Settings, director
         raise TechDocQAError("PAGE_WORKER_FAILED", "Documentation worker returned an invalid response.", stage="ingestion", retryable=True) from None
 
 
-def store_snapshot(root: Path, kind: str, data: bytes, suffix: str) -> tuple[Path, str]:
+def store_snapshot(root: Path, kind: str, data: bytes, suffix: str, *, namespace: str = "online") -> tuple[Path, str]:
     digest = hashlib.sha256(data).hexdigest()
-    directory = root / "online" / kind
+    directory = root / namespace / kind
     if not directory.resolve().is_relative_to(root):
         raise TechDocQAError("UNSAFE_STORAGE", "Snapshot storage escapes the configured data directory.", stage="storage")
     directory.mkdir(parents=True, exist_ok=True)

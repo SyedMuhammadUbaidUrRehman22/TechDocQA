@@ -1,8 +1,8 @@
 # TechDocQA implementation roadmap
 
-Status: roadmap proposed 2026-10-09; implementation checkpoint 2026-10-21. Source: [requirements](../TechDocQA_Requirements_v2.md), contents Revision 3. Phase 1 foundation, Phase 2 registration/local safety and the selected Phase 3A online HTML slice are implemented. Phase 1 corpus/hardware/budget/reviewer gates and the rest of Phase 3 onward remain open. Source release stages and priorities are preserved; an early slice does not complete a whole FR.
+Status: roadmap proposed 2026-10-09; implementation checkpoint 2026-10-22. Source: [requirements](../TechDocQA_Requirements_v2.md), contents Revision 3. Phase 1 foundation, Phase 2 registration/local safety, the selected Phase 3A online HTML slice and Phase 3B parsing/normalization/version finalization are implemented. Phase 1 corpus/hardware/budget/reviewer gates and Phase 4 onward remain open. Source release stages and priorities are preserved; an early slice does not complete a whole FR.
 
-Current checkpoint: [Phase 3A](PHASE_3A_STATUS.md) adds explicitly approved online HTML fetching/extraction, provenance and provisional candidates without changing Phase 2 local registration. This early, user-selected optional URL slice does not complete Phase 3 or the remaining Phase 12 features. Corpus/hardware/budget/reviewer decisions remain open; models, search and QA remain deferred. See [contract boundaries](PHASE_3A_PLAN.md) and [development log](../DEVELOPMENT_LOG.md).
+Current checkpoint: [Phase 3B](PHASE_3B_STATUS.md) completes the remaining Phase 3 implementation through an offline `process` step after registration/extraction. Phase 3A fetching/security and registration CLI behavior are retained. The optional URL slice does not complete the remaining Phase 12 features. Corpus/hardware/budget/reviewer decisions remain open; models, search and QA remain deferred. See [contracts](DECISIONS.md#phase-3b-normalization-and-finalization-2026-10-22) and [development log](../DEVELOPMENT_LOG.md).
 
 All future test paths are proposed in [traceability](requirements_traceability.md). See [repository structure](REPOSITORY_STRUCTURE.md) for component paths and [decisions](DECISIONS.md) for D/Q gates. Default tests run offline with mocks. Real provider/model/human benchmarks are separate recorded gates and never substituted by mock results.
 
@@ -45,6 +45,8 @@ Implementation checkpoint: registration, SQLite history/runs/attempts, local lim
 User-selected early URL slice of FR-01/FR-23, with online HTML extraction and FR-02/FR-20/FR-22 integration. The TOML catalog selects finite official Kafka/Airflow pages; four other approved sources start disabled. DNS/IP-pinned HTTPS fetching precedes local LangChain loading in a bounded worker. Existing SQLite JSON columns retain URL identity, raw/text snapshots and per-retrieval provenance; schema version 1 and local keys remain unchanged. No normalized versions, chunks or indexes are created. See [plan](PHASE_3A_PLAN.md), [implemented decisions](DECISIONS.md#phase-3a-online-contracts-2026-10-21) and [verification](PHASE_3A_STATUS.md).
 
 ## Phase 3 — Parsing, normalization and versioning
+
+Phase 3B is the user's name for this remaining Phase 3 work; the original roadmap had no distinct 3B entry or indexing responsibility. Local LangChain loaders, code-safe deterministic normalization, immutable extracted/normalized artifacts and transactional finalization now implement this boundary. `ingest` retains byte registration; `process [version_ids ...]` completes it offline and can consume Phase 3A snapshots without a fetch. See [checkpoint and acceptance limits](PHASE_3B_STATUS.md). The original plan below remains the scope; no Phase 4 work is included.
 
 - Objective: source-preserving text extraction and deterministic duplicate/change decisions.
 - FRs: FR-03, FR-04, FR-05 P0; remaining title capture FR-02, processing history FR-20 and parsing limits FR-23.
@@ -146,4 +148,4 @@ User-selected early URL slice of FR-01/FR-23, with online HTML extraction and FR
 
 ## Recommended next action
 
-Continue the remainder of Phase 3 from [Phase 3A](PHASE_3A_STATUS.md) and the [loader/metadata plan](LANGCHAIN_INGESTION_PLAN.md): local PDF/Markdown/TXT loading, normalization and finalized normalized-version decisions remain unimplemented. Retain online code spans and snapshot provenance. Settle remaining Q-10/Q-11 details for local formats. Complete corpus selection and hardware/budget/reviewer gates; models remain deferred to Phases 5/7.
+Next is Phase 4 segmentation/framework chunking, consuming verified finalized Documents from Phase 3B. Preserve code/heading/page provenance and apply active-version/duplicate eligibility. Complete corpus selection and hardware/budget/reviewer gates; models remain deferred to Phases 5/7.

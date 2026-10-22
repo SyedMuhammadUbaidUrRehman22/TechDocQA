@@ -1,5 +1,7 @@
 # Phase 3A controlled online ingestion checkpoint
 
+Historical Phase 3A evidence follows. Update 2026-10-22: [Phase 3B](PHASE_3B_STATUS.md) now adds local framework loading, offline normalization of the saved online extraction, and finalized-version handling. `ingest` still registers provisional candidates; `process` performs the new step. Statements below about absent normalization describe Phase 3A alone. Catalog, fetch security, immutable raw/extracted snapshots and original regression tests are preserved.
+
 Completed and verified 2026-10-21 on Windows/Python 3.13.3. TechDocQA can fetch explicitly selected official Kafka/Airflow pages, extract whole-page text through LangChain, retain snapshots/provenance and register provisional URL candidates in the existing SQLite registry. This is not a complete RAG pipeline or the remaining Phase 3 local parsing/normalization work.
 
 The [inspection plan and conflicts](PHASE_3A_PLAN.md) preceded implementation. [Online decisions](DECISIONS.md#phase-3a-online-contracts-2026-10-21) preserve Phase 2 local identities, provisional eligibility and the existing errors. URL ingestion remains optional P2 in the unchanged authoritative requirements; the user explicitly selected this limited slice early.

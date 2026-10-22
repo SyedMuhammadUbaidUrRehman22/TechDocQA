@@ -120,6 +120,22 @@ class RegistrationResult(StrictModel):
     is_active: bool = False
 
 
+class ProcessingProvenance(StrictModel):
+    snapshot_path: str
+    extracted_path: str
+    extracted_hash: str = Field(pattern=r"^[0-9a-f]{64}$")
+    normalized_path: str
+    normalized_hash: str = Field(pattern=r"^[0-9a-f]{64}$")
+    documents_path: str
+    documents_hash: str = Field(pattern=r"^[0-9a-f]{64}$")
+    normalization_policy: str
+    unicode_version: str
+    resolved_version_id: str | None = None
+    original_title: str | None = None
+    encoding: str | None = None
+    extraction_dependencies: dict[str, str] = Field(default_factory=dict)
+
+
 class DocumentRecord(RegistrationResult, RegistrationMetadata):
     source_key: str
     ingested_at: str
@@ -131,6 +147,8 @@ class DocumentRecord(RegistrationResult, RegistrationMetadata):
     page_count: int | None = None
     previous_version_id: str | None = None
     online: OnlineProvenance | None = None
+    processing: ProcessingProvenance | None = None
+    title_explicit: bool | None = None
 
 
 class AttemptOutcome(StrictModel):
@@ -145,7 +163,7 @@ class AttemptOutcome(StrictModel):
 class RunSummary(StrictModel):
     run_id: str
     status: Literal["running", "completed", "completed_with_errors", "failed"]
-    stage: Literal["registration"] = "registration"
+    stage: Literal["registration", "normalization"] = "registration"
     started_at: str
     finished_at: str | None = None
     processed: int = 0

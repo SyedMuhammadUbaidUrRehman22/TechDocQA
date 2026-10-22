@@ -6,6 +6,8 @@ Current checkpoint, 2026-10-21: Phase 2 adds `registry.py`, `errors.py`, `privac
 
 Phase 3A adds `ingestion/urls.py` (syntax/scope policy), `fetching.py` (pinned HTTPS), `html.py` (LangChain extraction adapter), `online_worker.py` (isolated bounded processing) and `online.py` (catalog selection/snapshots/registry/manifest coordination). Catalog entries use the existing `config/default.toml`; no second source catalog exists. `tests/test_online.py` contains mocked offline and opt-in live tests. `data/online/{snapshots,extracted}` and its generated corpus-manifest projection remain ignored runtime artifacts. See [Phase 3A checkpoint](PHASE_3A_STATUS.md).
 
+Phase 3B adds `normalization.py`, `ingestion/{loaders,processing,processing_worker}.py`, transactional finalization in the existing registry, the `process` CLI command and `tests/test_{normalization,loaders,versioning}.py`. Local raw snapshots use `data/local/snapshots`; extracted Documents JSON, normalized UTF-8 text and normalized Documents JSON use `data/processing/{extracted,normalized,documents}`. All remain ignored. No chunk/index/retrieval modules exist yet. See [Phase 3B checkpoint](PHASE_3B_STATUS.md); the proposed tree below is historical and normalization actually lives at the package root.
+
 ```text
 TechDocQA/
   TechDocQA_Requirements_v2.md    # original source, unchanged

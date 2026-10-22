@@ -1,6 +1,6 @@
 """Bounded byte inspection and handle-based local path validation."""
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 import hashlib
 import json
 import os
@@ -24,6 +24,7 @@ class ValidatedSource:
     doc_type: str
     size_bytes: int
     page_count: int | None = None
+    data: bytes | None = field(default=None, repr=False, compare=False)
 
 
 def allowed_path(path: Path, settings: Settings) -> Path:
@@ -91,7 +92,7 @@ def pdf_page_count(data: bytes, settings: Settings) -> int:
     return pages
 
 
-def validate_file(path: Path, settings: Settings) -> ValidatedSource:
+def validate_file(path: Path, settings: Settings, *, capture: bool = False) -> ValidatedSource:
     resolved = allowed_path(path, settings)
     try:
         initial = resolved.stat()
@@ -133,4 +134,5 @@ def validate_file(path: Path, settings: Settings) -> ValidatedSource:
     if not is_pdf and (b"\x00" in data or data.startswith((b"MZ", b"\x7fELF", b"\x89PNG", b"\xff\xd8\xff"))):
         raise TechDocQAError("FORMAT_MISMATCH", "Binary content does not match a supported text format.")
     pages = pdf_page_count(data, settings) if is_pdf else None
-    return ValidatedSource(resolved, hashlib.sha256(data).hexdigest(), SUPPORTED[extension], len(data), pages)
+    return ValidatedSource(resolved, hashlib.sha256(data).hexdigest(), SUPPORTED[extension], len(data), pages,
+                           data if capture else None)
