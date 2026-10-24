@@ -14,6 +14,14 @@ from techdocqa.normalization import document_text, normalize_documents
 
 def process(request: dict) -> dict:
     directory = Path(request["directory"])
+    if request.get("chunking"):
+        from techdocqa.chunking import build_chunks
+        from techdocqa.settings import ChunkingSettings, ModelSettings
+        documents = [Document(**item) for item in json.loads((directory / "input.json").read_text(encoding="utf-8"))]
+        result = build_chunks(documents, ChunkingSettings.model_validate(request['chunking']),
+                              model=ModelSettings.model_validate(request.get('model', {})))
+        (directory / 'chunks.json').write_bytes(json.dumps(result, ensure_ascii=True, sort_keys=True, separators=(',', ':')).encode('utf-8'))
+        return {'chunk_count': len(result['chunks'])}
     if request.get("extracted"):
         documents = [Document(**item) for item in json.loads((directory / "input.json").read_text(encoding="utf-8"))]
     else:
@@ -44,12 +52,15 @@ def main():
     def denied(*args, **kwargs):
         raise OSError("Network is disabled in the processing worker")
     socket.getaddrinfo = socket.socket.connect = socket.socket.connect_ex = denied
+    request = {}
     try:
-        output = process(json.loads(sys.stdin.buffer.read()))
+        request = json.loads(sys.stdin.buffer.read())
+        output = process(request)
     except TechDocQAError as error:
         output = {"error": error.response.error.model_dump()}
     except Exception:
-        output = {"error": TechDocQAError("PROCESSING_FAILED", "Document processing failed safely.", stage="normalization").response.error.model_dump()}
+        stage = 'chunking' if isinstance(request, dict) and request.get('chunking') else 'normalization'
+        output = {"error": TechDocQAError("PROCESSING_FAILED", "Document processing failed safely.", stage=stage).response.error.model_dump()}
     print(json.dumps(output, ensure_ascii=True))
 
 

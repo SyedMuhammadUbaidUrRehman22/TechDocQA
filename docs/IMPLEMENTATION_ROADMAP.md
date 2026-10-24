@@ -1,5 +1,7 @@
 # TechDocQA implementation roadmap
 
+Phase 4 checkpoint 2026-10-24: [segmentation/chunking evidence](PHASE_4_STATUS.md) records the implemented offline chunk layer, 1,609 public-reference chunks, explicit character fallback and the verified local Ollama embedding input profile. Index-dependent acceptance remains Phase 5. The phase plans and earlier checkpoints below remain historical.
+
 Corpus update 2026-10-24: [reference-corpus evidence](REFERENCE_CORPUS_STATUS.md) now covers 20 frozen public documents plus one private DDIA supplement, all successfully processed. The numeric format/size/technology selection gate is satisfied; DDIA permissions remain unverified and it is excluded from the public reference. Hardware, budget, human benchmark review, model selection and Phase 4 onward remain separate gates. Earlier zero-corpus statements below are historical.
 
 Status: roadmap proposed 2026-10-09; implementation checkpoint 2026-10-22. Source: [requirements](../TechDocQA_Requirements_v2.md), contents Revision 3. Phase 1 foundation, Phase 2 registration/local safety, the selected Phase 3A online HTML slice and Phase 3B parsing/normalization/version finalization are implemented. Phase 1 corpus/hardware/budget/reviewer gates and Phase 4 onward remain open. Source release stages and priorities are preserved; an early slice does not complete a whole FR.
@@ -150,4 +152,4 @@ Phase 3B is the user's name for this remaining Phase 3 work; the original roadma
 
 ## Recommended next action
 
-Next is Phase 4 segmentation/framework chunking, consuming verified finalized Documents from Phase 3B. Preserve code/heading/page provenance and apply active-version/duplicate eligibility. Complete corpus selection and hardware/budget/reviewer gates; models remain deferred to Phases 5/7.
+Next is Phase 5 lexical/vector retrieval and lifecycle work, consuming verified active chunks. Corpus selection and local model installation are recorded; provider generation/embedding quality, indexes, benchmark review and performance gates remain unverified. Do not treat the private DDIA supplement as part of the public reference or silently count it toward the approximate 3,000-chunk target.

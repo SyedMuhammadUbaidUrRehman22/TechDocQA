@@ -5,6 +5,7 @@ import json
 from pathlib import Path
 
 from techdocqa.ingestion.processing import finalized_documents
+from techdocqa.ingestion.chunks import active_chunks
 from techdocqa.registry import Registry
 from techdocqa.settings import load_settings
 
@@ -26,7 +27,7 @@ def main():
     selected_urls = {item["source_url"] for item in reference if item["format"] == "html"}
     catalog_urls = {url for source in settings.online.sources if source.enabled for url in source.pages}
     assert selected_urls == catalog_urls
-    raw_hashes, normalized_hashes = set(), set()
+    raw_hashes, normalized_hashes, chunk_counts = set(), set(), {}
     with Registry(Path(settings.data_directory) / "registry.sqlite3") as registry:
         current = {record.source_key: record for record in registry.list_documents()}
         for item in manifest["documents"]:
@@ -36,7 +37,7 @@ def main():
             assert record.license == item["license"] and record.source_url == item["source_url"]
             assert record.doc_type == item["format"] and record.size_bytes == item["size_bytes"]
             assert record.raw_hash == item["raw_hash"] and record.content_hash == item["content_hash"]
-            assert record.finalized and record.is_active and record.status == "normalized"
+            assert record.finalized and record.is_active and record.status in {"normalized", "chunked", "embedded", "indexed"}
             assert record.duplicate_of is None
             assert record.raw_hash not in raw_hashes and record.content_hash not in normalized_hashes
             raw_hashes.add(record.raw_hash)
@@ -45,6 +46,10 @@ def main():
             assert source.stat().st_size == item["size_bytes"]
             assert hashlib.sha256(source.read_bytes()).hexdigest() == record.raw_hash
             documents = finalized_documents(record.version_id, settings, registry)
+            if record.chunking:
+                chunks = active_chunks(record.version_id, settings, registry)
+                assert len(chunks) == record.chunking.chunk_count
+                chunk_counts[record.source_key] = len(chunks)
             assert sum(len(doc.page_content.strip()) for doc in documents) >= 1000
             if record.doc_type == "pdf":
                 assert source.read_bytes().startswith(b"%PDF-")
@@ -54,6 +59,8 @@ def main():
     print(json.dumps({"verified_documents": len(manifest["documents"]),
                       "reference_documents": len(reference), "reference_formats": dict(counts),
                       "total_bytes": sum(item["size_bytes"] for item in manifest["documents"]),
+                      "verified_chunks": sum(chunk_counts.values()),
+                      "reference_chunks": sum(chunk_counts.get(item['source_key'], 0) for item in reference),
                       "duplicate_documents": 0, "result": "passed"}))
 
 

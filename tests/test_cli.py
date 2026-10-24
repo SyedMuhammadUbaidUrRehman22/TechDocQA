@@ -20,11 +20,13 @@ def test_config_check_does_not_claim_provider_readiness():
     assert result.returncode == 0
     output = json.loads(result.stdout)
     assert output["provider_connection_checked"] is False
-    assert output["model_selection_complete"] is False
+    assert output["model_selection_complete"] is True
 
 
-def test_require_models_fails_with_standard_error():
-    result = run_cli("config-check", "--require-models")
+def test_require_models_fails_with_standard_error(tmp_path):
+    config = tmp_path / 'unselected.toml'
+    config.write_text('[model]\nprovider = "ollama"\n', encoding='utf-8')
+    result = run_cli("config-check", "--require-models", "--config", str(config))
     assert result.returncode == 1
     assert json.loads(result.stderr)["error"]["code"] == "INVALID_CONFIGURATION"
 

@@ -5,10 +5,16 @@ data_directory = "../data"
 
 [model]
 provider = "ollama"
-# Chat and embedding models are intentionally unselected.
+chat_model = "qwen3:1.7b"
+embedding_model = "nomic-embed-text:latest"
+context_window = 4096
+# Verified against installed Ollama 0.40.10 metadata; embedding API clamps to the GGUF context.
+embedding_context_window = 2048
+embedding_tokenizer = "bert"
+embedding_model_digest = "0a109f422b47e3a30ba2b10eca18548e944e8a23073ee3f3e947efcf3c45e59f"
+embedding_prefix = "search_document: "
 temperature = 0.0
 timeout_seconds = 60
-# Set chat_model, embedding_model and context_window after model selection.
 
 [ingestion]
 max_file_bytes = 20971520

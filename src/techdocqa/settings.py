@@ -17,6 +17,10 @@ class ModelSettings(StrictModel):
     provider: Literal["ollama", "openai"] = "ollama"
     chat_model: str | None = Field(default=None, min_length=1, pattern=r"\S")
     embedding_model: str | None = Field(default=None, min_length=1, pattern=r"\S")
+    embedding_context_window: int | None = Field(default=None, gt=0)
+    embedding_tokenizer: Literal["bert"] | None = None
+    embedding_model_digest: str | None = Field(default=None, pattern=r"^[0-9a-f]{64}$")
+    embedding_prefix: str = ""
     context_window: int | None = Field(default=None, gt=0)
     temperature: float = Field(default=0.0, ge=0.0, le=0.2)
     timeout_seconds: int = Field(default=60, gt=0)

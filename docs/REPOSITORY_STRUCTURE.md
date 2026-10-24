@@ -1,5 +1,7 @@
 # Proposed repository structure
 
+Phase 4 update 2026-10-24: actual additions are package-root `segmentation.py` and `chunking.py`, `ingestion/chunks.py`, and `tests/test_{segmentation,chunking}.py`. They reuse the existing worker, registry JSON metadata and atomic snapshot helpers. Runtime chunk text/spans live under ignored `data/chunking/artifacts`, with active pointers in the registry. No SQL migration or empty indexing module tree was added. See [Phase 4](PHASE_4_STATUS.md).
+
 Status: proposal, 2026-10-09. Source: [requirements](../TechDocQA_Requirements_v2.md), contents Revision 3. Only the five planning documents are created now. Paths below are future components, not claims that code exists. Add a module when its roadmap phase needs it; responsibilities may share a small module until size warrants separation.
 
 Current checkpoint, 2026-10-21: Phase 2 adds `registry.py`, `errors.py`, `privacy.py`, `ingestion/{pipeline,safety,pdf_check}.py`, registration schemas, CLI operations and offline ingestion/registry/safety/CLI tests with generated fixtures. `DEVELOPMENT_LOG.md`, `docs/PHASE_2_STATUS.md` and `docs/LANGCHAIN_INGESTION_PLAN.md` record evidence and the loader boundary. Remaining loaders/normalization/processing/indexing/retrieval/answering/evaluation modules are not created. The tree below remains the later target; no empty module tree is introduced.

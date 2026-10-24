@@ -8,14 +8,17 @@ from techdocqa.settings import ChunkingSettings, Settings, load_settings
 ROOT = Path(__file__).resolve().parents[1]
 
 
-def test_default_config_keeps_model_unselected_and_paths_local():
+def test_default_config_records_selected_local_models_and_paths():
     settings = load_settings(ROOT / "config/default.toml")
     assert settings.framework == "langchain"
     assert settings.model.provider == "ollama"
-    assert settings.model.chat_model is None
+    assert settings.model.chat_model == "qwen3:1.7b"
+    assert settings.model.embedding_model == "nomic-embed-text:latest"
+    assert settings.model.embedding_context_window == 2048 and settings.model.embedding_tokenizer == 'bert'
     assert Path(settings.allowed_directories[0]) == ROOT / "data/corpus"
+    settings.require_models()
     with pytest.raises(ValueError, match="must be selected"):
-        settings.require_models()
+        Settings().require_models()
 
 
 def test_profile_and_environment_precedence(tmp_path, monkeypatch):

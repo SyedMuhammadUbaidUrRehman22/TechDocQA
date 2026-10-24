@@ -3,13 +3,27 @@ TechDocQA is a domain-specific RAG project for answering software and data engin
 
 ## Current status
 
-Phase 3B adds deterministic normalization and transactional document-version finalization for local Markdown/HTML/TXT/PDF and Phase 3A's saved online extractions. `ingest` retains registration behavior; `process` completes the offline document layer. The catalog and secured online fetching remain intact. No splitting, indexing, retrieval or model calls are implemented. See [Phase 3B evidence and limits](docs/PHASE_3B_STATUS.md), [Phase 3A evidence](docs/PHASE_3A_STATUS.md) and [Phase 2 evidence](docs/PHASE_2_STATUS.md).
+Phase 4 adds offline sentence spans and LangChain chunks with source, heading, page and offset provenance. `ingest` registers, `process` normalizes/finalizes, and explicit `chunk` runs atomically activate a verified chunk artifact. The 20-document public reference has 1,609 chunks; the private DDIA supplement adds 3,934. See [Phase 4 evidence and limits](docs/PHASE_4_STATUS.md) and the earlier [Phase 3B checkpoint](docs/PHASE_3B_STATUS.md). Embeddings, indexes, retrieval and answer generation remain Phase 5 onward.
 
-LangChain is approved. An open source model will be selected later; Ollama is the configured local serving profile and both chat/embedding model names remain unset. The original source still specifies OpenAI/Ollama portability, so OpenAI support remains a later requirement pending clarification if the project becomes local-only. No model weights or provider service are required for foundation tests.
+The selected local models are Ollama `qwen3:1.7b` and `nomic-embed-text:latest`. Installed metadata verifies the embedding model's BERT tokenizer family and 2,048-token input limit; its advertised `num_ctx=8192` does not override the API's metadata clamp. Exact provider token counting is unavailable, so chunks use recorded character counting and a conservative UTF-8 bound: requested size 1000 becomes an effective 507 characters, overlap 150, minimum 100. The generation tokenizer is independent. Offline tests and chunking never call a provider. OpenAI model profiles remain a later integration requirement.
 
 ## Reference corpus
 
 The [2026-10-24 corpus report](docs/REFERENCE_CORPUS_STATUS.md) records 20 frozen public/openly licensed documents plus the existing private DDIA supplement: 21 documents, 2,700,598 bytes, five domains, four Markdown, 13 HTML, three text-based PDF excerpts and one TXT. Every selected version is normalized, finalized and active. The public selection meets the format/size/domain requirements without relying on DDIA's unverified permissions. See the [manifest](datasets/corpus_manifest.json) and [reproduction/verification instructions](datasets/README.md). Source material stays under ignored `data/`; the manifest contains provenance and hashes only.
+
+## Offline chunking
+
+Use explicit version IDs to chunk the frozen public selection, excluding DDIA and the rejected registry candidate:
+
+```powershell
+$referenceManifest = Get-Content datasets/corpus_manifest.json -Raw | ConvertFrom-Json
+$referenceVersionIds = @($referenceManifest.documents | Where-Object evaluation_included | ForEach-Object version_id)
+.\.venv\Scripts\techdocqa.exe chunk @referenceVersionIds
+.\.venv\Scripts\techdocqa.exe status --status chunked --json
+.\.venv\Scripts\python.exe datasets/verify_corpus.py
+```
+
+The private DDIA version was also chunked locally and remains excluded from public evaluation. `chunk` without IDs processes all active finalized nonduplicate registry versions; review selection is expressed by the version IDs. Repeating the same config verifies and skips existing chunks. To change size/overlap/unit, edit TOML or supply the existing `--profile`, then explicitly run `chunk` again. Previous artifacts stay retained, and only the successful new artifact becomes active. No source text is printed by the CLI or sent to a provider.
 
 ## Setup
 
@@ -23,7 +37,7 @@ py -3.13 -m venv .venv
 .\.venv\Scripts\techdocqa.exe config-check
 ```
 
-`config-check` validates settings without contacting providers. `config-check --require-models` intentionally fails while model names/context window are unset; it never verifies connectivity or model quality. TOML settings are in [config/default.toml](config/default.toml). TECHDOCQA_CHAT_MODEL and TECHDOCQA_EMBEDDING_MODEL override the model names; context_window must be selected in TOML. Relative paths resolve against the base configuration file.
+`config-check` validates settings without contacting providers. `config-check --require-models` succeeds for the selected default profile; it verifies selection, not connectivity or model quality. TOML settings are in [config/default.toml](config/default.toml). TECHDOCQA_CHAT_MODEL and TECHDOCQA_EMBEDDING_MODEL override model names. Changing embeddings requires a verified context/tokenizer/digest profile and explicit re-chunking; unsupported profiles fail safely. Relative paths resolve against the base configuration file.
 
 Keep credentials out of TOML, logs and version control. Local runtime data and virtual environments are ignored. Phase 3A uses LangChain's pinned `BSHTMLLoader`, BeautifulSoup, urllib3 and certifi. The archived loader package is a documented maintenance limitation; its network client is never used. Vector, NLP and reranking integrations remain later work.
 

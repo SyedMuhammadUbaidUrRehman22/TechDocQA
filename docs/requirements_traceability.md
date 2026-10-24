@@ -1,5 +1,9 @@
 # Requirements traceability
 
+## Implemented acceptance slices - Phase 4
+
+2026-10-24: `tests/test_segmentation.py` covers FR-06 P0 AC-06.1-06.3 (technical punctuation exceptions, repeated offsets/counts and exact span reconstruction). `tests/test_chunking.py` covers FR-10 chunk bounds/nonempty text, ten overlap pairs, complete occurrence/page/section provenance, repeat processing, explicit config replacement, intact fitting fences, oversized code and long-line flags, minimum exceptions, model-input bounds, corruption, eligibility, timeout, interrupted runs and activation rollback. The [real corpus report](PHASE_4_STATUS.md) records 1,609 public-reference chunks and all 21 processed versions. FR-02/FR-20 chunk metadata and stage are implemented through the existing CLI/registry. AC-10.5's active chunk set is covered; an active vector index is unimplemented until Phase 5. FR-06 P1 F1, embedding/index/QA acceptance and latency/quality targets remain unclaimed. Original source AC text below is unchanged.
+
 Status: planning only, 2026-10-09. Source: [TechDocQA_Requirements_v2.md](../TechDocQA_Requirements_v2.md), **contents Revision 3**. The source file is unchanged. All 24 FRs are accounted for below; their original headings, descriptions, priority/dependency declarations and acceptance criteria are reproduced in the source-record section. Proposed criteria are explicitly separate and do not replace the original tests or targets.
 
 Current checkpoint, 2026-10-21: Phase 2 local registration is preserved. Phase 3A adds explicitly selected URL ingestion, HTML extraction and provenance. The original ACs below remain unchanged. Actual evidence is mapped below and in [Phase 2](PHASE_2_STATUS.md) and [Phase 3A](PHASE_3A_STATUS.md). Historical planning validation is not current implementation evidence. The source's existing local table-formatting edit is preserved; all original AC text remains intact.

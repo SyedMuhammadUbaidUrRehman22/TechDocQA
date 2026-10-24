@@ -55,14 +55,15 @@ def read_snapshot(root: Path, relative: str, digest: str, limit: int) -> bytes:
 
 
 def run_processing_worker(request: dict, settings: Settings) -> dict:
+    stage = "chunking" if request.get("chunking") else "extraction"
     try:
         completed = subprocess.run([sys.executable, "-I", "-m", "techdocqa.ingestion.processing_worker"],
             input=json.dumps(request).encode("utf-8"), capture_output=True,
             timeout=settings.ingestion.parse_timeout_seconds, check=False)
     except subprocess.TimeoutExpired:
-        raise TechDocQAError("PARSE_TIMEOUT", "Document processing exceeded its deadline.", stage="extraction", retryable=True) from None
+        raise TechDocQAError("PARSE_TIMEOUT", "Document processing exceeded its deadline.", stage=stage, retryable=True) from None
     except OSError:
-        raise TechDocQAError("PROCESSING_WORKER_FAILED", "Processing worker could not start.", stage="extraction", retryable=True) from None
+        raise TechDocQAError("PROCESSING_WORKER_FAILED", "Processing worker could not start.", stage=stage, retryable=True) from None
     try:
         output = json.loads(completed.stdout)
         if completed.returncode or not isinstance(output, dict):
@@ -72,7 +73,7 @@ def run_processing_worker(request: dict, settings: Settings) -> dict:
             raise TechDocQAError(detail.code, detail.message, stage=detail.stage, retryable=detail.retryable)
         return output
     except (ValueError, TypeError):
-        raise TechDocQAError("PROCESSING_WORKER_FAILED", "Processing worker returned an invalid response.", stage="extraction", retryable=True) from None
+        raise TechDocQAError("PROCESSING_WORKER_FAILED", "Processing worker returned an invalid response.", stage=stage, retryable=True) from None
 
 
 def prepare_candidate(record, settings: Settings, registry: Registry, directory: Path) -> ProcessingProvenance:

@@ -13,7 +13,7 @@ from techdocqa.ingestion.safety import ValidatedSource
 from techdocqa.privacy import safe_text
 from techdocqa.schemas import (
     AttemptOutcome, BatchResult, DocumentRecord, ErrorDetail, RegistrationMetadata,
-    OnlineProvenance, ProcessingProvenance, RegistrationResult, RunSummary,
+    OnlineProvenance, ProcessingProvenance, RegistrationResult, RunSummary, ChunkingProvenance,
 )
 
 APPLICATION_ID = 0x54445141
@@ -207,8 +207,9 @@ class Registry:
             self.execute("INSERT INTO runs(run_id,status,started_at) VALUES (?,'running',?)", (run_id, utc_now()))
             for index, attempt_id in enumerate(attempts):
                 self.execute("INSERT INTO attempts(attempt_id,run_id,input_index) VALUES (?,?,?)", (attempt_id, run_id, index))
-            if stage == "normalization":
-                self.event(run_id=run_id, decision="PROCESSING_RUN_STARTED", reason="Offline candidate processing.", stage=stage)
+            if stage in {"normalization", "chunking"}:
+                decision = "CHUNKING_RUN_STARTED" if stage == "chunking" else "PROCESSING_RUN_STARTED"
+                self.event(run_id=run_id, decision=decision, reason="Offline candidate processing.", stage=stage)
         return run_id, attempts
 
     def pending_attempt(self, attempt_id: str):
@@ -391,6 +392,34 @@ class Registry:
                        stage="normalization")
         return result
 
+    def begin_chunking(self, version_id: str, attempt_id: str):
+        with self.transaction():
+            self.pending_attempt(attempt_id)
+            record = self.get_version(version_id)
+            if not record.finalized or not record.is_active or record.duplicate_of:
+                raise TechDocQAError("INVALID_STATE", "Chunking requires an active finalized nonduplicate version.", stage="chunking")
+            self.execute("UPDATE attempts SET document_id=?,version_id=? WHERE attempt_id=?",
+                         (record.document_id, version_id, attempt_id))
+
+    def save_chunking(self, version_id: str, info: ChunkingProvenance, attempt_id: str, *, skipped=False):
+        with self.transaction():
+            attempt = self.pending_attempt(attempt_id)
+            record = self.get_version(version_id)
+            if attempt['version_id'] != version_id or not record.finalized or not record.is_active or record.duplicate_of:
+                raise TechDocQAError("INVALID_STATE", "Chunking target is no longer eligible.", stage="chunking")
+            values = json.loads(self.execute("SELECT metadata_json FROM registrations WHERE version_id=?", (version_id,)).fetchone()[0])
+            values['chunking'] = info.model_dump()
+            status = record.status if skipped else 'chunked'
+            self.execute("UPDATE registrations SET metadata_json=?,status=? WHERE version_id=?", (json.dumps(values), status, version_id))
+            result = RegistrationResult(document_id=record.document_id, version_id=version_id, status=status,
+                deduplicated=skipped, run_id=attempt['run_id'], finalized=True, is_active=True)
+            self.execute("UPDATE attempts SET status=?,result_json=? WHERE attempt_id=?",
+                         ('skipped' if skipped else 'processed', result.model_dump_json(), attempt_id))
+            self.event(run_id=attempt['run_id'], attempt_id=attempt_id, document_id=record.document_id,
+                version_id=version_id, status=status, decision='CHUNKING_SKIPPED' if skipped else 'CHUNKS_ACTIVATED',
+                reason=f"Verified {info.chunk_count} chunks for configuration {info.chunking_config_id}; "
+                       + ('unchanged artifact reused.' if skipped else 'new artifact activated atomically.'), stage='chunking')
+
     def fail_registration(self, version_id: str):
         """Record a later processing failure without superseding another registration."""
         with self.transaction():
@@ -421,9 +450,11 @@ class Registry:
         """Caller must hold registration_lock; never infer process death from a PID."""
         runs = self.execute("SELECT run_id FROM runs WHERE status='running'").fetchall()
         for run in runs:
+            stage = self.get_run(run[0]).run.stage
             attempts = self.execute("SELECT attempt_id FROM attempts WHERE run_id=? AND status='pending' ORDER BY input_index", (run[0],)).fetchall()
             for attempt in attempts:
-                error = TechDocQAError("RUN_INTERRUPTED", "Registration was interrupted; re-register the input.", retryable=True).response.error
+                error = TechDocQAError("RUN_INTERRUPTED", "Processing was interrupted; rerun the requested stage.",
+                                       stage=stage, retryable=True).response.error
                 self.fail_attempt(attempt[0], error)
             self.finish_run(run[0])
 
@@ -441,8 +472,8 @@ class Registry:
                 error=ErrorDetail.model_validate_json(attempt["error_json"]) if attempt["error_json"] else None,
                 online=OnlineProvenance.model_validate(online_values) if online_values is not None else None,
             ))
-        processing = self.execute("SELECT 1 FROM events WHERE run_id=? AND decision='PROCESSING_RUN_STARTED' LIMIT 1", (run_id,)).fetchone()
-        return BatchResult(run=RunSummary(**dict(row), stage="normalization" if processing else "registration"), outcomes=outcomes)
+        processing = self.execute("SELECT stage FROM events WHERE run_id=? AND decision IN ('PROCESSING_RUN_STARTED','CHUNKING_RUN_STARTED') LIMIT 1", (run_id,)).fetchone()
+        return BatchResult(run=RunSummary(**dict(row), stage=processing[0] if processing else "registration"), outcomes=outcomes)
 
     def document_record(self, row) -> DocumentRecord:
         values = dict(row)

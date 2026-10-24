@@ -1,5 +1,7 @@
 # Reference corpus assembly and verification
 
+Later checkpoint: [Phase 4](PHASE_4_STATUS.md) has progressed the selected versions to `chunked`. Source selection and byte/content hashes remain frozen. Processing-status and runtime-storage figures below describe the earlier assembly checkpoint.
+
 Reviewed 2026-10-24 on Windows/Python 3.13.3. Dataset: `techdocqa-reference-2026-10-24-v1`.
 
 **21 selected local documents, 2,700,598 bytes (2.700598 MB; about 2.58 MiB), across five domains.** All are normalized, finalized and active, with distinct raw and normalized content hashes and no `duplicate_of` links. Source-byte size counts each selected document once; registry files, processed copies, preparation files and rejected candidates are not counted as additional corpus documents.

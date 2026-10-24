@@ -136,6 +136,15 @@ class ProcessingProvenance(StrictModel):
     extraction_dependencies: dict[str, str] = Field(default_factory=dict)
 
 
+class ChunkingProvenance(StrictModel):
+    snapshot_path: str
+    snapshot_hash: str = Field(pattern=r"^[0-9a-f]{64}$")
+    chunking_config_id: str = Field(pattern=r"^[0-9a-f]{64}$")
+    chunk_count: int = Field(gt=0)
+    sentence_count: int = Field(ge=0)
+    config: dict
+
+
 class DocumentRecord(RegistrationResult, RegistrationMetadata):
     source_key: str
     ingested_at: str
@@ -148,6 +157,7 @@ class DocumentRecord(RegistrationResult, RegistrationMetadata):
     previous_version_id: str | None = None
     online: OnlineProvenance | None = None
     processing: ProcessingProvenance | None = None
+    chunking: ChunkingProvenance | None = None
     title_explicit: bool | None = None
 
 
@@ -163,7 +173,7 @@ class AttemptOutcome(StrictModel):
 class RunSummary(StrictModel):
     run_id: str
     status: Literal["running", "completed", "completed_with_errors", "failed"]
-    stage: Literal["registration", "normalization"] = "registration"
+    stage: Literal["registration", "normalization", "chunking"] = "registration"
     started_at: str
     finished_at: str | None = None
     processed: int = 0
