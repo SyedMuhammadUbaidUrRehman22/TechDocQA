@@ -7,6 +7,10 @@ Phase 3B adds deterministic normalization and transactional document-version fin
 
 LangChain is approved. An open source model will be selected later; Ollama is the configured local serving profile and both chat/embedding model names remain unset. The original source still specifies OpenAI/Ollama portability, so OpenAI support remains a later requirement pending clarification if the project becomes local-only. No model weights or provider service are required for foundation tests.
 
+## Reference corpus
+
+The [2026-10-24 corpus report](docs/REFERENCE_CORPUS_STATUS.md) records 20 frozen public/openly licensed documents plus the existing private DDIA supplement: 21 documents, 2,700,598 bytes, five domains, four Markdown, 13 HTML, three text-based PDF excerpts and one TXT. Every selected version is normalized, finalized and active. The public selection meets the format/size/domain requirements without relying on DDIA's unverified permissions. See the [manifest](datasets/corpus_manifest.json) and [reproduction/verification instructions](datasets/README.md). Source material stays under ignored `data/`; the manifest contains provenance and hashes only.
+
 ## Setup
 
 Use Python 3.11–3.13; Windows Python 3.13.3 is the verified development environment. From this repository root in PowerShell:

@@ -1,5 +1,7 @@
 # TechDocQA implementation roadmap
 
+Corpus update 2026-10-24: [reference-corpus evidence](REFERENCE_CORPUS_STATUS.md) now covers 20 frozen public documents plus one private DDIA supplement, all successfully processed. The numeric format/size/technology selection gate is satisfied; DDIA permissions remain unverified and it is excluded from the public reference. Hardware, budget, human benchmark review, model selection and Phase 4 onward remain separate gates. Earlier zero-corpus statements below are historical.
+
 Status: roadmap proposed 2026-10-09; implementation checkpoint 2026-10-22. Source: [requirements](../TechDocQA_Requirements_v2.md), contents Revision 3. Phase 1 foundation, Phase 2 registration/local safety, the selected Phase 3A online HTML slice and Phase 3B parsing/normalization/version finalization are implemented. Phase 1 corpus/hardware/budget/reviewer gates and Phase 4 onward remain open. Source release stages and priorities are preserved; an early slice does not complete a whole FR.
 
 Current checkpoint: [Phase 3B](PHASE_3B_STATUS.md) completes the remaining Phase 3 implementation through an offline `process` step after registration/extraction. Phase 3A fetching/security and registration CLI behavior are retained. The optional URL slice does not complete the remaining Phase 12 features. Corpus/hardware/budget/reviewer decisions remain open; models, search and QA remain deferred. See [contracts](DECISIONS.md#phase-3b-normalization-and-finalization-2026-10-22) and [development log](../DEVELOPMENT_LOG.md).

@@ -50,6 +50,11 @@ class Response:
 def online_settings(settings):
     configured = load_settings(ROOT / "config/default.toml")
     settings.online = configured.online
+    # Mock queues exercise one page and unreviewed/disabled states independently of the corpus selection.
+    for source in settings.online.sources:
+        source.pages = source.pages[:1]
+        source.usage_status = "unverified"
+        source.enabled = source.source_id in {"apache_kafka", "apache_airflow"}
     return settings
 
 
@@ -381,10 +386,11 @@ def test_cli_json_modes_and_document_query(online_settings, network, inline_work
     config.write_text((ROOT / "config/default.toml").read_text(encoding="utf-8"), encoding="utf-8")
     # This config's relative data directory is still beneath the test's temporary root.
     config.write_text(config.read_text(encoding="utf-8").replace('data_directory = "../data"', 'data_directory = "runtime"'), encoding="utf-8")
-    network[0].append(Response())
+    kafka = next(source for source in load_settings(config).online.sources if source.source_id == "apache_kafka")
+    network[0].extend(Response() for _ in kafka.pages)
     assert main(["ingest", "--source", "apache_kafka", "--config", str(config), "--json"]) == 0
     payload = json.loads(capsys.readouterr().out)
-    assert payload["run"]["stage"] == "registration" and payload["pages_succeeded"] == 1
+    assert payload["run"]["stage"] == "registration" and payload["pages_succeeded"] == len(kafka.pages)
     identifier = payload["outcomes"][0]["result"]["document_id"]
     assert main(["status", "--document-id", identifier, "--config", str(config)]) == 0
     assert json.loads(capsys.readouterr().out)["document"]["online"]["source_id"] == "apache_kafka"

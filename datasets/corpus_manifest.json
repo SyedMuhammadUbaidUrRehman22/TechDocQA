@@ -1,12 +1,1508 @@
 {
   "schema_version": 1,
-  "status": "draft",
-  "dataset_id": null,
-  "technologies": [],
-  "documents": [],
+  "status": "frozen",
+  "dataset_id": "techdocqa-reference-2026-10-24-v1",
+  "frozen_date": "2026-10-24",
+  "path_base": "repository_root",
+  "freeze_scope": "20 public/openly licensed reference documents; DDIA is an excluded private supplement",
+  "reference_fingerprint_sha256": "a09e71fae4751538ce0b65b2a2341792a2bb4f0358805c1c8505f03f69c0d303",
+  "technologies": [
+    "Apache Airflow",
+    "Apache Kafka",
+    "Apache Spark",
+    "Designing Data-Intensive Applications",
+    "PostgreSQL"
+  ],
+  "summary": {
+    "total_documents": 21,
+    "total_size_bytes": 2700598,
+    "counts_by_technology": {
+      "Apache Airflow": 4,
+      "Apache Kafka": 4,
+      "Apache Spark": 5,
+      "Designing Data-Intensive Applications": 1,
+      "PostgreSQL": 7
+    },
+    "counts_by_format": {
+      "html": 13,
+      "md": 4,
+      "pdf": 3,
+      "txt": 1
+    },
+    "reference_documents": 20,
+    "reference_size_bytes": 1513828,
+    "reference_counts_by_format": {
+      "html": 13,
+      "md": 3,
+      "pdf": 3,
+      "txt": 1
+    },
+    "reference_technologies": [
+      "Apache Airflow",
+      "Apache Kafka",
+      "Apache Spark",
+      "PostgreSQL"
+    ],
+    "private_supplement_documents": 1,
+    "duplicate_documents": 0,
+    "rejected_candidates": 1
+  },
+  "source_of_truth": {
+    "catalog": "config/default.toml",
+    "registry": "data/registry.sqlite3",
+    "note": "Manifest is a reviewed frozen projection, not an alternate registry. IDs are this local registry; source keys and hashes support comparison after reacquisition."
+  },
+  "acquisition_evidence": {
+    "path": "data/corpus-acquisition/acquisition.json",
+    "sha256": "b2c66a86b91c8eab923f1bf2176694904e94c697b289af5bf81dddc4cf242a2e",
+    "resources": [
+      {
+        "url": "https://kafka.apache.org/robots.txt",
+        "path": "data/corpus-acquisition/kafka.apache.org-robots.txt",
+        "size_bytes": 13,
+        "sha256": "d9066d29c1dfed62e1bbde2c102079a5ccc0c1e9f669644fd89fd652cdc156bb",
+        "content_type": "text/plain"
+      },
+      {
+        "url": "https://airflow.apache.org/robots.txt",
+        "path": "data/corpus-acquisition/airflow.apache.org-robots.txt",
+        "size_bytes": 14,
+        "sha256": "fd89345af6aca5dab85f2aa6a830e270a362b1fa6b5f19607ddd773a081ed651",
+        "content_type": "text/plain"
+      },
+      {
+        "url": "https://spark.apache.org/robots.txt",
+        "path": "data/corpus-acquisition/spark.apache.org-robots.txt",
+        "size_bytes": 46,
+        "sha256": "ba837e9b8008de79ba59841183c0d1df3d3cdb5551fe29d6f3b0f9d61e55661b",
+        "content_type": "text/plain"
+      },
+      {
+        "url": "https://www.postgresql.org/robots.txt",
+        "path": "data/corpus-acquisition/www.postgresql.org-robots.txt",
+        "size_bytes": 273,
+        "sha256": "44d41cd563a231327036a3b84ea0c78a05c66807b5f62c43158213448d28e308",
+        "content_type": "text/plain; charset=UTF-8"
+      },
+      {
+        "url": "https://www.apache.org/licenses/LICENSE-2.0",
+        "path": "data/corpus-acquisition/apache-license.html",
+        "size_bytes": 11358,
+        "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+        "content_type": "text/plain"
+      },
+      {
+        "url": "https://www.postgresql.org/docs/18/legalnotice.html",
+        "path": "data/corpus-acquisition/postgresql-legalnotice.html",
+        "size_bytes": 12721,
+        "sha256": "f7d8246e99c7dc148b325803dc762f0176dd089d0500b29fc2a5c0f18ae75fa1",
+        "content_type": "text/html; charset=utf-8"
+      },
+      {
+        "url": "https://raw.githubusercontent.com/apache/spark/v4.0.1/LICENSE",
+        "path": "data/corpus-acquisition/spark-LICENSE",
+        "size_bytes": 13575,
+        "sha256": "c2adf48f12e044a7755b0a12d6c9679b394d3e345934cd668db7c13a9eb22ff1",
+        "content_type": "text/plain; charset=utf-8"
+      },
+      {
+        "url": "https://raw.githubusercontent.com/apache/spark/v4.0.1/NOTICE",
+        "path": "data/corpus-acquisition/spark-NOTICE",
+        "size_bytes": 2002,
+        "sha256": "9346e8e0a1e21cb45ac792b75ca4d3adfd858bc57dd6627e47714c761e917a0d",
+        "content_type": "text/plain; charset=utf-8"
+      },
+      {
+        "url": "https://raw.githubusercontent.com/apache/spark/v4.0.1/docs/cluster-overview.md",
+        "path": "data/corpus/spark-4.0.1-cluster-overview.md",
+        "size_bytes": 7026,
+        "sha256": "721162734268ec3a2163be4adebe7dad6f8dcd46dbb136ac7ed0117cdd56ed73",
+        "content_type": "text/plain; charset=utf-8"
+      },
+      {
+        "url": "https://raw.githubusercontent.com/apache/spark/v4.0.1/docs/tuning.md",
+        "path": "data/corpus/spark-4.0.1-tuning.md",
+        "size_bytes": 22082,
+        "sha256": "f6971cd2abbb0c532d1ec0bc2ccaa637d795356822b3c790605a8f1235aeae94",
+        "content_type": "text/plain; charset=utf-8"
+      },
+      {
+        "url": "https://raw.githubusercontent.com/apache/spark/v4.0.1/docs/hardware-provisioning.md",
+        "path": "data/corpus/spark-4.0.1-hardware-provisioning.md",
+        "size_bytes": 4541,
+        "sha256": "8a136f3bfbd9882fb2c7782e6f4f54c54fcecd48a980c66786ff9769c25d690b",
+        "content_type": "text/plain; charset=utf-8"
+      },
+      {
+        "url": "https://api.github.com/repos/postgres/postgres/commits/REL_18_STABLE",
+        "path": "data/corpus-acquisition/postgres-commit.json",
+        "size_bytes": 5540,
+        "sha256": "32d1e92599abafa3c8a5e542696873aa16f504a525397354e27310071bc96b5f",
+        "content_type": "application/json; charset=utf-8"
+      },
+      {
+        "url": "https://raw.githubusercontent.com/postgres/postgres/9412c35035a74b9e5623b4d7e67c5f77967f0d1a/src/backend/access/transam/README",
+        "path": "data/corpus/postgresql-18-transaction-system.txt",
+        "size_bytes": 48795,
+        "sha256": "137ff195933dddbf58cfa62fb42a56e713d20d41c226cdf6973b3567a7a881f5",
+        "content_type": "text/plain; charset=utf-8"
+      },
+      {
+        "url": "https://www.postgresql.org/docs/",
+        "path": "data/corpus-acquisition/postgresql-docs-index.html",
+        "size_bytes": 8830,
+        "sha256": "369e3206bb401c0e43ad38c7537506bfc2161e406d62774607ce0a0faf13ef46",
+        "content_type": "text/html; charset=utf-8"
+      },
+      {
+        "url": "https://www.postgresql.org/files/documentation/pdf/18/postgresql-18-A4.pdf",
+        "path": "data/corpus-acquisition/postgresql-18-A4.pdf",
+        "size_bytes": 15864875,
+        "sha256": "9c6af8d2c8f0eda1b05e510bd8028f752162d2f5ce2db405bbf197336ce638d2",
+        "content_type": "application/pdf"
+      }
+    ],
+    "access_policies": [
+      {
+        "url": "https://kafka.apache.org/robots.txt",
+        "selected_pages_allowed": true
+      },
+      {
+        "url": "https://airflow.apache.org/robots.txt",
+        "selected_pages_allowed": true
+      },
+      {
+        "url": "https://spark.apache.org/robots.txt",
+        "selected_pages_allowed": true
+      },
+      {
+        "url": "https://www.postgresql.org/robots.txt",
+        "selected_pages_allowed": true
+      }
+    ]
+  },
+  "documents": [
+    {
+      "document_id": "doc_a61e9a15b1b440b083bfaf65ac785d35",
+      "version_id": "ver_d2d551d208104cc0a7b29dbfcf062a9e",
+      "source_key": "https://airflow.apache.org/docs/apache-airflow/stable/core-concepts/overview.html",
+      "title": "Architecture Overview \u2014 Airflow 3.3.2 Documentation",
+      "technology": "Apache Airflow",
+      "category": "Workflow orchestration",
+      "version_label": "stable (version recorded in HTML title)",
+      "source_url": "https://airflow.apache.org/docs/apache-airflow/stable/core-concepts/overview.html",
+      "license": "Apache-2.0",
+      "raw_hash": "56cc38f3c641ab6355ce006d483b669bf8032290a065dcb8ed05e0fafa255cce",
+      "content_hash": "6463ff25e503a255742917f562654b68973dc4e6bc7db3759caf2282005ae4a0",
+      "size_bytes": 132189,
+      "page_count": null,
+      "finalized": true,
+      "is_active": true,
+      "duplicate_of": null,
+      "format": "html",
+      "status": "normalized",
+      "role": "reference",
+      "evaluation_included": true,
+      "local_path": "data/online/snapshots/56cc38f3c641ab6355ce006d483b669bf8032290a065dcb8ed05e0fafa255cce.html",
+      "snapshot_path": "data/online/snapshots/56cc38f3c641ab6355ce006d483b669bf8032290a065dcb8ed05e0fafa255cce.html",
+      "normalized_path": "data/processing/normalized/6463ff25e503a255742917f562654b68973dc4e6bc7db3759caf2282005ae4a0.txt",
+      "normalized_documents_path": "data/processing/documents/e5656813737e2ee12b20625634ccb122088ebf609dc366552c1f9ed1d22031cd.json",
+      "provenance": "Approved Phase 3A URL acquisition",
+      "review_status": "accepted",
+      "license_review": {
+        "status": "verified",
+        "license": "Apache-2.0",
+        "evidence_urls": [
+          "https://www.apache.org/licenses/LICENSE-2.0"
+        ],
+        "note": "Retain upstream copyright/license/NOTICE obligations for any redistribution. Corpus bytes remain ignored and local."
+      },
+      "content_review": {
+        "usable_text": true,
+        "normalized_characters": 12979,
+        "topic_tokens_verified": [
+          "Dag",
+          "scheduler"
+        ],
+        "reviewer": "Codex",
+        "scope": "Text samples, headings, technical content and source/provenance review",
+        "limitations": []
+      },
+      "online": {
+        "source_id": "apache_airflow",
+        "canonical_url": "https://airflow.apache.org/docs/apache-airflow/stable/core-concepts/overview.html",
+        "final_url": "https://airflow.apache.org/docs/apache-airflow/stable/core-concepts/overview.html",
+        "retrieved_at": "2026-10-24T05:08:22.443380+00:00",
+        "http_status": 200,
+        "content_type": "text/html",
+        "usage_status": "reviewed",
+        "configuration_id": "950420df8bdd6bd6368a80083ef3fbae911f688cf92fc27ad316797ec21e503d",
+        "warnings": []
+      }
+    },
+    {
+      "document_id": "doc_c605cdca20214683af415003fa7676f9",
+      "version_id": "ver_fef9eb662b9343758c578d51c35223e9",
+      "source_key": "https://airflow.apache.org/docs/apache-airflow/stable/core-concepts/dag-run.html",
+      "title": "Dag Runs \u2014 Airflow 3.3.2 Documentation",
+      "technology": "Apache Airflow",
+      "category": "Workflow orchestration",
+      "version_label": "stable (version recorded in HTML title)",
+      "source_url": "https://airflow.apache.org/docs/apache-airflow/stable/core-concepts/dag-run.html",
+      "license": "Apache-2.0",
+      "raw_hash": "21a1e826754128816592577248549dc3fccdba906d92e1b624ffb5d51709ff93",
+      "content_hash": "bd482c9a282b873d1999f88373d7e56a54c975f8ed0285252cf3a9855e09b482",
+      "size_bytes": 136824,
+      "page_count": null,
+      "finalized": true,
+      "is_active": true,
+      "duplicate_of": null,
+      "format": "html",
+      "status": "normalized",
+      "role": "reference",
+      "evaluation_included": true,
+      "local_path": "data/online/snapshots/21a1e826754128816592577248549dc3fccdba906d92e1b624ffb5d51709ff93.html",
+      "snapshot_path": "data/online/snapshots/21a1e826754128816592577248549dc3fccdba906d92e1b624ffb5d51709ff93.html",
+      "normalized_path": "data/processing/normalized/bd482c9a282b873d1999f88373d7e56a54c975f8ed0285252cf3a9855e09b482.txt",
+      "normalized_documents_path": "data/processing/documents/b800246d3f2026b6b10ba409e0ec76489b30a9ca2eeaf01398acf1ac96e9910c.json",
+      "provenance": "Approved Phase 3A URL acquisition",
+      "review_status": "accepted",
+      "license_review": {
+        "status": "verified",
+        "license": "Apache-2.0",
+        "evidence_urls": [
+          "https://www.apache.org/licenses/LICENSE-2.0"
+        ],
+        "note": "Retain upstream copyright/license/NOTICE obligations for any redistribution. Corpus bytes remain ignored and local."
+      },
+      "content_review": {
+        "usable_text": true,
+        "normalized_characters": 12216,
+        "topic_tokens_verified": [
+          "Dag Run",
+          "status"
+        ],
+        "reviewer": "Codex",
+        "scope": "Text samples, headings, technical content and source/provenance review",
+        "limitations": []
+      },
+      "online": {
+        "source_id": "apache_airflow",
+        "canonical_url": "https://airflow.apache.org/docs/apache-airflow/stable/core-concepts/dag-run.html",
+        "final_url": "https://airflow.apache.org/docs/apache-airflow/stable/core-concepts/dag-run.html",
+        "retrieved_at": "2026-10-24T05:08:32.092108+00:00",
+        "http_status": 200,
+        "content_type": "text/html",
+        "usage_status": "reviewed",
+        "configuration_id": "950420df8bdd6bd6368a80083ef3fbae911f688cf92fc27ad316797ec21e503d",
+        "warnings": []
+      }
+    },
+    {
+      "document_id": "doc_fb544139ee214920a1cc539cd060d0a8",
+      "version_id": "ver_0a56589d5e16448990307b2c34564c74",
+      "source_key": "https://airflow.apache.org/docs/apache-airflow/stable/core-concepts/dags.html",
+      "title": "Dags \u2014 Airflow 3.3.2 Documentation",
+      "technology": "Apache Airflow",
+      "category": "Workflow orchestration",
+      "version_label": "stable (version recorded in HTML title)",
+      "source_url": "https://airflow.apache.org/docs/apache-airflow/stable/core-concepts/dags.html",
+      "license": "Apache-2.0",
+      "raw_hash": "8474cde37671fa8ad0583e02a7d7cdbcd90243845966fb744ba1b8fd88e3c226",
+      "content_hash": "adb1b05bc39a5f577b06d14677c62c97680f2f6a2d278324c5aa0550442b2668",
+      "size_bytes": 229316,
+      "page_count": null,
+      "finalized": true,
+      "is_active": true,
+      "duplicate_of": null,
+      "format": "html",
+      "status": "normalized",
+      "role": "reference",
+      "evaluation_included": true,
+      "local_path": "data/online/snapshots/8474cde37671fa8ad0583e02a7d7cdbcd90243845966fb744ba1b8fd88e3c226.html",
+      "snapshot_path": "data/online/snapshots/8474cde37671fa8ad0583e02a7d7cdbcd90243845966fb744ba1b8fd88e3c226.html",
+      "normalized_path": "data/processing/normalized/adb1b05bc39a5f577b06d14677c62c97680f2f6a2d278324c5aa0550442b2668.txt",
+      "normalized_documents_path": "data/processing/documents/feb8fcde53c3d3510a923b9dbb03bef6cd31a5ba36f5c82069590d919aef589a.json",
+      "provenance": "Approved Phase 3A URL acquisition",
+      "review_status": "accepted",
+      "license_review": {
+        "status": "verified",
+        "license": "Apache-2.0",
+        "evidence_urls": [
+          "https://www.apache.org/licenses/LICENSE-2.0"
+        ],
+        "note": "Retain upstream copyright/license/NOTICE obligations for any redistribution. Corpus bytes remain ignored and local."
+      },
+      "content_review": {
+        "usable_text": true,
+        "normalized_characters": 38816,
+        "topic_tokens_verified": [
+          "dependencies",
+          "schedule"
+        ],
+        "reviewer": "Codex",
+        "scope": "Text samples, headings, technical content and source/provenance review",
+        "limitations": []
+      },
+      "online": {
+        "source_id": "apache_airflow",
+        "canonical_url": "https://airflow.apache.org/docs/apache-airflow/stable/core-concepts/dags.html",
+        "final_url": "https://airflow.apache.org/docs/apache-airflow/stable/core-concepts/dags.html",
+        "retrieved_at": "2026-10-24T05:08:25.103804+00:00",
+        "http_status": 200,
+        "content_type": "text/html",
+        "usage_status": "reviewed",
+        "configuration_id": "950420df8bdd6bd6368a80083ef3fbae911f688cf92fc27ad316797ec21e503d",
+        "warnings": []
+      }
+    },
+    {
+      "document_id": "doc_348e68dbf8dd49a1b7e11c8fb2980496",
+      "version_id": "ver_570b2b46ca86455ca087565c73465d48",
+      "source_key": "https://airflow.apache.org/docs/apache-airflow/stable/core-concepts/tasks.html",
+      "title": "Tasks \u2014 Airflow 3.3.2 Documentation",
+      "technology": "Apache Airflow",
+      "category": "Workflow orchestration",
+      "version_label": "stable (version recorded in HTML title)",
+      "source_url": "https://airflow.apache.org/docs/apache-airflow/stable/core-concepts/tasks.html",
+      "license": "Apache-2.0",
+      "raw_hash": "fb2563c399db53175a1ff1479896ecdde2b0a83851fede8a23a00c4a8e0876d4",
+      "content_hash": "5364a7c4908dec207e779851d704e8ee04153b070bf335a4c96b2e7eaf1684bd",
+      "size_bytes": 156842,
+      "page_count": null,
+      "finalized": true,
+      "is_active": true,
+      "duplicate_of": null,
+      "format": "html",
+      "status": "normalized",
+      "role": "reference",
+      "evaluation_included": true,
+      "local_path": "data/online/snapshots/fb2563c399db53175a1ff1479896ecdde2b0a83851fede8a23a00c4a8e0876d4.html",
+      "snapshot_path": "data/online/snapshots/fb2563c399db53175a1ff1479896ecdde2b0a83851fede8a23a00c4a8e0876d4.html",
+      "normalized_path": "data/processing/normalized/5364a7c4908dec207e779851d704e8ee04153b070bf335a4c96b2e7eaf1684bd.txt",
+      "normalized_documents_path": "data/processing/documents/36f9a92a67534f9113effe418769e9981da791d0a550ede149db0baad6b50718.json",
+      "provenance": "Approved Phase 3A URL acquisition",
+      "review_status": "accepted",
+      "license_review": {
+        "status": "verified",
+        "license": "Apache-2.0",
+        "evidence_urls": [
+          "https://www.apache.org/licenses/LICENSE-2.0"
+        ],
+        "note": "Retain upstream copyright/license/NOTICE obligations for any redistribution. Corpus bytes remain ignored and local."
+      },
+      "content_review": {
+        "usable_text": true,
+        "normalized_characters": 16410,
+        "topic_tokens_verified": [
+          "Task",
+          "retry"
+        ],
+        "reviewer": "Codex",
+        "scope": "Text samples, headings, technical content and source/provenance review",
+        "limitations": []
+      },
+      "online": {
+        "source_id": "apache_airflow",
+        "canonical_url": "https://airflow.apache.org/docs/apache-airflow/stable/core-concepts/tasks.html",
+        "final_url": "https://airflow.apache.org/docs/apache-airflow/stable/core-concepts/tasks.html",
+        "retrieved_at": "2026-10-24T05:08:28.176535+00:00",
+        "http_status": 200,
+        "content_type": "text/html",
+        "usage_status": "reviewed",
+        "configuration_id": "950420df8bdd6bd6368a80083ef3fbae911f688cf92fc27ad316797ec21e503d",
+        "warnings": []
+      }
+    },
+    {
+      "document_id": "doc_0b5b20f8046b43beacbc36997c619ef8",
+      "version_id": "ver_26b3f42f3f4f487895a4f42364dc3631",
+      "source_key": "https://kafka.apache.org/43/design/design/",
+      "title": "Design | Apache Kafka",
+      "technology": "Apache Kafka",
+      "category": "Distributed streaming",
+      "version_label": "4.3",
+      "source_url": "https://kafka.apache.org/43/design/design/",
+      "license": "Apache-2.0",
+      "raw_hash": "bcca1c2a60856d1be95d7774beb60e7ff5531ede367529becb787e5772531ef4",
+      "content_hash": "f5d421852f30db0aabbe1f3df3bc67aa7683c690e3337db42c034490c82f64cb",
+      "size_bytes": 146232,
+      "page_count": null,
+      "finalized": true,
+      "is_active": true,
+      "duplicate_of": null,
+      "format": "html",
+      "status": "normalized",
+      "role": "reference",
+      "evaluation_included": true,
+      "local_path": "data/online/snapshots/bcca1c2a60856d1be95d7774beb60e7ff5531ede367529becb787e5772531ef4.html",
+      "snapshot_path": "data/online/snapshots/bcca1c2a60856d1be95d7774beb60e7ff5531ede367529becb787e5772531ef4.html",
+      "normalized_path": "data/processing/normalized/f5d421852f30db0aabbe1f3df3bc67aa7683c690e3337db42c034490c82f64cb.txt",
+      "normalized_documents_path": "data/processing/documents/515a6bba90239a65d7285062019456d2be8bec12febb18b7c8cd9aab10799f34.json",
+      "provenance": "Approved Phase 3A URL acquisition",
+      "review_status": "accepted",
+      "license_review": {
+        "status": "verified",
+        "license": "Apache-2.0",
+        "evidence_urls": [
+          "https://www.apache.org/licenses/LICENSE-2.0"
+        ],
+        "note": "Retain upstream copyright/license/NOTICE obligations for any redistribution. Corpus bytes remain ignored and local."
+      },
+      "content_review": {
+        "usable_text": true,
+        "normalized_characters": 72917,
+        "topic_tokens_verified": [
+          "replication",
+          "consumer"
+        ],
+        "reviewer": "Codex",
+        "scope": "Text samples, headings, technical content and source/provenance review",
+        "limitations": []
+      },
+      "online": {
+        "source_id": "apache_kafka",
+        "canonical_url": "https://kafka.apache.org/43/design/design/",
+        "final_url": "https://kafka.apache.org/43/design/design/",
+        "retrieved_at": "2026-10-24T05:04:56.923236+00:00",
+        "http_status": 200,
+        "content_type": "text/html",
+        "usage_status": "reviewed",
+        "configuration_id": "f0b61a57e7b4248c5c57697728d436497d7e49c0114890bebdc04239aec5a45f",
+        "warnings": []
+      }
+    },
+    {
+      "document_id": "doc_a4e2455340354b8bb42ba48463f5ed16",
+      "version_id": "ver_616ce86119094b27b32544dc37ca874f",
+      "source_key": "https://kafka.apache.org/43/getting-started/introduction/",
+      "title": "Introduction | Apache Kafka",
+      "technology": "Apache Kafka",
+      "category": "Distributed streaming",
+      "version_label": "4.3",
+      "source_url": "https://kafka.apache.org/43/getting-started/introduction/",
+      "license": "Apache-2.0",
+      "raw_hash": "6774ade173d6a1f1053e06440a80f89ad1fc77928e671492c50da27163c68587",
+      "content_hash": "c5b90b0ce9a173220b1549879621b5e9557762dc169d4a40a0f741714808b5ff",
+      "size_bytes": 73550,
+      "page_count": null,
+      "finalized": true,
+      "is_active": true,
+      "duplicate_of": null,
+      "format": "html",
+      "status": "normalized",
+      "role": "reference",
+      "evaluation_included": true,
+      "local_path": "data/online/snapshots/6774ade173d6a1f1053e06440a80f89ad1fc77928e671492c50da27163c68587.html",
+      "snapshot_path": "data/online/snapshots/6774ade173d6a1f1053e06440a80f89ad1fc77928e671492c50da27163c68587.html",
+      "normalized_path": "data/processing/normalized/c5b90b0ce9a173220b1549879621b5e9557762dc169d4a40a0f741714808b5ff.txt",
+      "normalized_documents_path": "data/processing/documents/f31fb6fad941a4c590e3a054651c9ceb9112964de66b3790a0367166de4a3960.json",
+      "provenance": "Approved Phase 3A URL acquisition",
+      "review_status": "accepted",
+      "license_review": {
+        "status": "verified",
+        "license": "Apache-2.0",
+        "evidence_urls": [
+          "https://www.apache.org/licenses/LICENSE-2.0"
+        ],
+        "note": "Retain upstream copyright/license/NOTICE obligations for any redistribution. Corpus bytes remain ignored and local."
+      },
+      "content_review": {
+        "usable_text": true,
+        "normalized_characters": 9404,
+        "topic_tokens_verified": [
+          "event streaming",
+          "Kafka"
+        ],
+        "reviewer": "Codex",
+        "scope": "Text samples, headings, technical content and source/provenance review",
+        "limitations": []
+      },
+      "online": {
+        "source_id": "apache_kafka",
+        "canonical_url": "https://kafka.apache.org/43/getting-started/introduction/",
+        "final_url": "https://kafka.apache.org/43/getting-started/introduction/",
+        "retrieved_at": "2026-10-24T05:04:51.665070+00:00",
+        "http_status": 200,
+        "content_type": "text/html",
+        "usage_status": "reviewed",
+        "configuration_id": "f0b61a57e7b4248c5c57697728d436497d7e49c0114890bebdc04239aec5a45f",
+        "warnings": []
+      }
+    },
+    {
+      "document_id": "doc_e908b26340164fa6a08b78348adb739c",
+      "version_id": "ver_397f457bf5b640c19a8dcddb97aa487a",
+      "source_key": "https://kafka.apache.org/43/configuration/producer-configs/",
+      "title": "Producer Configs | Apache Kafka",
+      "technology": "Apache Kafka",
+      "category": "Distributed streaming",
+      "version_label": "4.3",
+      "source_url": "https://kafka.apache.org/43/configuration/producer-configs/",
+      "license": "Apache-2.0",
+      "raw_hash": "9fff580cd4dbcc40003eea673f16e041cfee3ddc496e9a628b055b2bb4f03de1",
+      "content_hash": "301a5f4a902739d48edc7b758ba89741412ec7c2775ab3482071bebcfdf92504",
+      "size_bytes": 146845,
+      "page_count": null,
+      "finalized": true,
+      "is_active": true,
+      "duplicate_of": null,
+      "format": "html",
+      "status": "normalized",
+      "role": "reference",
+      "evaluation_included": true,
+      "local_path": "data/online/snapshots/9fff580cd4dbcc40003eea673f16e041cfee3ddc496e9a628b055b2bb4f03de1.html",
+      "snapshot_path": "data/online/snapshots/9fff580cd4dbcc40003eea673f16e041cfee3ddc496e9a628b055b2bb4f03de1.html",
+      "normalized_path": "data/processing/normalized/301a5f4a902739d48edc7b758ba89741412ec7c2775ab3482071bebcfdf92504.txt",
+      "normalized_documents_path": "data/processing/documents/75746403b9182c8fe5e2750a18180194b2e713c28edbec9512f0b8a9f831895e.json",
+      "provenance": "Approved Phase 3A URL acquisition",
+      "review_status": "accepted",
+      "license_review": {
+        "status": "verified",
+        "license": "Apache-2.0",
+        "evidence_urls": [
+          "https://www.apache.org/licenses/LICENSE-2.0"
+        ],
+        "note": "Retain upstream copyright/license/NOTICE obligations for any redistribution. Corpus bytes remain ignored and local."
+      },
+      "content_review": {
+        "usable_text": true,
+        "normalized_characters": 52858,
+        "topic_tokens_verified": [
+          "bootstrap.servers",
+          "acks"
+        ],
+        "reviewer": "Codex",
+        "scope": "Text samples, headings, technical content and source/provenance review",
+        "limitations": []
+      },
+      "online": {
+        "source_id": "apache_kafka",
+        "canonical_url": "https://kafka.apache.org/43/configuration/producer-configs/",
+        "final_url": "https://kafka.apache.org/43/configuration/producer-configs/",
+        "retrieved_at": "2026-10-24T05:05:00.001843+00:00",
+        "http_status": 200,
+        "content_type": "text/html",
+        "usage_status": "reviewed",
+        "configuration_id": "f0b61a57e7b4248c5c57697728d436497d7e49c0114890bebdc04239aec5a45f",
+        "warnings": []
+      }
+    },
+    {
+      "document_id": "doc_4dd377efb44f4bf7a72ec52df02dee86",
+      "version_id": "ver_81c0200118744f9fbdbbddc3090ccd13",
+      "source_key": "https://kafka.apache.org/43/getting-started/quickstart/",
+      "title": "Quick Start | Apache Kafka",
+      "technology": "Apache Kafka",
+      "category": "Distributed streaming",
+      "version_label": "4.3",
+      "source_url": "https://kafka.apache.org/43/getting-started/quickstart/",
+      "license": "Apache-2.0",
+      "raw_hash": "c8ef3ede29ad2373b896bd06263294b7ebc54795b74d861614f0b16d8a5fce6b",
+      "content_hash": "ad5e2b8a3d94217fe7240a568fa215f8d9fc896225d9a95499cf4d14a4710803",
+      "size_bytes": 86810,
+      "page_count": null,
+      "finalized": true,
+      "is_active": true,
+      "duplicate_of": null,
+      "format": "html",
+      "status": "normalized",
+      "role": "reference",
+      "evaluation_included": true,
+      "local_path": "data/online/snapshots/c8ef3ede29ad2373b896bd06263294b7ebc54795b74d861614f0b16d8a5fce6b.html",
+      "snapshot_path": "data/online/snapshots/c8ef3ede29ad2373b896bd06263294b7ebc54795b74d861614f0b16d8a5fce6b.html",
+      "normalized_path": "data/processing/normalized/ad5e2b8a3d94217fe7240a568fa215f8d9fc896225d9a95499cf4d14a4710803.txt",
+      "normalized_documents_path": "data/processing/documents/60f8d11dcf30c49c0fa5b036d980c3897c426fa6cb51766d9e0304d43fd9226e.json",
+      "provenance": "Approved Phase 3A URL acquisition",
+      "review_status": "accepted",
+      "license_review": {
+        "status": "verified",
+        "license": "Apache-2.0",
+        "evidence_urls": [
+          "https://www.apache.org/licenses/LICENSE-2.0"
+        ],
+        "note": "Retain upstream copyright/license/NOTICE obligations for any redistribution. Corpus bytes remain ignored and local."
+      },
+      "content_review": {
+        "usable_text": true,
+        "normalized_characters": 10250,
+        "topic_tokens_verified": [
+          "kafka-topics.sh",
+          "kafka-console-producer.sh"
+        ],
+        "reviewer": "Codex",
+        "scope": "Text samples, headings, technical content and source/provenance review",
+        "limitations": []
+      },
+      "online": {
+        "source_id": "apache_kafka",
+        "canonical_url": "https://kafka.apache.org/43/getting-started/quickstart/",
+        "final_url": "https://kafka.apache.org/43/getting-started/quickstart/",
+        "retrieved_at": "2026-10-24T05:04:54.256914+00:00",
+        "http_status": 200,
+        "content_type": "text/html",
+        "usage_status": "reviewed",
+        "configuration_id": "f0b61a57e7b4248c5c57697728d436497d7e49c0114890bebdc04239aec5a45f",
+        "warnings": []
+      }
+    },
+    {
+      "document_id": "doc_a23db9787b5a41cf8feae6ef2a46cd65",
+      "version_id": "ver_2383f2d83ef14dfd8101c3d16443f716",
+      "source_key": "[\"spark-4.0.1-cluster-overview.md\",null]",
+      "title": "Cluster Mode Overview",
+      "technology": "Apache Spark",
+      "category": "Distributed computing",
+      "version_label": "4.0.1",
+      "source_url": "https://raw.githubusercontent.com/apache/spark/v4.0.1/docs/cluster-overview.md",
+      "license": "Apache-2.0",
+      "raw_hash": "721162734268ec3a2163be4adebe7dad6f8dcd46dbb136ac7ed0117cdd56ed73",
+      "content_hash": "8d55c72762776946eaa9579adaa88764790024d977d1fb6add0571c046196bea",
+      "size_bytes": 7026,
+      "page_count": null,
+      "finalized": true,
+      "is_active": true,
+      "duplicate_of": null,
+      "format": "md",
+      "status": "normalized",
+      "role": "reference",
+      "evaluation_included": true,
+      "local_path": "data/corpus/spark-4.0.1-cluster-overview.md",
+      "snapshot_path": "data/local/snapshots/721162734268ec3a2163be4adebe7dad6f8dcd46dbb136ac7ed0117cdd56ed73.md",
+      "normalized_path": "data/processing/normalized/8d55c72762776946eaa9579adaa88764790024d977d1fb6add0571c046196bea.txt",
+      "normalized_documents_path": "data/processing/documents/a04c1fbf26f1cd6b214a15bf2ff58ea3c734b96f7fb1f62ab52e6e9066c25ace.json",
+      "provenance": "Official upstream source, acquired locally",
+      "review_status": "accepted",
+      "license_review": {
+        "status": "verified",
+        "license": "Apache-2.0",
+        "evidence_urls": [
+          "https://www.apache.org/licenses/LICENSE-2.0",
+          "https://raw.githubusercontent.com/apache/spark/v4.0.1/LICENSE"
+        ],
+        "note": "Retain upstream copyright/license/NOTICE obligations for any redistribution. Corpus bytes remain ignored and local."
+      },
+      "content_review": {
+        "usable_text": true,
+        "normalized_characters": 7021,
+        "topic_tokens_verified": [],
+        "reviewer": "Codex",
+        "scope": "Text samples, headings, technical content and source/provenance review",
+        "limitations": [
+          "Original Jekyll front matter, relative links, raw HTML and any template tokens are preserved; subresources are not downloaded."
+        ]
+      },
+      "preparation": {
+        "path": "data/corpus/spark-4.0.1-cluster-overview.md",
+        "title": "Cluster Mode Overview",
+        "technology": "Apache Spark",
+        "source_url": "https://raw.githubusercontent.com/apache/spark/v4.0.1/docs/cluster-overview.md",
+        "license": "Apache-2.0",
+        "version_label": "4.0.1",
+        "category": "Distributed computing",
+        "transformation": "none; upstream Markdown/Jekyll source"
+      }
+    },
+    {
+      "document_id": "doc_0de01bd0cc5b468982efb5b568d1c0d8",
+      "version_id": "ver_4ec4fc6aced64c1188b5b87c54e079ec",
+      "source_key": "https://spark.apache.org/docs/4.0.1/sql-data-sources-load-save-functions.html",
+      "title": "Generic Load/Save Functions - Spark 4.0.1 Documentation",
+      "technology": "Apache Spark",
+      "category": "Distributed computing",
+      "version_label": "4.0.1",
+      "source_url": "https://spark.apache.org/docs/4.0.1/sql-data-sources-load-save-functions.html",
+      "license": "Apache-2.0",
+      "raw_hash": "a8bee8acf465c201714e641a54ccfd6bafa74cba41174a47d4d59b671e50ab91",
+      "content_hash": "2d07780764f97e81c6fdffea631ba2f1aec79d3aa3ffa41493c2ba3df2c30185",
+      "size_bytes": 67545,
+      "page_count": null,
+      "finalized": true,
+      "is_active": true,
+      "duplicate_of": null,
+      "format": "html",
+      "status": "normalized",
+      "role": "reference",
+      "evaluation_included": true,
+      "local_path": "data/online/snapshots/a8bee8acf465c201714e641a54ccfd6bafa74cba41174a47d4d59b671e50ab91.html",
+      "snapshot_path": "data/online/snapshots/a8bee8acf465c201714e641a54ccfd6bafa74cba41174a47d4d59b671e50ab91.html",
+      "normalized_path": "data/processing/normalized/2d07780764f97e81c6fdffea631ba2f1aec79d3aa3ffa41493c2ba3df2c30185.txt",
+      "normalized_documents_path": "data/processing/documents/36c9b6cba777cb96a81d82376fa84cbede472c6f764abcaeec0fd9bad4f2cf0e.json",
+      "provenance": "Approved Phase 3A URL acquisition",
+      "review_status": "accepted",
+      "license_review": {
+        "status": "verified",
+        "license": "Apache-2.0",
+        "evidence_urls": [
+          "https://www.apache.org/licenses/LICENSE-2.0",
+          "https://raw.githubusercontent.com/apache/spark/v4.0.1/LICENSE"
+        ],
+        "note": "Retain upstream copyright/license/NOTICE obligations for any redistribution. Corpus bytes remain ignored and local."
+      },
+      "content_review": {
+        "usable_text": true,
+        "normalized_characters": 17074,
+        "topic_tokens_verified": [
+          "parquet",
+          "save"
+        ],
+        "reviewer": "Codex",
+        "scope": "Text samples, headings, technical content and source/provenance review",
+        "limitations": [
+          "SQL-guide sidebar text remains before substantive load/save examples."
+        ]
+      },
+      "online": {
+        "source_id": "apache_spark",
+        "canonical_url": "https://spark.apache.org/docs/4.0.1/sql-data-sources-load-save-functions.html",
+        "final_url": "https://spark.apache.org/docs/4.0.1/sql-data-sources-load-save-functions.html",
+        "retrieved_at": "2026-10-24T05:16:35.923875+00:00",
+        "http_status": 200,
+        "content_type": "text/html",
+        "usage_status": "reviewed",
+        "configuration_id": "7ccf3f26c6c630e978f4f49b3412888806b12a1a0e3d94ea3ab2c7163cfb0ad3",
+        "warnings": []
+      }
+    },
+    {
+      "document_id": "doc_e38caba8b8d648d3abd3b085f03ec6ef",
+      "version_id": "ver_5a39aca625c94fc3bc7af33ffcfe65ae",
+      "source_key": "[\"spark-4.0.1-hardware-provisioning.md\",null]",
+      "title": "Hardware Provisioning",
+      "technology": "Apache Spark",
+      "category": "Distributed computing",
+      "version_label": "4.0.1",
+      "source_url": "https://raw.githubusercontent.com/apache/spark/v4.0.1/docs/hardware-provisioning.md",
+      "license": "Apache-2.0",
+      "raw_hash": "8a136f3bfbd9882fb2c7782e6f4f54c54fcecd48a980c66786ff9769c25d690b",
+      "content_hash": "549b53bc317da568fdf6d39d8e83b0602bfef3f0227cd6328ed25faec97b64ef",
+      "size_bytes": 4541,
+      "page_count": null,
+      "finalized": true,
+      "is_active": true,
+      "duplicate_of": null,
+      "format": "md",
+      "status": "normalized",
+      "role": "reference",
+      "evaluation_included": true,
+      "local_path": "data/corpus/spark-4.0.1-hardware-provisioning.md",
+      "snapshot_path": "data/local/snapshots/8a136f3bfbd9882fb2c7782e6f4f54c54fcecd48a980c66786ff9769c25d690b.md",
+      "normalized_path": "data/processing/normalized/549b53bc317da568fdf6d39d8e83b0602bfef3f0227cd6328ed25faec97b64ef.txt",
+      "normalized_documents_path": "data/processing/documents/400cb0cbc2baa30780b63c5112ad629710aedbbc650d3cfd8a92eadf29407951.json",
+      "provenance": "Official upstream source, acquired locally",
+      "review_status": "accepted",
+      "license_review": {
+        "status": "verified",
+        "license": "Apache-2.0",
+        "evidence_urls": [
+          "https://www.apache.org/licenses/LICENSE-2.0",
+          "https://raw.githubusercontent.com/apache/spark/v4.0.1/LICENSE"
+        ],
+        "note": "Retain upstream copyright/license/NOTICE obligations for any redistribution. Corpus bytes remain ignored and local."
+      },
+      "content_review": {
+        "usable_text": true,
+        "normalized_characters": 4536,
+        "topic_tokens_verified": [],
+        "reviewer": "Codex",
+        "scope": "Text samples, headings, technical content and source/provenance review",
+        "limitations": [
+          "Original Jekyll front matter, relative links, raw HTML and any template tokens are preserved; subresources are not downloaded."
+        ]
+      },
+      "preparation": {
+        "path": "data/corpus/spark-4.0.1-hardware-provisioning.md",
+        "title": "Hardware Provisioning",
+        "technology": "Apache Spark",
+        "source_url": "https://raw.githubusercontent.com/apache/spark/v4.0.1/docs/hardware-provisioning.md",
+        "license": "Apache-2.0",
+        "version_label": "4.0.1",
+        "category": "Distributed computing",
+        "transformation": "none; upstream Markdown/Jekyll source"
+      }
+    },
+    {
+      "document_id": "doc_9aebb36b24f341e0960bd65b830e2c95",
+      "version_id": "ver_f248f2dc624d4b9e9bdc1266c52e2f50",
+      "source_key": "https://spark.apache.org/docs/4.0.1/submitting-applications.html",
+      "title": "Submitting Applications - Spark 4.0.1 Documentation",
+      "technology": "Apache Spark",
+      "category": "Distributed computing",
+      "version_label": "4.0.1",
+      "source_url": "https://spark.apache.org/docs/4.0.1/submitting-applications.html",
+      "license": "Apache-2.0",
+      "raw_hash": "0dbf27711233d4b2631744734a3c7640c09e91bc8749197bf8d65d4d1c6b12b6",
+      "content_hash": "7303183d8b1b8de371610d6223ebf64417d7dc1b3bd04de0d2d79353abd0086a",
+      "size_bytes": 29974,
+      "page_count": null,
+      "finalized": true,
+      "is_active": true,
+      "duplicate_of": null,
+      "format": "html",
+      "status": "normalized",
+      "role": "reference",
+      "evaluation_included": true,
+      "local_path": "data/online/snapshots/0dbf27711233d4b2631744734a3c7640c09e91bc8749197bf8d65d4d1c6b12b6.html",
+      "snapshot_path": "data/online/snapshots/0dbf27711233d4b2631744734a3c7640c09e91bc8749197bf8d65d4d1c6b12b6.html",
+      "normalized_path": "data/processing/normalized/7303183d8b1b8de371610d6223ebf64417d7dc1b3bd04de0d2d79353abd0086a.txt",
+      "normalized_documents_path": "data/processing/documents/296c2a30d22ad12ed404c65dd86e0a9814d0f8647766a1275c1adf8d520af738.json",
+      "provenance": "Approved Phase 3A URL acquisition",
+      "review_status": "accepted",
+      "license_review": {
+        "status": "verified",
+        "license": "Apache-2.0",
+        "evidence_urls": [
+          "https://www.apache.org/licenses/LICENSE-2.0",
+          "https://raw.githubusercontent.com/apache/spark/v4.0.1/LICENSE"
+        ],
+        "note": "Retain upstream copyright/license/NOTICE obligations for any redistribution. Corpus bytes remain ignored and local."
+      },
+      "content_review": {
+        "usable_text": true,
+        "normalized_characters": 10651,
+        "topic_tokens_verified": [
+          "spark-submit",
+          "--master"
+        ],
+        "reviewer": "Codex",
+        "scope": "Text samples, headings, technical content and source/provenance review",
+        "limitations": []
+      },
+      "online": {
+        "source_id": "apache_spark",
+        "canonical_url": "https://spark.apache.org/docs/4.0.1/submitting-applications.html",
+        "final_url": "https://spark.apache.org/docs/4.0.1/submitting-applications.html",
+        "retrieved_at": "2026-10-24T05:08:41.606383+00:00",
+        "http_status": 200,
+        "content_type": "text/html",
+        "usage_status": "reviewed",
+        "configuration_id": "d570b431b1d1c41bba1ab55d764891676e8b0f680f62a58a3f88c87db2273293",
+        "warnings": []
+      }
+    },
+    {
+      "document_id": "doc_8e9694340baf4db4885f6cdd32831dbd",
+      "version_id": "ver_87c045ad95bf4df69122e5d3df264951",
+      "source_key": "[\"spark-4.0.1-tuning.md\",null]",
+      "title": "Tuning Spark",
+      "technology": "Apache Spark",
+      "category": "Distributed computing",
+      "version_label": "4.0.1",
+      "source_url": "https://raw.githubusercontent.com/apache/spark/v4.0.1/docs/tuning.md",
+      "license": "Apache-2.0",
+      "raw_hash": "f6971cd2abbb0c532d1ec0bc2ccaa637d795356822b3c790605a8f1235aeae94",
+      "content_hash": "cab4f71b5f7e72a2f0eb489bfe4b403fc256cda39e440b559f417595a6398057",
+      "size_bytes": 22082,
+      "page_count": null,
+      "finalized": true,
+      "is_active": true,
+      "duplicate_of": null,
+      "format": "md",
+      "status": "normalized",
+      "role": "reference",
+      "evaluation_included": true,
+      "local_path": "data/corpus/spark-4.0.1-tuning.md",
+      "snapshot_path": "data/local/snapshots/f6971cd2abbb0c532d1ec0bc2ccaa637d795356822b3c790605a8f1235aeae94.md",
+      "normalized_path": "data/processing/normalized/cab4f71b5f7e72a2f0eb489bfe4b403fc256cda39e440b559f417595a6398057.txt",
+      "normalized_documents_path": "data/processing/documents/6c456346e7737bfa48a1b50c5430bb33d292b47265685cd3cc01cec19a63ffe9.json",
+      "provenance": "Official upstream source, acquired locally",
+      "review_status": "accepted",
+      "license_review": {
+        "status": "verified",
+        "license": "Apache-2.0",
+        "evidence_urls": [
+          "https://www.apache.org/licenses/LICENSE-2.0",
+          "https://raw.githubusercontent.com/apache/spark/v4.0.1/LICENSE"
+        ],
+        "note": "Retain upstream copyright/license/NOTICE obligations for any redistribution. Corpus bytes remain ignored and local."
+      },
+      "content_review": {
+        "usable_text": true,
+        "normalized_characters": 22055,
+        "topic_tokens_verified": [],
+        "reviewer": "Codex",
+        "scope": "Text samples, headings, technical content and source/provenance review",
+        "limitations": [
+          "Original Jekyll front matter, relative links, raw HTML and any template tokens are preserved; subresources are not downloaded."
+        ]
+      },
+      "preparation": {
+        "path": "data/corpus/spark-4.0.1-tuning.md",
+        "title": "Tuning Spark",
+        "technology": "Apache Spark",
+        "source_url": "https://raw.githubusercontent.com/apache/spark/v4.0.1/docs/tuning.md",
+        "license": "Apache-2.0",
+        "version_label": "4.0.1",
+        "category": "Distributed computing",
+        "transformation": "none; upstream Markdown/Jekyll source"
+      }
+    },
+    {
+      "document_id": "doc_68ff848568604f13b96eddcacdad0f07",
+      "version_id": "ver_4b9903f5503c40e1bc66cec52f799a4c",
+      "source_key": "[\"martin-kleppmann---designing-data-intensive-applications_-o\u2019reilly-media-(2017).md\",null]",
+      "title": "Designing Data-Intensive Applications",
+      "technology": "Designing Data-Intensive Applications",
+      "category": null,
+      "version_label": null,
+      "source_url": null,
+      "license": null,
+      "raw_hash": "ec3c55271f4135af76aa6b78c1e94c7a06ce43405a21551ffd6c0617af20c947",
+      "content_hash": "e669e272e60f97ed33ca08961ab04383dfbec53b43a3e6c70ed4a3dba6428820",
+      "size_bytes": 1186770,
+      "page_count": null,
+      "finalized": true,
+      "is_active": true,
+      "duplicate_of": null,
+      "format": "md",
+      "status": "normalized",
+      "role": "private_supplement",
+      "evaluation_included": false,
+      "local_path": "data/corpus/Martin-Kleppmann---Designing-Data-Intensive-Applications_-O\u2019Reilly-Media-(2017).md",
+      "snapshot_path": "data/local/snapshots/ec3c55271f4135af76aa6b78c1e94c7a06ce43405a21551ffd6c0617af20c947.md",
+      "normalized_path": "data/processing/normalized/e669e272e60f97ed33ca08961ab04383dfbec53b43a3e6c70ed4a3dba6428820.txt",
+      "normalized_documents_path": "data/processing/documents/8b87f5ce62f582ced5d1aff6c888669ff14ddfaa4c336567d4b384835db340c9.json",
+      "provenance": "User-provided local conversion",
+      "review_status": "accepted_private_supplement",
+      "license_review": {
+        "status": "unverified",
+        "license": null,
+        "evidence_urls": [],
+        "note": "User-provided local Markdown conversion of the 2017 book; permissions and conversion fidelity unverified. No upload or redistribution. Excluded from the public evaluation reference."
+      },
+      "content_review": {
+        "usable_text": true,
+        "normalized_characters": 1158946,
+        "topic_tokens_verified": [],
+        "reviewer": "Codex",
+        "scope": "Structural/integrity checks only; not a full book review",
+        "limitations": []
+      }
+    },
+    {
+      "document_id": "doc_0f1ed75741774d67ab9cefe50564997a",
+      "version_id": "ver_be51957aff7947f291080bdec86fa5a7",
+      "source_key": "[\"postgresql-18-tutorial-getting-started.pdf\",null]",
+      "title": "PostgreSQL 18 Tutorial: 1. Getting Started",
+      "technology": "PostgreSQL",
+      "category": "Databases",
+      "version_label": "18.6 (PDF)",
+      "source_url": "https://www.postgresql.org/files/documentation/pdf/18/postgresql-18-A4.pdf",
+      "license": "PostgreSQL",
+      "raw_hash": "620ce4208199766788d25a907514a4b2fae205079c889d077b603489859e796f",
+      "content_hash": "2c77fa0d18f30046ec2156c35b1e07014b5ea9d2a04a9c59ca7017d52d0e8989",
+      "size_bytes": 18970,
+      "page_count": 5,
+      "finalized": true,
+      "is_active": true,
+      "duplicate_of": null,
+      "format": "pdf",
+      "status": "normalized",
+      "role": "reference",
+      "evaluation_included": true,
+      "local_path": "data/corpus/postgresql-18-tutorial-getting-started.pdf",
+      "snapshot_path": "data/local/snapshots/620ce4208199766788d25a907514a4b2fae205079c889d077b603489859e796f.pdf",
+      "normalized_path": "data/processing/normalized/2c77fa0d18f30046ec2156c35b1e07014b5ea9d2a04a9c59ca7017d52d0e8989.txt",
+      "normalized_documents_path": "data/processing/documents/b537d780a7bf34c538910d6853bb8214992af3452ea92bd6be12ee3c675f52f9.json",
+      "provenance": "Official upstream source, acquired locally",
+      "review_status": "accepted",
+      "license_review": {
+        "status": "verified",
+        "license": "PostgreSQL",
+        "evidence_urls": [
+          "https://www.postgresql.org/docs/18/legalnotice.html"
+        ],
+        "note": "Retain upstream copyright/license/NOTICE obligations for any redistribution. Corpus bytes remain ignored and local."
+      },
+      "content_review": {
+        "usable_text": true,
+        "normalized_characters": 11896,
+        "topic_tokens_verified": [],
+        "reviewer": "Codex",
+        "scope": "Text samples, headings, technical content and source/provenance review",
+        "limitations": [
+          "Excerpt citation page numbers start at 1; original physical-page mapping is in preparation. Cross-manual link annotations omitted."
+        ],
+        "pdf_review": "All pages text-based; copied page text and geometry equal parent pages; all 25 excerpt pages rendered and visually reviewed."
+      },
+      "preparation": {
+        "path": "data/corpus/postgresql-18-tutorial-getting-started.pdf",
+        "title": "PostgreSQL 18 Tutorial: 1. Getting Started",
+        "technology": "PostgreSQL",
+        "source_url": "https://www.postgresql.org/files/documentation/pdf/18/postgresql-18-A4.pdf",
+        "license": "PostgreSQL",
+        "version_label": "18.6 (PDF)",
+        "category": "Databases",
+        "transformation": "pypdf page extraction; link annotations omitted to avoid copying cross-manual references; no reflow or text generation; original legal-notice page prepended",
+        "parent_raw_hash": "9c6af8d2c8f0eda1b05e510bd8028f752162d2f5ce2db405bbf197336ce638d2",
+        "parent_path": "data/corpus-acquisition/postgresql-18-A4.pdf",
+        "original_physical_pages_1_based": [
+          2,
+          42,
+          43,
+          44,
+          45
+        ],
+        "page_count": 5,
+        "page_text_characters": [
+          1332,
+          3550,
+          2463,
+          3015,
+          1588
+        ],
+        "first_body_heading_verified": "1. Getting Started",
+        "sha256": "620ce4208199766788d25a907514a4b2fae205079c889d077b603489859e796f",
+        "pdf_metadata": {
+          "/Title": "PostgreSQL 18 Tutorial: 1. Getting Started",
+          "/Subject": "Original manual physical pages 42-45; legal notice on physical page 2",
+          "/Author": "The PostgreSQL Global Development Group"
+        }
+      }
+    },
+    {
+      "document_id": "doc_d45ea9f1d9e64aa5a0eae477b8d20624",
+      "version_id": "ver_36206b014dc74d1c84e4fc20d96755ca",
+      "source_key": "[\"postgresql-18-tutorial-sql-language.pdf\",null]",
+      "title": "PostgreSQL 18 Tutorial: 2. The SQL Language",
+      "technology": "PostgreSQL",
+      "category": "Databases",
+      "version_label": "18.6 (PDF)",
+      "source_url": "https://www.postgresql.org/files/documentation/pdf/18/postgresql-18-A4.pdf",
+      "license": "PostgreSQL",
+      "raw_hash": "632a2f93ea7d8817dca9c413896cb43a9ffbd44a82d1812b905cd56a16e7eff6",
+      "content_hash": "ca1f1d7b4efef97adf6ae2bf4fb715a9104ce0e7a9373b9c551a1e4a8ea09dd3",
+      "size_bytes": 32673,
+      "page_count": 11,
+      "finalized": true,
+      "is_active": true,
+      "duplicate_of": null,
+      "format": "pdf",
+      "status": "normalized",
+      "role": "reference",
+      "evaluation_included": true,
+      "local_path": "data/corpus/postgresql-18-tutorial-sql-language.pdf",
+      "snapshot_path": "data/local/snapshots/632a2f93ea7d8817dca9c413896cb43a9ffbd44a82d1812b905cd56a16e7eff6.pdf",
+      "normalized_path": "data/processing/normalized/ca1f1d7b4efef97adf6ae2bf4fb715a9104ce0e7a9373b9c551a1e4a8ea09dd3.txt",
+      "normalized_documents_path": "data/processing/documents/6927c94ed288447636092b1cdc584569603e88a6cb5cd0effbc12472103865aa.json",
+      "provenance": "Official upstream source, acquired locally",
+      "review_status": "accepted",
+      "license_review": {
+        "status": "verified",
+        "license": "PostgreSQL",
+        "evidence_urls": [
+          "https://www.postgresql.org/docs/18/legalnotice.html"
+        ],
+        "note": "Retain upstream copyright/license/NOTICE obligations for any redistribution. Corpus bytes remain ignored and local."
+      },
+      "content_review": {
+        "usable_text": true,
+        "normalized_characters": 22169,
+        "topic_tokens_verified": [],
+        "reviewer": "Codex",
+        "scope": "Text samples, headings, technical content and source/provenance review",
+        "limitations": [
+          "Excerpt citation page numbers start at 1; original physical-page mapping is in preparation. Cross-manual link annotations omitted."
+        ],
+        "pdf_review": "All pages text-based; copied page text and geometry equal parent pages; all 25 excerpt pages rendered and visually reviewed."
+      },
+      "preparation": {
+        "path": "data/corpus/postgresql-18-tutorial-sql-language.pdf",
+        "title": "PostgreSQL 18 Tutorial: 2. The SQL Language",
+        "technology": "PostgreSQL",
+        "source_url": "https://www.postgresql.org/files/documentation/pdf/18/postgresql-18-A4.pdf",
+        "license": "PostgreSQL",
+        "version_label": "18.6 (PDF)",
+        "category": "Databases",
+        "transformation": "pypdf page extraction; link annotations omitted to avoid copying cross-manual references; no reflow or text generation; original legal-notice page prepended",
+        "parent_raw_hash": "9c6af8d2c8f0eda1b05e510bd8028f752162d2f5ce2db405bbf197336ce638d2",
+        "parent_path": "data/corpus-acquisition/postgresql-18-A4.pdf",
+        "original_physical_pages_1_based": [
+          2,
+          46,
+          47,
+          48,
+          49,
+          50,
+          51,
+          52,
+          53,
+          54,
+          55
+        ],
+        "page_count": 11,
+        "page_text_characters": [
+          1332,
+          2386,
+          2590,
+          2356,
+          1997,
+          2530,
+          2642,
+          2337,
+          1764,
+          2225,
+          544
+        ],
+        "first_body_heading_verified": "2. The SQL Language",
+        "sha256": "632a2f93ea7d8817dca9c413896cb43a9ffbd44a82d1812b905cd56a16e7eff6",
+        "pdf_metadata": {
+          "/Title": "PostgreSQL 18 Tutorial: 2. The SQL Language",
+          "/Subject": "Original manual physical pages 46-55; legal notice on physical page 2",
+          "/Author": "The PostgreSQL Global Development Group"
+        }
+      }
+    },
+    {
+      "document_id": "doc_4fa20d81edfe467ea8c3dea403f83506",
+      "version_id": "ver_6e137a9928b4429dbbf7b6dcc0302a36",
+      "source_key": "[\"postgresql-18-tutorial-advanced-features.pdf\",null]",
+      "title": "PostgreSQL 18 Tutorial: 3. Advanced Features",
+      "technology": "PostgreSQL",
+      "category": "Databases",
+      "version_label": "18.6 (PDF)",
+      "source_url": "https://www.postgresql.org/files/documentation/pdf/18/postgresql-18-A4.pdf",
+      "license": "PostgreSQL",
+      "raw_hash": "91ccbc9bfee0619f944c1d667b69d1373df6d5a0e0808319003f7f9638ac25d2",
+      "content_hash": "993e12936bb96ad0171d6640196bd6229f391b7ab6ea517040ac9d180b4a580c",
+      "size_bytes": 29743,
+      "page_count": 9,
+      "finalized": true,
+      "is_active": true,
+      "duplicate_of": null,
+      "format": "pdf",
+      "status": "normalized",
+      "role": "reference",
+      "evaluation_included": true,
+      "local_path": "data/corpus/postgresql-18-tutorial-advanced-features.pdf",
+      "snapshot_path": "data/local/snapshots/91ccbc9bfee0619f944c1d667b69d1373df6d5a0e0808319003f7f9638ac25d2.pdf",
+      "normalized_path": "data/processing/normalized/993e12936bb96ad0171d6640196bd6229f391b7ab6ea517040ac9d180b4a580c.txt",
+      "normalized_documents_path": "data/processing/documents/1be320b9122d5cfbe10817b71a2aa0d91a76fba4e65441995267e9a4320df5e4.json",
+      "provenance": "Official upstream source, acquired locally",
+      "review_status": "accepted",
+      "license_review": {
+        "status": "verified",
+        "license": "PostgreSQL",
+        "evidence_urls": [
+          "https://www.postgresql.org/docs/18/legalnotice.html"
+        ],
+        "note": "Retain upstream copyright/license/NOTICE obligations for any redistribution. Corpus bytes remain ignored and local."
+      },
+      "content_review": {
+        "usable_text": true,
+        "normalized_characters": 20576,
+        "topic_tokens_verified": [],
+        "reviewer": "Codex",
+        "scope": "Text samples, headings, technical content and source/provenance review",
+        "limitations": [
+          "Excerpt citation page numbers start at 1; original physical-page mapping is in preparation. Cross-manual link annotations omitted."
+        ],
+        "pdf_review": "All pages text-based; copied page text and geometry equal parent pages; all 25 excerpt pages rendered and visually reviewed."
+      },
+      "preparation": {
+        "path": "data/corpus/postgresql-18-tutorial-advanced-features.pdf",
+        "title": "PostgreSQL 18 Tutorial: 3. Advanced Features",
+        "technology": "PostgreSQL",
+        "source_url": "https://www.postgresql.org/files/documentation/pdf/18/postgresql-18-A4.pdf",
+        "license": "PostgreSQL",
+        "version_label": "18.6 (PDF)",
+        "category": "Databases",
+        "transformation": "pypdf page extraction; link annotations omitted to avoid copying cross-manual references; no reflow or text generation; original legal-notice page prepended",
+        "parent_raw_hash": "9c6af8d2c8f0eda1b05e510bd8028f752162d2f5ce2db405bbf197336ce638d2",
+        "parent_path": "data/corpus-acquisition/postgresql-18-A4.pdf",
+        "original_physical_pages_1_based": [
+          2,
+          56,
+          57,
+          58,
+          59,
+          60,
+          61,
+          62,
+          63
+        ],
+        "page_count": 9,
+        "page_text_characters": [
+          1332,
+          2380,
+          3157,
+          3253,
+          3148,
+          2566,
+          2185,
+          1764,
+          1276
+        ],
+        "first_body_heading_verified": "3. Advanced Features",
+        "sha256": "91ccbc9bfee0619f944c1d667b69d1373df6d5a0e0808319003f7f9638ac25d2",
+        "pdf_metadata": {
+          "/Title": "PostgreSQL 18 Tutorial: 3. Advanced Features",
+          "/Subject": "Original manual physical pages 56-63; legal notice on physical page 2",
+          "/Author": "The PostgreSQL Global Development Group"
+        }
+      }
+    },
+    {
+      "document_id": "doc_40c71a7e9bf7444882f1a4a3e1b064b5",
+      "version_id": "ver_0a64f5661a494ee7ad51280927048f61",
+      "source_key": "https://www.postgresql.org/docs/18/indexes-types.html",
+      "title": "PostgreSQL: Documentation: 18: 11.2.\u00a0Index Types",
+      "technology": "PostgreSQL",
+      "category": "Databases",
+      "version_label": "18",
+      "source_url": "https://www.postgresql.org/docs/18/indexes-types.html",
+      "license": "PostgreSQL",
+      "raw_hash": "3489b7eb60f721c3c63048c667fd766145a4aaae9fc824715bd6d8f1642ee61c",
+      "content_hash": "8857512451009575c246fc2906e3428b182c801d1ff1b09f4ebeaa87ff04c951",
+      "size_bytes": 26200,
+      "page_count": null,
+      "finalized": true,
+      "is_active": true,
+      "duplicate_of": null,
+      "format": "html",
+      "status": "normalized",
+      "role": "reference",
+      "evaluation_included": true,
+      "local_path": "data/online/snapshots/3489b7eb60f721c3c63048c667fd766145a4aaae9fc824715bd6d8f1642ee61c.html",
+      "snapshot_path": "data/online/snapshots/3489b7eb60f721c3c63048c667fd766145a4aaae9fc824715bd6d8f1642ee61c.html",
+      "normalized_path": "data/processing/normalized/8857512451009575c246fc2906e3428b182c801d1ff1b09f4ebeaa87ff04c951.txt",
+      "normalized_documents_path": "data/processing/documents/893ba1ffe55c9216d83063fee1ebbf6a050b76a316463dbc0af1a248b9493789.json",
+      "provenance": "Approved Phase 3A URL acquisition",
+      "review_status": "accepted",
+      "license_review": {
+        "status": "verified",
+        "license": "PostgreSQL",
+        "evidence_urls": [
+          "https://www.postgresql.org/docs/18/legalnotice.html"
+        ],
+        "note": "Retain upstream copyright/license/NOTICE obligations for any redistribution. Corpus bytes remain ignored and local."
+      },
+      "content_review": {
+        "usable_text": true,
+        "normalized_characters": 8165,
+        "topic_tokens_verified": [
+          "B-tree",
+          "GIN"
+        ],
+        "reviewer": "Codex",
+        "scope": "Text samples, headings, technical content and source/provenance review",
+        "limitations": [
+          "Existing HTML cleaner retains some version navigation, release banner and feedback boilerplate; technical body verified."
+        ]
+      },
+      "online": {
+        "source_id": "postgresql",
+        "canonical_url": "https://www.postgresql.org/docs/18/indexes-types.html",
+        "final_url": "https://www.postgresql.org/docs/18/indexes-types.html",
+        "retrieved_at": "2026-10-24T05:08:37.053707+00:00",
+        "http_status": 200,
+        "content_type": "text/html",
+        "usage_status": "reviewed",
+        "configuration_id": "57237611dfd3ef5e6fd6b0a4bcda8ccbcd5e8a12c24d61122cd813702556cfc3",
+        "warnings": []
+      }
+    },
+    {
+      "document_id": "doc_65cd8ee6cb6b4b07aaed666fa4f66921",
+      "version_id": "ver_b8d5d693dafa4f5596345c058fa7a083",
+      "source_key": "https://www.postgresql.org/docs/18/transaction-iso.html",
+      "title": "PostgreSQL: Documentation: 18: 13.2.\u00a0Transaction Isolation",
+      "technology": "PostgreSQL",
+      "category": "Databases",
+      "version_label": "18",
+      "source_url": "https://www.postgresql.org/docs/18/transaction-iso.html",
+      "license": "PostgreSQL",
+      "raw_hash": "42a64110b076015643e964bb1bc4e72a4143111916376e4e12991e4b6980c8e9",
+      "content_hash": "db1c6335455a5b3f227e71493bc0c36821d545693dd6597b73eaf6a06d4b42b0",
+      "size_bytes": 47642,
+      "page_count": null,
+      "finalized": true,
+      "is_active": true,
+      "duplicate_of": null,
+      "format": "html",
+      "status": "normalized",
+      "role": "reference",
+      "evaluation_included": true,
+      "local_path": "data/online/snapshots/42a64110b076015643e964bb1bc4e72a4143111916376e4e12991e4b6980c8e9.html",
+      "snapshot_path": "data/online/snapshots/42a64110b076015643e964bb1bc4e72a4143111916376e4e12991e4b6980c8e9.html",
+      "normalized_path": "data/processing/normalized/db1c6335455a5b3f227e71493bc0c36821d545693dd6597b73eaf6a06d4b42b0.txt",
+      "normalized_documents_path": "data/processing/documents/896f18c9b004a848253ebc30812e05cdeb7b83776bb7df52be2b32ce7e8308a2.json",
+      "provenance": "Approved Phase 3A URL acquisition",
+      "review_status": "accepted",
+      "license_review": {
+        "status": "verified",
+        "license": "PostgreSQL",
+        "evidence_urls": [
+          "https://www.postgresql.org/docs/18/legalnotice.html"
+        ],
+        "note": "Retain upstream copyright/license/NOTICE obligations for any redistribution. Corpus bytes remain ignored and local."
+      },
+      "content_review": {
+        "usable_text": true,
+        "normalized_characters": 25581,
+        "topic_tokens_verified": [
+          "Read Committed",
+          "Serializable"
+        ],
+        "reviewer": "Codex",
+        "scope": "Text samples, headings, technical content and source/provenance review",
+        "limitations": [
+          "Existing HTML cleaner retains some version navigation, release banner and feedback boilerplate; technical body verified."
+        ]
+      },
+      "online": {
+        "source_id": "postgresql",
+        "canonical_url": "https://www.postgresql.org/docs/18/transaction-iso.html",
+        "final_url": "https://www.postgresql.org/docs/18/transaction-iso.html",
+        "retrieved_at": "2026-10-24T05:08:34.353776+00:00",
+        "http_status": 200,
+        "content_type": "text/html",
+        "usage_status": "reviewed",
+        "configuration_id": "57237611dfd3ef5e6fd6b0a4bcda8ccbcd5e8a12c24d61122cd813702556cfc3",
+        "warnings": []
+      }
+    },
+    {
+      "document_id": "doc_b225b7d399084605b12cdd8b56333e04",
+      "version_id": "ver_79e7a43c97b1493590e1a33a2571da96",
+      "source_key": "https://www.postgresql.org/docs/18/using-explain.html",
+      "title": "PostgreSQL: Documentation: 18: 14.1.\u00a0Using EXPLAIN",
+      "technology": "PostgreSQL",
+      "category": "Databases",
+      "version_label": "18",
+      "source_url": "https://www.postgresql.org/docs/18/using-explain.html",
+      "license": "PostgreSQL",
+      "raw_hash": "c43249a5393e829323f8480237b94bf0c083cd073b1e659fe7924a662c403f74",
+      "content_hash": "fd00087c3d1a1f7d54d3c65afd867d225c9b431b959347a207540a915ca26f7a",
+      "size_bytes": 70029,
+      "page_count": null,
+      "finalized": true,
+      "is_active": true,
+      "duplicate_of": null,
+      "format": "html",
+      "status": "normalized",
+      "role": "reference",
+      "evaluation_included": true,
+      "local_path": "data/online/snapshots/c43249a5393e829323f8480237b94bf0c083cd073b1e659fe7924a662c403f74.html",
+      "snapshot_path": "data/online/snapshots/c43249a5393e829323f8480237b94bf0c083cd073b1e659fe7924a662c403f74.html",
+      "normalized_path": "data/processing/normalized/fd00087c3d1a1f7d54d3c65afd867d225c9b431b959347a207540a915ca26f7a.txt",
+      "normalized_documents_path": "data/processing/documents/81a950a5d726627882e94c599d33a10fd65879b758cd5ebfa890da246d746c07.json",
+      "provenance": "Approved Phase 3A URL acquisition",
+      "review_status": "accepted",
+      "license_review": {
+        "status": "verified",
+        "license": "PostgreSQL",
+        "evidence_urls": [
+          "https://www.postgresql.org/docs/18/legalnotice.html"
+        ],
+        "note": "Retain upstream copyright/license/NOTICE obligations for any redistribution. Corpus bytes remain ignored and local."
+      },
+      "content_review": {
+        "usable_text": true,
+        "normalized_characters": 48189,
+        "topic_tokens_verified": [
+          "EXPLAIN",
+          "Seq Scan"
+        ],
+        "reviewer": "Codex",
+        "scope": "Text samples, headings, technical content and source/provenance review",
+        "limitations": [
+          "Existing HTML cleaner retains some version navigation, release banner and feedback boilerplate; technical body verified."
+        ]
+      },
+      "online": {
+        "source_id": "postgresql",
+        "canonical_url": "https://www.postgresql.org/docs/18/using-explain.html",
+        "final_url": "https://www.postgresql.org/docs/18/using-explain.html",
+        "retrieved_at": "2026-10-24T05:08:39.872658+00:00",
+        "http_status": 200,
+        "content_type": "text/html",
+        "usage_status": "reviewed",
+        "configuration_id": "57237611dfd3ef5e6fd6b0a4bcda8ccbcd5e8a12c24d61122cd813702556cfc3",
+        "warnings": []
+      }
+    },
+    {
+      "document_id": "doc_2a84158ee25943319b02505b34548d6f",
+      "version_id": "ver_f9dec023f5384325aa3f4a879c04898c",
+      "source_key": "[\"postgresql-18-transaction-system.txt\",null]",
+      "title": "The PostgreSQL Transaction System",
+      "technology": "PostgreSQL",
+      "category": "Databases",
+      "version_label": "18",
+      "source_url": "https://raw.githubusercontent.com/postgres/postgres/9412c35035a74b9e5623b4d7e67c5f77967f0d1a/src/backend/access/transam/README",
+      "license": "PostgreSQL",
+      "raw_hash": "137ff195933dddbf58cfa62fb42a56e713d20d41c226cdf6973b3567a7a881f5",
+      "content_hash": "bdf84937b0eae32b30a226d0d08ff12c7467b5f75d8ad1db6fc6c185a8c5116a",
+      "size_bytes": 48795,
+      "page_count": null,
+      "finalized": true,
+      "is_active": true,
+      "duplicate_of": null,
+      "format": "txt",
+      "status": "normalized",
+      "role": "reference",
+      "evaluation_included": true,
+      "local_path": "data/corpus/postgresql-18-transaction-system.txt",
+      "snapshot_path": "data/local/snapshots/137ff195933dddbf58cfa62fb42a56e713d20d41c226cdf6973b3567a7a881f5.txt",
+      "normalized_path": "data/processing/normalized/bdf84937b0eae32b30a226d0d08ff12c7467b5f75d8ad1db6fc6c185a8c5116a.txt",
+      "normalized_documents_path": "data/processing/documents/3925edbcd10d23cac646c90d7b54f6f5aa3fc887362adba6ff707bde8aa641e2.json",
+      "provenance": "Official upstream source, acquired locally",
+      "review_status": "accepted",
+      "license_review": {
+        "status": "verified",
+        "license": "PostgreSQL",
+        "evidence_urls": [
+          "https://www.postgresql.org/docs/18/legalnotice.html"
+        ],
+        "note": "Retain upstream copyright/license/NOTICE obligations for any redistribution. Corpus bytes remain ignored and local."
+      },
+      "content_review": {
+        "usable_text": true,
+        "normalized_characters": 48482,
+        "topic_tokens_verified": [],
+        "reviewer": "Codex",
+        "scope": "Text samples, headings, technical content and source/provenance review",
+        "limitations": []
+      },
+      "preparation": {
+        "path": "data/corpus/postgresql-18-transaction-system.txt",
+        "title": "The PostgreSQL Transaction System",
+        "technology": "PostgreSQL",
+        "source_url": "https://raw.githubusercontent.com/postgres/postgres/9412c35035a74b9e5623b4d7e67c5f77967f0d1a/src/backend/access/transam/README",
+        "license": "PostgreSQL",
+        "version_label": "18",
+        "category": "Databases",
+        "transformation": "none; upstream plain-text README saved as .txt",
+        "upstream_commit": "9412c35035a74b9e5623b4d7e67c5f77967f0d1a"
+      }
+    }
+  ],
+  "rejected_documents": [
+    {
+      "document_id": "doc_9579e530c184489582bada4d8699b635",
+      "version_id": "ver_d4663599898f4122ab2ef16d8e5d7de1",
+      "source_url": "https://spark.apache.org/docs/4.0.1/sql-data-sources.html",
+      "title": "Data Sources - Spark 4.0.1 Documentation",
+      "processing_status": "normalized",
+      "is_active_in_registry": true,
+      "review_status": "rejected",
+      "reason": "Navigation/contents overview; too little substantive body content. Replaced by Generic Load/Save Functions.",
+      "raw_hash": "3dc21a8737219efc29d03ed39fe41cfe77c9a0aff1b5bcb6dcb054508b7ad409",
+      "content_hash": "77bf4a5e5b0bd110e236b90e21d6ca3a1668b02ebe4b434185cc5483d5de5bcf",
+      "size_bytes": 19756
+    }
+  ],
   "online_candidates": {
     "status": "unfrozen_runtime_projection",
     "manifest_path": "../data/online/corpus_manifest.json",
     "catalog_path": "../config/default.toml"
-  }
+  },
+  "limitations": [
+    "DDIA permissions/edition conversion fidelity unverified; excluded from DS-04 public reference.",
+    "Review performed by Codex; no second human or benchmark review is claimed.",
+    "HTML and stable documentation URLs can drift; hashes identify the frozen local bytes. Reacquisition must detect changes rather than silently update this manifest.",
+    "PDFs are three nonoverlapping tutorial chapters extracted from one official manual, each retaining its legal-notice page; not three independently published PDF manuals.",
+    "Chunk count, embeddings, indexing, retrieval and QA are unimplemented and unmeasured."
+  ]
 }

@@ -1,5 +1,7 @@
 # LangChain loading and corpus preparation
 
+Update 2026-10-24: the [reference corpus](REFERENCE_CORPUS_STATUS.md) is now selected, processed and frozen in `datasets/corpus_manifest.json`: 20 public reference documents plus one excluded private DDIA supplement. The zero-file/draft statements below describe the earlier preparation checkpoint. Local registration/processing supplies the Markdown, TXT and extracted PDF chapter files; Phase 3A supplies the selected HTML pages.
+
 Reviewed 2026-10-22 against the dependency lock, requirements C-01/DS-01–DS-05/FR-01–FR-05/FR-10 and Phase 3B. The loading/normalization portion is now implemented; splitting remains Phase 4 and the corpus is unfrozen. See [Phase 3B status](PHASE_3B_STATUS.md) and [normalization/version contracts](DECISIONS.md#phase-3b-normalization-and-finalization-2026-10-22).
 
 ## Current dependency boundary

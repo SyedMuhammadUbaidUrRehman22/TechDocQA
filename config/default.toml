@@ -51,11 +51,16 @@ technology = "Apache Kafka"
 title = "Apache Kafka official documentation"
 entry_url = "https://kafka.apache.org/documentation/"
 scopes = ["https://kafka.apache.org/documentation/", "https://kafka.apache.org/43/"]
-# The entry is a client-side redirect page; fetch one explicitly selected page.
-pages = ["https://kafka.apache.org/43/getting-started/introduction/"]
+# The entry is a client-side redirect page; fetch only the explicitly selected pages.
+pages = [
+  "https://kafka.apache.org/43/getting-started/introduction/",
+  "https://kafka.apache.org/43/getting-started/quickstart/",
+  "https://kafka.apache.org/43/design/design/",
+  "https://kafka.apache.org/43/configuration/producer-configs/",
+]
 enabled = true
 usage_policy_url = "https://www.apache.org/licenses/"
-usage_status = "unverified"
+usage_status = "reviewed"
 
 [[online.sources]]
 source_id = "apache_airflow"
@@ -63,31 +68,44 @@ technology = "Apache Airflow"
 title = "Apache Airflow official documentation"
 entry_url = "https://airflow.apache.org/docs/apache-airflow/stable/"
 scopes = ["https://airflow.apache.org/docs/apache-airflow/stable/"]
-pages = ["https://airflow.apache.org/docs/apache-airflow/stable/"]
+pages = [
+  "https://airflow.apache.org/docs/apache-airflow/stable/core-concepts/overview.html",
+  "https://airflow.apache.org/docs/apache-airflow/stable/core-concepts/dags.html",
+  "https://airflow.apache.org/docs/apache-airflow/stable/core-concepts/tasks.html",
+  "https://airflow.apache.org/docs/apache-airflow/stable/core-concepts/dag-run.html",
+]
 enabled = true
 usage_policy_url = "https://www.apache.org/licenses/"
-usage_status = "unverified"
+usage_status = "reviewed"
 
 [[online.sources]]
 source_id = "postgresql"
 technology = "PostgreSQL"
 title = "PostgreSQL official documentation"
 entry_url = "https://www.postgresql.org/docs/current/"
-scopes = ["https://www.postgresql.org/docs/current/"]
-pages = ["https://www.postgresql.org/docs/current/"]
-enabled = false
-usage_status = "unverified"
+scopes = ["https://www.postgresql.org/docs/current/", "https://www.postgresql.org/docs/18/"]
+pages = [
+  "https://www.postgresql.org/docs/18/transaction-iso.html",
+  "https://www.postgresql.org/docs/18/indexes-types.html",
+  "https://www.postgresql.org/docs/18/using-explain.html",
+]
+enabled = true
+usage_policy_url = "https://www.postgresql.org/docs/18/legalnotice.html"
+usage_status = "reviewed"
 
 [[online.sources]]
 source_id = "apache_spark"
 technology = "Apache Spark"
 title = "Apache Spark official documentation"
 entry_url = "https://spark.apache.org/docs/latest/"
-scopes = ["https://spark.apache.org/docs/latest/"]
-pages = ["https://spark.apache.org/docs/latest/"]
-enabled = false
+scopes = ["https://spark.apache.org/docs/latest/", "https://spark.apache.org/docs/4.0.1/"]
+pages = [
+  "https://spark.apache.org/docs/4.0.1/submitting-applications.html",
+  "https://spark.apache.org/docs/4.0.1/sql-data-sources-load-save-functions.html",
+]
+enabled = true
 usage_policy_url = "https://www.apache.org/licenses/"
-usage_status = "unverified"
+usage_status = "reviewed"
 
 [[online.sources]]
 source_id = "redis"

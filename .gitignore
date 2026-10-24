@@ -11,6 +11,7 @@ dist/
 .env
 .env.*
 !.env.example
+# Private book, downloaded corpus, acquisition evidence, registry and processing snapshots.
 data/
 *.log
 .tools/
