@@ -13,6 +13,12 @@ embedding_context_window = 2048
 embedding_tokenizer = "bert"
 embedding_model_digest = "0a109f422b47e3a30ba2b10eca18548e944e8a23073ee3f3e947efcf3c45e59f"
 embedding_prefix = "search_document: "
+embedding_query_prefix = "search_query: "
+embedding_dimension = 768
+# Measured on the installed model; a vector off the unit sphere is rejected as invalid.
+embedding_normalization = "l2"
+embedding_batch_size = 32
+base_url = "http://127.0.0.1:11434"
 temperature = 0.0
 timeout_seconds = 60
 

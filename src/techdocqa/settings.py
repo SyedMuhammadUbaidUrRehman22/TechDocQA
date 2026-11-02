@@ -21,6 +21,11 @@ class ModelSettings(StrictModel):
     embedding_tokenizer: Literal["bert", "tiktoken"] | None = None
     embedding_model_digest: str | None = Field(default=None, pattern=r"^[0-9a-f]{64}$")
     embedding_prefix: str = ""
+    embedding_query_prefix: str = ""
+    embedding_dimension: int | None = Field(default=None, gt=0)
+    embedding_normalization: Literal["l2", "none"] = "none"
+    embedding_batch_size: int = Field(default=32, gt=0)
+    base_url: str = Field(default="http://127.0.0.1:11434", min_length=1)
     context_window: int | None = Field(default=None, gt=0)
     temperature: float = Field(default=0.0, ge=0.0, le=0.2)
     timeout_seconds: int = Field(default=60, gt=0)

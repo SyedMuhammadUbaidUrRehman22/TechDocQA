@@ -106,6 +106,31 @@ Prose uses LF, Unicode NFC and conservative whitespace cleanup. Headings, paragr
 
 `status`/`list` still show the latest requested byte candidate, which can be failed or a nonfinalized duplicate. A duplicate's `processing.resolved_version_id` identifies its finalized content version; `history` exposes all candidates and active flags. `normalized` means eligible for later processing, not indexed/searchable. Finalized files remain private under `data/processing` and local byte snapshots under `data/local`; no document bodies enter SQLite. The schema and dependencies are unchanged. Older application readers cannot read the new metadata fields.
 
+## Indexing and search
+
+Requires the local Ollama service for embedding. Run after `chunk`:
+
+```powershell
+.\.venv\Scripts\techdocqa.exe index --json
+.\.venv\Scripts\techdocqa.exe search "What does linger.ms do?" --mode vector --technology "Apache Kafka" --top-k 5
+.\.venv\Scripts\techdocqa.exe search linger.ms --mode bm25
+.\.venv\Scripts\techdocqa.exe search --mode bm25 -- --flag-name
+.\.venv\Scripts\techdocqa.exe index --rebuild
+```
+
+`index` embeds only chunks without a stored vector, so a repeat run needs no provider. `--rebuild` restores the whole vector index from stored vectors, also with no model call. BM25 needs no provider and serves chunked versions straight away; vector search needs `index` first. Filters are `--document-id`, `--technology`, `--category` and `--entity`. Unfiltered search includes every active document, including any private ones you have indexed. `hybrid` is not implemented yet. After changing the embedding model, run `chunk` and then `index`; each model keeps its own collection.
+
+Everything stays on this machine under the Ollama profile. Known limits and measured results are in the [Phase 5 report](docs/PHASE_5_STATUS.md).
+
+## Withdrawing and deleting documents
+
+```powershell
+.\.venv\Scripts\techdocqa.exe withdraw doc_ID --reason "License under review"
+.\.venv\Scripts\techdocqa.exe delete doc_ID --reason "Rights expired" --yes
+```
+
+`withdraw` removes a document from both searches immediately and keeps its data. Re-ingesting the same content reactivates it; run `index` to return it to vector search. `delete` cannot be undone: it removes the document's registry records, chunks, vectors, index entries and stored snapshots, while keeping anything another source shares. It does not touch your original files or registry backups.
+
 ## Source and plan
 
 The source filename says v2, but its contents identify **Revision 3**; those contents remain authoritative. The Phase 1 review records an existing local table-formatting edit; the requirement and acceptance-criterion text is unchanged.

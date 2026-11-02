@@ -362,7 +362,7 @@ def test_phase3a_registry_rows_read_without_schema_change(corpus, settings, regi
     with Registry(registry.path) as reopened:
         assert reopened.get_document(candidate.document_id).processing is None
         assert process_versions([candidate.version_id], settings, reopened).run.processed == 1
-    assert registry.execute("PRAGMA user_version").fetchone()[0] == 1
+    assert registry.execute("PRAGMA user_version").fetchone()[0] == 2
     assert before == [tuple(row) for row in registry.execute("SELECT type,name,sql FROM sqlite_master ORDER BY name").fetchall()]
 
 

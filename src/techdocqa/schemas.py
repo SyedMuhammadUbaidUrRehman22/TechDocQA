@@ -15,11 +15,42 @@ class SearchFilters(StrictModel):
 
 
 class SearchRequest(StrictModel):
-    query: str = Field(min_length=1, pattern=r"\S")
+    query: str = Field(min_length=1, max_length=1000, pattern=r"\S")
     mode: Literal["bm25", "vector", "hybrid"] = "vector"
     top_k: int = Field(default=5, gt=0)
     filters: SearchFilters = Field(default_factory=SearchFilters)
     rerank: bool = False
+
+
+class SearchResult(StrictModel):
+    rank: int
+    chunk_id: str
+    document_id: str
+    version_id: str
+    title: str | None = None
+    section_path: str | None = None
+    page: int | None = None
+    text: str
+    scores: dict[str, float | None]
+    ranks: dict[str, int]
+
+
+class SearchResponse(StrictModel):
+    retrieval_config_id: str
+    mode: Literal["bm25", "vector"]
+    degraded: bool = False
+    degradation_reason: str | None = None
+    results: list[SearchResult]
+
+
+class LifecycleResult(StrictModel):
+    document_id: str
+    status: Literal["withdrawn", "deleted"]
+    reason: str
+    version_id: str | None = None
+    removed_entries: int = 0
+    removed_files: int = 0
+    warnings: list[str] = Field(default_factory=list)
 
 
 class QuestionRequest(StrictModel):
@@ -173,7 +204,7 @@ class AttemptOutcome(StrictModel):
 class RunSummary(StrictModel):
     run_id: str
     status: Literal["running", "completed", "completed_with_errors", "failed"]
-    stage: Literal["registration", "normalization", "chunking"] = "registration"
+    stage: Literal["registration", "normalization", "chunking", "indexing"] = "registration"
     started_at: str
     finished_at: str | None = None
     processed: int = 0
