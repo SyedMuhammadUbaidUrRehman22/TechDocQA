@@ -46,5 +46,9 @@ def register_paths(paths: list[Path], settings: Settings, registry: Registry, *,
                 registry.register(source, metadata, logical_name, attempt_id)
             except TechDocQAError as error:
                 registry.fail_attempt(attempt_id, error.response.error)
+            except UnicodeError:
+                # An undecodable filename or metadata value must not stop the remaining files.
+                error = TechDocQAError("INVALID_METADATA", "Source name or metadata cannot be stored safely.")
+                registry.fail_attempt(attempt_id, error.response.error)
         registry.finish_run(run_id)
         return registry.get_run(run_id)

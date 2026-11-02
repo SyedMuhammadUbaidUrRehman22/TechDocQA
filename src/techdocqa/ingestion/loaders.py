@@ -1,7 +1,9 @@
 """Local framework loaders; called only inside the bounded processing worker."""
 
+import codecs
 from importlib.metadata import version
 from pathlib import Path
+import re
 
 from langchain_core.documents import Document
 from langchain_community.document_loaders.pdf import PyPDFLoader
@@ -10,7 +12,9 @@ from langchain_community.document_loaders.text import TextLoader
 from techdocqa.errors import TechDocQAError
 from techdocqa.ingestion.html import extract_html
 from techdocqa.normalization import code_spans, headings
-from techdocqa.privacy import safe_text
+from techdocqa.privacy import safe_title
+
+UTF8_MULTIBYTE = re.compile(rb"[\xc2-\xdf][\x80-\xbf]|[\xe0-\xef][\x80-\xbf]{2}|[\xf0-\xf4][\x80-\xbf]{3}")
 
 
 def load_documents(path: Path, doc_type: str, directory: Path, minimum: int) -> list[Document]:
@@ -24,15 +28,19 @@ def load_documents(path: Path, doc_type: str, directory: Path, minimum: int) -> 
         documents = [Document(page_content=doc.page_content, metadata={
             "page_index": doc.metadata["page"], "page": doc.metadata["page"] + 1,
             "total_pages": doc.metadata["total_pages"],
-            "original_title": safe_text(doc.metadata.get("title", ""))[:1000] or None,
+            "original_title": safe_title(doc.metadata.get("title", ""))[:1000] or None,
         }) for doc in loaded]
     elif doc_type in {"md", "txt"}:
         raw = path.read_bytes()
         try:
-            text, encoding = raw.decode("utf-8"), "utf-8"
+            encoding = "utf-8-sig" if raw.startswith(codecs.BOM_UTF8) else "utf-8"
+            text = raw.decode(encoding)
         except UnicodeDecodeError:
             if doc_type != "txt":
                 raise TechDocQAError("DECODE_FAILED", "Markdown must be valid UTF-8.", stage="extraction") from None
+            # Damaged UTF-8 would decode as Latin-1 without error but store mojibake.
+            if UTF8_MULTIBYTE.search(raw):
+                raise TechDocQAError("DECODE_FAILED", "Text mixes UTF-8 sequences with invalid bytes.", stage="extraction") from None
             text, encoding = raw.decode("latin-1"), "latin-1"
         if any(ord(char) < 32 and char not in "\t\r\n\f" or 0x7f <= ord(char) < 0xa0 for char in text):
             raise TechDocQAError("DECODE_FAILED", "Text contains unsupported control characters.", stage="extraction")
@@ -42,7 +50,7 @@ def load_documents(path: Path, doc_type: str, directory: Path, minimum: int) -> 
         spans = code_spans(text)
         sections = headings(text, spans) if doc_type == "md" else []
         title = next((section["text"] for section in sections if section["level"] == 1), None)
-        document.metadata = {"encoding": encoding, "original_title": safe_text(title)[:1000] if title else None,
+        document.metadata = {"encoding": encoding, "original_title": safe_title(title)[:1000] if title else None,
                              "headings": sections, "code_spans": spans}
         documents = [document]
     else:

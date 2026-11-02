@@ -87,18 +87,66 @@ def test_tokenizer_fallback_and_config_identity():
     assert first_id != effective_config(ChunkingSettings(size=900, unit='tokens'))[0]
 
 
-def test_verified_embedding_profile_bounds_unicode_and_preserves_requested_config():
-    profile = ModelSettings(embedding_model='nomic-embed-text', embedding_context_window=2048,
-        embedding_tokenizer='bert', embedding_model_digest='a' * 64, embedding_prefix='search_document: ')
-    _, config = effective_config(ChunkingSettings(), profile)
-    assert config['requested_size'] == 1000 and config['size'] == 507
+PROFILE = ModelSettings(embedding_model='nomic-embed-text', embedding_context_window=2048,
+    embedding_tokenizer='bert', embedding_model_digest='a' * 64, embedding_prefix='search_document: ')
+
+
+def test_verified_embedding_profile_bounds_unicode_and_keeps_configured_size():
+    _, config = effective_config(ChunkingSettings(), PROFILE)
+    assert config['size'] == 1000 and config['embedding_input']['byte_limit'] == 2029
     doc = normalized('😀' * 1500)
-    result = build_chunks([doc], ChunkingSettings(), model=profile)
+    result = build_chunks([doc], ChunkingSettings(), model=PROFILE)
     assert result['config'] == config
     assert all(len(c['text'].encode('utf-8')) + 19 <= 2048 for c in result['chunks'])
-    assert all(c['size'] <= 507 for c in result['chunks'])
-    changed = profile.model_copy(update={'embedding_model_digest': 'b' * 64})
-    assert effective_config(ChunkingSettings(), profile)[0] != effective_config(ChunkingSettings(), changed)[0]
+    assert all(c['size'] <= 1000 for c in result['chunks'])
+    assert result['chunks'][-1]['end'] == len(doc.page_content)
+    changed = PROFILE.model_copy(update={'embedding_model_digest': 'b' * 64})
+    assert effective_config(ChunkingSettings(), PROFILE)[0] != effective_config(ChunkingSettings(), changed)[0]
+
+
+def test_embedding_bound_does_not_shrink_ascii_chunks_or_split_fitting_code():
+    code = '```text\n' + 'value = 1\n' * 80 + '```\n'
+    assert 507 < len(code) < 1000
+    doc = normalized('# Config\n' + 'Words fill this paragraph evenly. ' * 120 + '\n' + code)
+    chunks = build_chunks([doc], ChunkingSettings(), model=PROFILE)['chunks']
+    assert any(code.rstrip('\n') in c['text'] for c in chunks)
+    assert not any(c['oversize_split'] for c in chunks)
+    assert max(c['size'] for c in chunks) > 507
+
+
+def test_mixed_width_text_stays_within_both_character_and_byte_bounds():
+    doc = normalized('Ascii words here. ' * 40 + '日本語の文章です。' * 300 + ' more ascii words ' * 40)
+    chunks = build_chunks([doc], ChunkingSettings(), model=PROFILE)['chunks']
+    assert all(c['size'] <= 1000 and len(c['text'].encode('utf-8')) <= 2029 for c in chunks)
+    assert all(c['text'] == doc.page_content[c['start']:c['end']] for c in chunks)
+    assert chunks[-1]['end'] == len(doc.page_content)
+
+
+def test_openai_tiktoken_profile_is_accepted_and_incomplete_profile_rejected():
+    profile = ModelSettings(provider='openai', embedding_model='text-embedding-3-small',
+                            embedding_context_window=8191, embedding_tokenizer='tiktoken')
+    assert effective_config(ChunkingSettings(), profile)[1]['embedding_input']['byte_limit'] == 8189
+    with pytest.raises(TechDocQAError) as error:
+        effective_config(ChunkingSettings(), profile.model_copy(update={'embedding_tokenizer': None}))
+    assert error.value.response.error.code == 'EMBEDDING_PROFILE_UNVERIFIED'
+
+
+def test_overlap_starts_on_a_word_and_prose_prefers_sentence_boundaries():
+    doc = normalized('The replication protocol keeps followers synchronized with leaders. ' * 60)
+    chunks = build_chunks([doc], ChunkingSettings())['chunks']
+    text = doc.page_content
+    assert len(chunks) > 2
+    for chunk in chunks[1:]:
+        assert text[chunk['start'] - 1].isspace() and not text[chunk['start']].isspace()
+        assert chunk['overlap_characters'] > 0
+    assert all(c['text'].rstrip().endswith('.') for c in chunks)
+
+
+def test_unbroken_text_falls_back_to_no_overlap_and_is_recorded():
+    doc = normalized('x' * 2500)
+    chunks = build_chunks([doc], ChunkingSettings())['chunks']
+    assert all(c['overlap_exception'] for c in chunks[1:])
+    assert ''.join(c['text'] for c in chunks) == doc.page_content
 
 
 def test_unverified_or_too_small_embedding_profile_fails_at_startup():
@@ -199,6 +247,26 @@ def test_cli_chunk_config_status_history_and_sanitized_missing_version(chunk_sou
     output = capsys.readouterr()
     assert 'secret-path-or-argument' not in output.out + output.err
     assert any(e['decision'] == 'CHUNKS_ACTIVATED' for e in registry.history(registry.get_version(version).document_id)['events'])
+
+
+def test_cli_with_nothing_to_chunk_is_not_reported_as_invalid_syntax(settings, registry, monkeypatch, capsys):
+    monkeypatch.setattr('techdocqa.cli.load_settings', lambda *_: settings)
+    assert main(['chunk']) == 1
+    assert json.loads(capsys.readouterr().err)['error']['code'] == 'NO_ELIGIBLE_VERSIONS'
+
+
+def test_promoted_duplicate_becomes_chunkable_when_original_changes(chunk_source, corpus, settings, registry):
+    source, _ = chunk_source
+    copy = corpus / 'copy.md'
+    copy.write_bytes(source.read_bytes())
+    copied = register_paths([copy], settings, registry).outcomes[0].result.version_id
+    process_versions([copied], settings, registry)
+    assert chunk_versions([copied], settings, registry).run.failed == 1
+    source.write_text(source.read_text() + 'Changed source content.', encoding='utf-8')
+    newer = register_paths([source], settings, registry).outcomes[0].result.version_id
+    process_versions([newer], settings, registry)
+    assert chunk_versions([copied], settings, registry).run.processed == 1
+    assert active_chunks(copied, settings, registry)
 
 
 def test_pending_new_candidate_does_not_hide_active_version(chunk_source, settings, registry):

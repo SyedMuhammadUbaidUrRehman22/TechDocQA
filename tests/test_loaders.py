@@ -1,9 +1,12 @@
 from pathlib import Path
 
+from langchain_core.documents import Document
 import pytest
 
+from techdocqa.ingestion.html import extract_html
 from techdocqa.ingestion.pipeline import register_paths
 from techdocqa.ingestion.processing import finalized_documents, process_versions
+from techdocqa.normalization import normalize_documents
 from techdocqa.schemas import RegistrationMetadata
 
 TEXT = "Kafka consumer.group configures max.poll.interval.ms. Airflow uses dag_id and airflow tasks test. " * 3
@@ -63,6 +66,54 @@ def test_latin1_fallback_records_encoding_and_invalid_markdown_fails(corpus, set
     record = registry.get_version(result.outcomes[0].result.version_id)
     assert record.processing.encoding == "latin-1"
     assert "Caf\u00e9" in finalized_documents(record.version_id, settings, registry)[0].page_content
+
+
+def test_utf8_bom_is_removed_so_title_and_headings_survive(corpus, settings, registry):
+    source = corpus / "bom.md"
+    source.write_bytes(b"\xef\xbb\xbf# Kafka Basics\n" + TEXT.encode())
+    candidate = register_paths([source], settings, registry).outcomes[0].result
+    assert process_versions([candidate.version_id], settings, registry).run.processed == 1
+    record = registry.get_document(candidate.document_id)
+    assert record.title == "Kafka Basics" and record.processing.encoding == "utf-8-sig"
+    document = finalized_documents(candidate.version_id, settings, registry)[0]
+    assert document.page_content.startswith("# Kafka") and document.metadata["headings"][0]["section_path"] == ["Kafka Basics"]
+
+
+def test_damaged_utf8_is_reported_instead_of_stored_as_mojibake(corpus, settings, registry):
+    source = corpus / "damaged.txt"
+    source.write_bytes(("café " + TEXT).encode("utf-8") + b"\xff")
+    candidate = register_paths([source], settings, registry).outcomes[0].result
+    result = process_versions([candidate.version_id], settings, registry)
+    assert result.outcomes[0].error.code == "DECODE_FAILED"
+    assert registry.get_version(candidate.version_id).status == "extraction_failed"
+
+
+def extracted(tmp_path, markup):
+    result = extract_html(markup.encode(), tmp_path, 10)
+    return result, (tmp_path / "extracted.txt").read_text(encoding="utf-8")
+
+
+def test_html_source_formatted_heading_keeps_section_and_nbsp(tmp_path):
+    result, text = extracted(tmp_path, f"<html><body><main><h2>\n  1.2. Consumer\n  Groups\n</h2><p>{TEXT}</p></main></body></html>")
+    document = normalize_documents([Document(page_content=text, metadata={"doc_type": "html", "code_spans": result["code_spans"]})])[0]
+    assert document.metadata["headings"][0]["section_path"] == ["1.2. Consumer Groups"]
+
+
+def test_html_cleaning_keeps_documentation_about_cookies_and_removes_notices(tmp_path):
+    _, text = extracted(tmp_path, "<html><body><main>"
+        f"<section id='http-cookie-handling'><h2>Cookies</h2><p>KEPT_SECTION {TEXT}</p></section>"
+        f"<div class='section' id='login-banner'><p>KEPT_DIV {TEXT}</p></div>"
+        f"<p>Use <span class='cookie'>KEPT_INLINE</span> values. {'long ' * 300}</p>"
+        "<div class='banner'>DROP_CLASS</div><div id='cookie-consent'>DROP_ID</div>"
+        "<div class='cookieNotice'><p>DROP_CAMEL</p></div>"
+        "</main></body></html>")
+    assert all(marker in text for marker in ("KEPT_SECTION", "KEPT_DIV", "KEPT_INLINE"))
+    assert not any(marker in text for marker in ("DROP_CLASS", "DROP_ID", "DROP_CAMEL"))
+
+
+def test_svg_title_does_not_hide_page_title(tmp_path):
+    result, _ = extracted(tmp_path, f"<html><head><title>Real Title</title></head><body><svg><title>icon</title></svg><main><p>{TEXT}</p></main></body></html>")
+    assert result["original_title"] == "Real Title" and result["warnings"] == []
 
 
 def test_user_title_precedence_and_pdf_metadata_title(corpus, settings, registry, pdf_factory):

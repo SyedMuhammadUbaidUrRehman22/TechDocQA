@@ -103,7 +103,7 @@ def chunk_versions(version_ids, settings, registry) -> ChunkingBatchResult:
                 "SELECT version_id FROM registrations WHERE finalized=1 AND is_active=1 AND duplicate_of IS NULL ORDER BY document_id"
             ).fetchall()]
         if not version_ids:
-            raise TechDocQAError("INVALID_ARGUMENT", "No eligible versions are available.", stage="chunking")
+            raise TechDocQAError("NO_ELIGIBLE_VERSIONS", "No eligible versions are available.", stage="chunking")
         run_id, attempts = registry.start_run(len(version_ids), stage='chunking')
         counts = {}
         for version_id, attempt_id in zip(version_ids, attempts, strict=True):

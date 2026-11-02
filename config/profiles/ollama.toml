@@ -4,4 +4,4 @@
 provider = "ollama"
 temperature = 0.0
 timeout_seconds = 60
-# Populate chat_model, embedding_model and context_window after approval.
+# Model selections and the verified embedding limits are in config/default.toml.

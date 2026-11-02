@@ -3,6 +3,8 @@
 import hashlib
 from importlib.metadata import version
 import json
+from math import ceil
+import re
 
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
@@ -11,7 +13,18 @@ from techdocqa.normalization import code_spans
 from techdocqa.segmentation import SEGMENTATION_POLICY, sentence_spans
 from techdocqa.settings import ChunkingSettings, ModelSettings
 
-CHUNKING_POLICY = "source-preserving-chunks-v2"
+CHUNKING_POLICY = "source-preserving-chunks-v3"
+WHITESPACE = re.compile(r"\s+")
+
+
+def verified_embedding_profile(model: ModelSettings) -> bool:
+    # shortcut: only these tokenizers are known to emit at most one token per UTF-8 byte; add others after verifying that.
+    if not model.embedding_context_window:
+        return False
+    if model.provider == 'ollama':
+        return (model.embedding_model.split(':')[0] == 'nomic-embed-text' and model.embedding_tokenizer == 'bert'
+                and bool(model.embedding_model_digest))
+    return model.embedding_tokenizer == 'tiktoken'
 
 
 def effective_config(settings: ChunkingSettings, model: ModelSettings | None = None) -> tuple[str, dict]:
@@ -24,33 +37,36 @@ def effective_config(settings: ChunkingSettings, model: ModelSettings | None = N
               "splitter_version": version("langchain-text-splitters")}
     values['embedding_input'] = None
     if model.embedding_model:
-        # shortcut: only nomic's verified BERT profile is supported; add a provider tokenizer for other models.
-        if (model.provider != 'ollama' or model.embedding_model.split(':')[0] != 'nomic-embed-text'
-                or model.embedding_tokenizer != 'bert' or not model.embedding_context_window
-                or not model.embedding_model_digest):
+        if not verified_embedding_profile(model):
             raise TechDocQAError('EMBEDDING_PROFILE_UNVERIFIED',
                 'Verify the installed embedding context, tokenizer and model digest before chunking.', stage='configuration')
-        # WordPiece emits at most one token per input UTF-8 byte; reserve CLS/SEP and the task prefix.
+        # Tokens never outnumber UTF-8 bytes for these tokenizers; reserve CLS/SEP and the task prefix.
         overhead = len(model.embedding_prefix.encode('utf-8')) + 2
-        cap = (model.embedding_context_window - overhead) // 4
-        values['requested_size'] = settings.size
-        values['size'] = min(settings.size, cap)
-        if values['size'] <= settings.overlap or values['size'] < settings.minimum:
+        byte_limit = model.embedding_context_window - overhead
+        if byte_limit <= settings.overlap or byte_limit < settings.minimum:
             raise TechDocQAError('INVALID_CONFIGURATION',
                 'Embedding input bound cannot fit the configured minimum and overlap.', stage='configuration')
         values['embedding_input'] = {'provider': model.provider, 'model': model.embedding_model,
             'model_digest': model.embedding_model_digest, 'context_tokens': model.embedding_context_window,
             'tokenizer_family': model.embedding_tokenizer, 'counting': 'utf8-byte-upper-bound-v1',
-            'prefix': model.embedding_prefix, 'special_tokens_reserved': 2,
+            'prefix': model.embedding_prefix, 'special_tokens_reserved': 2, 'byte_limit': byte_limit,
             'validation': 'conservative_bound_not_exact_token_count'}
     serialized = json.dumps(values, sort_keys=True, separators=(",", ":"))
     return hashlib.sha256(serialized.encode()).hexdigest(), values
 
 
-def split_ranges(text: str, start: int, end: int, size: int, *, code: bool = False) -> list[dict]:
+def size_measure(size: int, byte_limit: int | None):
+    """Length on the configured size scale: characters, raised when bytes near the embedding bound."""
+    if byte_limit is None:
+        return len
+    return lambda value: max(len(value), ceil(len(value.encode('utf-8')) * size / byte_limit))
+
+
+def split_ranges(text: str, start: int, end: int, size: int, measure=len, *, code: bool = False) -> list[dict]:
+    # Literal ". " can also follow an abbreviation; that only moves a soft boundary, never coverage.
     splitter = RecursiveCharacterTextSplitter(chunk_size=size, chunk_overlap=0,
-        separators=["\n", ""] if code else ["\n\n", "\n", " ", ""],
-        keep_separator="end", strip_whitespace=False)
+        separators=["\n", ""] if code else ["\n\n", "\n", ". ", "? ", "! ", " ", ""],
+        keep_separator="end", strip_whitespace=False, length_function=measure)
     value = text[start:end]
     parts = splitter.split_text(value)
     if ''.join(parts) != value:
@@ -60,6 +76,14 @@ def split_ranges(text: str, start: int, end: int, size: int, *, code: bool = Fal
         ranges.append({"start": start, "end": start + len(part), "oversize_split": code})
         start += len(part)
     return ranges
+
+
+def word_start(text: str, start: int, limit: int) -> int:
+    """First word boundary at or after start, so overlap never begins mid-word."""
+    if text[start - 1:start].isspace():
+        return start
+    match = WHITESPACE.search(text, start, limit)
+    return match.end() if match else limit
 
 
 def section_ranges(text: str, metadata: dict, blocks: list[dict]) -> list[tuple]:
@@ -83,11 +107,13 @@ def section_ranges(text: str, metadata: dict, blocks: list[dict]) -> list[tuple]
 
 def build_chunks(documents, settings: ChunkingSettings, *, model: ModelSettings | None = None) -> dict:
     config_id, config = effective_config(settings, model)
-    settings = settings.model_copy(update={'size': config['size']})
+    profile = config['embedding_input']
+    measure = size_measure(settings.size, profile['byte_limit'] if profile else None)
     chunks, spans = [], []
     target = settings.size - settings.overlap
     for document_index, document in enumerate(documents):
         text, metadata = document.page_content, document.metadata
+        cost = lambda begin, stop: measure(text[begin:stop])
         protected = code_spans(text, metadata.get("code_spans"))
         blocks = [span for span in protected if span["kind"] == "block"]
         spans.append({"document_index": document_index, "page": metadata.get("page"),
@@ -98,17 +124,17 @@ def build_chunks(documents, settings: ChunkingSettings, *, model: ModelSettings 
                 if not begin <= block["start"] < end:
                     continue
                 if cursor < block["start"]:
-                    atoms.extend(split_ranges(text, cursor, block["start"], target))
-                if block["end"] - block["start"] <= settings.size:
+                    atoms.extend(split_ranges(text, cursor, block["start"], target, measure))
+                if cost(block["start"], block["end"]) <= settings.size:
                     atoms.append({"start": block["start"], "end": block["end"], "oversize_split": False})
                 else:
-                    atoms.extend(split_ranges(text, block["start"], block["end"], settings.size, code=True))
+                    atoms.extend(split_ranges(text, block["start"], block["end"], settings.size, measure, code=True))
                 cursor = block["end"]
             if cursor < end:
-                atoms.extend(split_ranges(text, cursor, end, target))
+                atoms.extend(split_ranges(text, cursor, end, target, measure))
             merged = []
             for atom in atoms:
-                if merged and atom["end"] - merged[-1]["start"] <= target:
+                if merged and cost(merged[-1]["start"], atom["end"]) <= target:
                     merged[-1]["end"] = atom["end"]
                     merged[-1]["oversize_split"] |= atom["oversize_split"]
                 else:
@@ -117,12 +143,12 @@ def build_chunks(documents, settings: ChunkingSettings, *, model: ModelSettings 
             while index < len(merged):
                 item = merged[index]
                 if item['end'] - item['start'] < settings.minimum:
-                    if index and item['end'] - merged[index - 1]['start'] <= settings.size:
+                    if index and cost(merged[index - 1]['start'], item['end']) <= settings.size:
                         merged[index - 1]['end'] = item['end']
                         merged[index - 1]['oversize_split'] |= item['oversize_split']
                         merged.pop(index)
                         continue
-                    if index + 1 < len(merged) and merged[index + 1]['end'] - item['start'] <= settings.size:
+                    if index + 1 < len(merged) and cost(item['start'], merged[index + 1]['end']) <= settings.size:
                         merged[index + 1]['start'] = item['start']
                         merged[index + 1]['oversize_split'] |= item['oversize_split']
                         merged.pop(index)
@@ -132,9 +158,13 @@ def build_chunks(documents, settings: ChunkingSettings, *, model: ModelSettings 
             for item in merged:
                 base_start, stop = item['start'], item['end']
                 start = max(begin, base_start - min(settings.overlap, settings.size - (stop - base_start)))
+                while start < base_start and cost(start, stop) > settings.size:
+                    start += 1
+                if begin < start < base_start:
+                    start = word_start(text, start, base_start)
                 for block in blocks:
                     if block['start'] < start < block['end']:
-                        if block['end'] - block['start'] <= settings.size:
+                        if cost(block['start'], block['end']) <= settings.size:
                             start = min(base_start, block['end'])
                         elif text[start - 1:start] != '\n':
                             next_line = text.find('\n', start, base_start)
@@ -157,8 +187,7 @@ def build_chunks(documents, settings: ChunkingSettings, *, model: ModelSettings 
                 previous_end = stop
     if not chunks:
         raise TechDocQAError("NO_CHUNKS", "No usable chunks were produced.", stage="chunking")
-    if config['embedding_input']:
-        profile = config['embedding_input']
+    if profile:
         overhead = len(profile['prefix'].encode('utf-8')) + profile['special_tokens_reserved']
         if any(len(chunk['text'].encode('utf-8')) + overhead > profile['context_tokens'] for chunk in chunks):
             raise TechDocQAError('EMBEDDING_INPUT_LIMIT', 'A chunk exceeds the embedding input bound.', stage='chunking')

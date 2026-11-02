@@ -1,8 +1,8 @@
 # Reference corpus
 
-Phase 4 update: the selected versions are now `chunked`; the frozen source hashes and evaluation selection remain unchanged. The public reference produces **1,609** chunks; private DDIA adds **3,934**. The verifier accepts later successful document stages. See [Phase 4](../docs/PHASE_4_STATUS.md) for the explicit CLI command, active chunk checks and model-input bound.
+Phase 4 update: the selected versions are now `chunked`; source bytes and the evaluation selection are unchanged. The public reference produces **816** chunks; private DDIA adds **1,919**. The verifier accepts later successful document stages. See [Phase 4](../docs/PHASE_4_STATUS.md) for the explicit CLI command, active chunk checks and model-input bound.
 
-`corpus_manifest.json` freezes `techdocqa-reference-2026-10-24-v1`. It is a reviewed projection of the existing SQLite registry: source keys, IDs, source/normalized hashes, URLs, licenses, review limitations and relative paths. `config/default.toml` remains the approved HTML acquisition catalog. The manifest defines the evaluation selection; not every active registry document belongs to it.
+`corpus_manifest.json` freezes `techdocqa-reference-2026-10-24-v2`; version 2 restores one table value in one PDF's normalized text. It is a reviewed projection of the existing SQLite registry: source keys, IDs, source/normalized hashes, URLs, licenses, review limitations and relative paths. `config/default.toml` remains the approved HTML acquisition catalog. The manifest defines the evaluation selection; not every active registry document belongs to it.
 
 The public reference contains **20 documents, 1,513,828 bytes, four technologies**: three Markdown, 13 HTML, three text-based PDF chapter excerpts and one TXT. The existing DDIA Markdown is an excluded **private supplement**, giving 21 local documents, 2,700,598 bytes and five domains. DDIA permissions and conversion fidelity are unverified. The public selection meets the numeric format/size/technology and public-source requirements without DDIA. Phase 4 measures 1,609 public-reference chunks.
 

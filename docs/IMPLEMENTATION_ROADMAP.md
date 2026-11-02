@@ -1,6 +1,6 @@
 # TechDocQA implementation roadmap
 
-Phase 4 checkpoint 2026-10-24: [segmentation/chunking evidence](PHASE_4_STATUS.md) records the implemented offline chunk layer, 1,609 public-reference chunks, explicit character fallback and the verified local Ollama embedding input profile. Index-dependent acceptance remains Phase 5. The phase plans and earlier checkpoints below remain historical.
+Phase 4 checkpoint 2026-10-24: [segmentation/chunking evidence](PHASE_4_STATUS.md) records the implemented offline chunk layer, 816 public-reference chunks, explicit character fallback and the verified local Ollama embedding input profile. Index-dependent acceptance remains Phase 5. The phase plans and earlier checkpoints below remain historical.
 
 Corpus update 2026-10-24: [reference-corpus evidence](REFERENCE_CORPUS_STATUS.md) now covers 20 frozen public documents plus one private DDIA supplement, all successfully processed. The numeric format/size/technology selection gate is satisfied; DDIA permissions remain unverified and it is excluded from the public reference. Hardware, budget, human benchmark review, model selection and Phase 4 onward remain separate gates. Earlier zero-corpus statements below are historical.
 

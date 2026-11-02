@@ -1,14 +1,14 @@
 # TechDocQA Software Design Document
 
-Status: proposed, 2026-10-09. Primary source: [TechDocQA_Requirements_v2.md](../TechDocQA_Requirements_v2.md), whose contents identify **Revision 3**. [Traceability](requirements_traceability.md) preserves all original FR titles, priorities, dependencies and acceptance criteria. [Decisions](DECISIONS.md) distinguishes engineering proposals and unresolved questions from source requirements. No implementation or measured performance is claimed.
+Status: proposed, 2026-10-09. Primary source: [TechDocQA_Requirements_v2.md](../TechDocQA_Requirements_v2.md), whose contents identify **Revision 3**. [Traceability](requirements_traceability.md) preserves all original FR titles, priorities, dependencies and acceptance criteria. [Decisions](DECISIONS.md) distinguishes engineering proposals and unresolved questions from source requirements. Sections marked proposed remain later work; the phase status documents hold implemented behavior and measured evidence.
 
-Current checkpoint, 2026-10-21: Phase 2 local registration is preserved. [Phase 3A](PHASE_3A_STATUS.md) adds approved finite online HTML fetches, isolated LangChain extraction, content-addressed snapshots and URL/retrieval provenance through the existing registry. [Phase 2 contracts](DECISIONS.md#implemented-phase-2-contracts-2026-10-21) still govern local keys and provisional eligibility; [online contracts](DECISIONS.md#phase-3a-online-contracts-2026-10-21) document the additive JSON/API extension without a SQL migration. Local framework parsing, normalization/finalized versioning, splitting/indexing/retrieval/QA/evaluation remain future work; models remain deferred.
+Current checkpoint, 2026-11-02: roadmap Phases 1-4 and the selected Phase 3A URL slice are implemented: registration and local safety ([Phase 2](PHASE_2_STATUS.md)), controlled online HTML ([Phase 3A](PHASE_3A_STATUS.md)), parsing, normalization and finalized versions ([Phase 3B](PHASE_3B_STATUS.md)), and segmentation and chunking ([Phase 4](PHASE_4_STATUS.md)). Embeddings, indexes, retrieval, QA and evaluation remain future work. Implemented contracts are in [DECISIONS](DECISIONS.md) and take precedence over historical proposal wording here.
 
 ## 1. Overview and scope
 
-TechDocQA answers English software/data engineering questions from a small, frozen technical-document corpus with source citations and refusal when evidence is inadequate. The deliverable is a portfolio/course-quality Python CLI application, developed incrementally under an approved plan. LangChain is proposed; OpenAI and Ollama are configuration-selected providers.
+TechDocQA answers English software/data engineering questions from a small, frozen technical-document corpus with source citations and refusal when evidence is inadequate. The deliverable is a portfolio/course-quality Python CLI application, developed incrementally under an approved plan. LangChain is selected; OpenAI and Ollama are configuration-selected providers.
 
-In scope: local PDF/HTML/Markdown/TXT ingestion, normalization, provenance, chunking, embeddings, independent BM25/vector search, grounded QA, evaluation, withdrawal/deletion and local safety. P1 adds full NLP, hybrid RRF, optional reranking and full evaluation/provider switching. P2 URL ingestion, web UI, cross-version embedding reuse and FR-24 remain optional. OCR, multilingual support, multi-turn chat, authentication, fine-tuning, table/image understanding, web-scale/high-availability infrastructure and version restoration remain out of scope per source section 1.4.
+In scope: local PDF/HTML/Markdown/TXT ingestion, normalization, provenance, chunking, embeddings, independent BM25/vector search, grounded QA, evaluation, withdrawal/deletion and local safety. P1 adds full NLP, hybrid RRF, optional reranking and full evaluation/provider switching. P2 URL ingestion (a controlled slice exists from Phase 3A), web UI, cross-version embedding reuse and FR-24 remain optional. OCR, multilingual support, multi-turn chat, authentication, fine-tuning, table/image understanding, web-scale/high-availability infrastructure and version restoration remain out of scope per source section 1.4.
 
 ## 2. Requirements and constraints
 
@@ -44,7 +44,7 @@ All FR-01 through FR-24 are mapped in section 17; original pass/fail criteria ar
 | NFR-10 | Automated AC tests where practical; offline model mocks plus clearly identified real/human gates. |
 | NFR-11 | Separate replaceable components using framework abstractions. |
 
-NFR targets are initial source values pending reference-machine measurement. No default is weakened here. Budget, hardware, exact models and corpus remain unset.
+NFR targets are initial source values pending reference-machine measurement. No default is weakened here. The local models and frozen corpus are selected ([Phase 4](PHASE_4_STATUS.md)); budget and the reference-hardware targets remain unset.
 
 ## 3. Proposed architecture
 
@@ -112,7 +112,7 @@ Phase 3B update (2026-10-22): the [implemented normalization/finalization contra
 
 Implemented Phase 2 tables are `documents`, `registrations`, `runs`, `attempts` and `events`. Registrations reserve a provisional `version_id`, retain raw hashes/metadata and predecessor/byte-duplicate relationships, and keep `content_hash=null`, `finalized=false`, `is_active=false`. No text body or disk snapshot is stored by this phase. Phase 3 must snapshot or verify bytes before framework loading and finalize normalized versions; chunk/embedding/entity/config tables remain unimplemented. Public records omit private paths and include sanitized source URL/license metadata. The later target below is not a claim that those tables or snapshots exist.
 
-Proposed SQLite entities: documents/source keys; immutable versions; ingestion attempts/runs; status history/failures/decisions; chunk occurrences; embedding keys/profile metadata; occurrence-to-embedding/index associations; P1 entities/keyphrases/category assignments; retrieval configurations/calibration run references. These are table responsibilities, not a mandatory ORM model hierarchy.
+Proposed SQLite entities: documents/source keys; immutable versions; ingestion attempts/runs; status history/failures/decisions; chunk occurrences; embedding keys/profile metadata; occurrence-to-embedding/index associations; P1 entities/keyphrases/category assignments; retrieval configurations/calibration run references. These are table responsibilities, not a mandatory ORM model hierarchy. As implemented through Phase 4, chunk occurrences and sentence spans are immutable JSON artifacts referenced from registry metadata, not SQLite tables; schema version 1 is unchanged.
 
 Retain required metadata and optional null/default fields exactly from FR-02. Title precedence is user > format title > filename. Store original bytes, extracted and normalized text per version in local snapshots so registry/index rebuilds do not require mutable original files. This snapshot choice is an engineering proposal supporting reproducibility and provenance. Manifest records both raw_hash and normalized content_hash, clarifying byte integrity versus source definition of content_hash.
 
@@ -120,7 +120,7 @@ Framework Documents retain full metadata; vector payloads use scalar values only
 
 ## 7. Chunking and provenance
 
-Use framework recursive and Markdown heading-aware splitters with defaults size=1000, overlap=150, minimum=100 characters. Prefer paragraph then sentence/line then word boundaries. Preserve fitting code blocks, line-split oversized blocks and flag oversize_split. Size must always meet the actual embedding input limit; token counting/fallback and oversized lines need an explicit policy. Merge tiny chunks without crossing a provenance boundary or violating limits, pending Q-09.
+Use the framework recursive splitter inside heading and page ranges, with defaults size=1000, overlap=150, minimum=100 characters. Prefer paragraph then line then sentence then word boundaries; overlap begins at a word boundary. Preserve fitting code blocks, line-split oversized blocks and flag oversize_split. Every chunk meets both the configured character size and a conservative UTF-8 byte bound on the embedding input (tokens never outnumber bytes for the supported tokenizers), so ASCII text keeps the full configured size. An oversized single line splits at characters with the same flag. Merge tiny chunks without crossing a provenance boundary or violating limits, recording `minimum_exception` otherwise (Q-09).
 
 Store chunk_id, document_id, version_id, chunk_index, section_path, PDF page, size/unit, text and chunking_config_id. Retain normalized-text spans and extracted-text/page mappings as proposed provenance details; sentence/entity offsets need Q-11 convention. Keep distinct occurrence identity even for repeated text. The source-defined chunk_key remains SHA-256(chunk_text) + chunking_config_id + embedding_model_id; use unambiguous serialization without changing its semantics. It is not sufficient alone to represent multiple source occurrences (Q-03). Resolve storage/count/delete semantics before indexing.
 
@@ -128,7 +128,7 @@ Store chunk_id, document_id, version_id, chunk_index, section_path, PDF page, si
 
 Configuration holds independent chat and embedding profiles, provider/model identifier/revision when available, dimension, normalization, batch size, timeout, input/context limits and tokenizer identity/version. Proposed factory constructs framework embedding/chat objects. OpenAI keys are environment-only; Ollama uses configured local base URL/model. A fully local profile uses local embeddings, chat and any enabled reranker/judge.
 
-Validate vectors for dimension, finite elements and nonzero norm before storing. Reuse identical chunk_key embeddings within approved identity semantics; repeat processing makes zero embedding calls for unchanged eligible artifacts. Record MODEL_CHANGED/CONTENT_CHANGED and paid token/request counts. Model/dimension changes require separate collection and rebuild. Provider-client transient retries are P0 FR-11 behavior; FR-24 adds optional health/manual recovery visibility. No model is selected or downloaded by this plan.
+Validate vectors for dimension, finite elements and nonzero norm before storing. Reuse identical chunk_key embeddings within approved identity semantics; repeat processing makes zero embedding calls for unchanged eligible artifacts. Record MODEL_CHANGED/CONTENT_CHANGED and paid token/request counts. Model/dimension changes require separate collection and rebuild. Provider-client transient retries are P0 FR-11 behavior; FR-24 adds optional health/manual recovery visibility. The selected models and their verified metadata are recorded in [Phase 4](PHASE_4_STATUS.md); no inference has run.
 
 ## 9. Vector and lexical retrieval
 
@@ -174,19 +174,19 @@ Unit tests use fake embeddings/chat/reranker and synthetic format fixtures. Inte
 
 Treat source/query/model output as untrusted. Enforce resolved allowlisted paths including traversal/symlink escapes, format sniffing, size/page/time bounds and archive rejection. Configuration validation checks positive limits, overlap<chunk_size, permissible units/model windows and explicit profile values. Use generated test secrets; scan output/logs/repository without committing literal secrets. Redact credentials in URLs, exception text and configuration before output. Prompt instructions mitigate injection; no tools/output execution further limits effects, without claiming a guarantee.
 
-If P2 URL ingestion is later authorized, validate schemes and resolved destination IPs including redirects, block loopback/private/link-local/cloud-metadata addresses, and bound redirects/time/bytes. Fetching docs is not part of current work. OpenAI profile documentation must state text/questions sent externally; local mode uses only local providers. Raw snapshot/corpus access remains single-user local filesystem scope.
+Controlled URL ingestion ([Phase 3A](PHASE_3A_STATUS.md)) validates schemes and resolved destination IPs including redirects, blocks loopback/private/link-local/cloud-metadata addresses, and bounds redirects/time/bytes. OpenAI profile documentation must state text/questions sent externally; local mode uses only local providers. Raw snapshot/corpus access remains single-user local filesystem scope.
 
 ## 16. Deployment and dependencies
 
-Propose Python 3.11+ (subject to dependency/platform validation), src package, virtualenv and pip from a constrained pyproject plus exact requirements.lock.txt. Use minimal LangChain integrations, Pydantic, local Chroma and parsing/BM25 prerequisites, with pytest as development dependency. P1 NLP/reranker packages are optional extras introduced only when needed. No pins are invented before compatibility is verified. Current inspected PATH points to Python 3.9, so runtime selection is an explicit phase-1 gate.
+Propose Python 3.11+ (subject to dependency/platform validation), src package, virtualenv and pip from a constrained pyproject plus exact requirements.lock.txt. Use minimal LangChain integrations, Pydantic, local Chroma and parsing/BM25 prerequisites, with pytest as development dependency. P1 NLP/reranker packages are optional extras introduced only when needed. No pins are invented before compatibility is verified. The verified runtime is Python 3.13.3 in a virtualenv; `pyproject.toml` allows >=3.11,<3.14.
 
-Deploy the CLI on one laptop-class machine; local files/SQLite/Chroma and optional Ollama service. Record CPU/RAM/GPU and model artifacts, then measure source NFR targets. README/deployment documentation must cover clean setup, model provisioning later, storage paths, rebuilding, withdrawal/deletion and privacy/cost. No container orchestration or API endpoints. Dedicated project Git initialization is pending approval because current root is user home.
+Deploy the CLI on one laptop-class machine; local files/SQLite/Chroma and optional Ollama service. Record CPU/RAM/GPU and model artifacts, then measure source NFR targets. README/deployment documentation must cover clean setup, model provisioning later, storage paths, rebuilding, withdrawal/deletion and privacy/cost. No container orchestration or API endpoints. The project has its own Git repository.
 
 ## 17. Requirement-to-component traceability
 
 | FR | Component responsibility | Roadmap phase |
 |---|---|---|
-| FR-01 | ingestion/safety/loaders, CLI | 2; URL 12 |
+| FR-01 | ingestion/safety/loaders, CLI | 2; URL 3A |
 | FR-02 | registry/schemas, metadata projection | 2–5 |
 | FR-03 | framework loaders, parser fixtures | 3 |
 | FR-04 | normalization/snapshots | 3 |
@@ -206,13 +206,13 @@ Deploy the CLI on one laptop-class machine; local files/SQLite/Chroma and option
 | FR-18 | calibrated sufficiency/refusal | 8 |
 | FR-19 | metrics/runner/calibration/report | smoke 6,8; full 10 |
 | FR-20 | registry run/status/error history | 2–5 |
-| FR-21 | registry/index withdrawal/deletion | 5,8 |
+| FR-21 | registry/index withdrawal/deletion | 5,6,8 |
 | FR-22 | CLI/schemas, provider-switch demo | incremental 2–8; demo 10; UI 12 |
-| FR-23 | input limits/path/secrets, untrusted prompt | 2–3,7; URL 12 |
+| FR-23 | input limits/path/secrets, untrusted prompt | 2–3,7; URL 3A |
 | FR-24 | CLI recovery/check/structured logs | 12 |
 
-All are planned/not implemented. Early CLI/FR-23 slices are explicitly incomplete until QA dependencies land. Full original dependencies and acceptance coverage remain in traceability.
+Rows through roadmap Phase 4 and the 3A URL slice are implemented to the limits in their status documents; later phases are planned. Early CLI/FR-23 slices are explicitly incomplete until QA dependencies land. Full original dependencies and acceptance coverage remain in traceability.
 
 ## 18. Decisions, trade-offs and unresolved questions
 
-Use [DECISIONS.md](DECISIONS.md) D-01 through D-15 and Q-01 through Q-16 as the approval record. The highest-risk gates are active status versus processing state, occurrence identity versus shared chunk_key, transactional visibility, source identity, mode-specific evidence scales, required response fields and evaluation labeling semantics. P0 entity-filter support can use registry memberships tested with seeded verified associations; automatic entity extraction remains P1, and absent verified memberships produce no matches (Q-16 proposal). Multi-category filtering must match approved membership semantics. Local Chroma/SQLite favors simplicity but demands reconciliation tests; framework-first integrations reduce code but still need preservation/filter/score acceptance checks. Exact versions, models, hardware, corpus/license selection, reviewer and budget remain unverified. Source priorities and targets are retained while these questions are resolved.
+Use [DECISIONS.md](DECISIONS.md) D-01 through D-15 and Q-01 through Q-16 as the approval record. The highest-risk gates are active status versus processing state, occurrence identity versus shared chunk_key, transactional visibility, source identity, mode-specific evidence scales, required response fields and evaluation labeling semantics. P0 entity-filter support can use registry memberships tested with seeded verified associations; automatic entity extraction remains P1, and absent verified memberships produce no matches (Q-16 proposal). Multi-category filtering must match approved membership semantics. Local Chroma/SQLite favors simplicity but demands reconciliation tests; framework-first integrations reduce code but still need preservation/filter/score acceptance checks. Exact provider token counts, embedding and generation quality, hardware, reviewer and budget remain unverified. Source priorities and targets are retained while these questions are resolved.
