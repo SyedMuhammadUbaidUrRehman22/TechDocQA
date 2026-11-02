@@ -1,17 +1,102 @@
 # TechDocQA
-TechDocQA is a domain-specific RAG project for answering software and data engineering questions from technical documentation with source citations. The planned system uses LangChain, semantic search, BM25 and NLP.
+TechDocQA is a domain-specific RAG project for answering software and data engineering questions from technical documentation with source citations. It uses LangChain, local embeddings, a persisted Chroma index and BM25 search. Answer generation with citations and NLP enrichment are planned.
 
 ## Current status
 
-Phase 4 adds offline sentence spans and LangChain chunks with source, heading, page and offset provenance. `ingest` registers, `process` normalizes/finalizes, and explicit `chunk` runs atomically activate a verified chunk artifact. The 20-document public reference has 816 chunks; the private DDIA supplement adds 1,919. See [Phase 4 evidence and limits](docs/PHASE_4_STATUS.md) and the earlier [Phase 3B checkpoint](docs/PHASE_3B_STATUS.md). Embeddings, indexes, retrieval and answer generation remain Phase 5 onward.
+Phases 1-5 are implemented. You can ingest local files and approved web pages, normalize and chunk them, build a local index, search it by BM25 or vector similarity, and withdraw or delete documents. **TechDocQA cannot answer questions yet:** `ask` and `eval` arrive in later phases.
 
-The selected local models are Ollama `qwen3:1.7b` and `nomic-embed-text:latest`. Installed metadata verifies the embedding model's BERT tokenizer family and 2,048-token input limit; its advertised `num_ctx=8192` does not override the API's metadata clamp. Exact provider token counting is unavailable, so chunks use recorded character counting plus a conservative UTF-8 bound: at most 1000 characters and 2,029 bytes, overlap 150, minimum 100. The generation tokenizer is independent. Offline tests and chunking never call a provider. OpenAI chunking profiles are accepted with `embedding_tokenizer = "tiktoken"` and a context window; the OpenAI provider integration remains later work.
+All 2,735 chunks are indexed: 816 from the 20-document public reference and 1,919 from the private DDIA supplement. Results survive a restart and a full rebuild unchanged. Two targets are not met: a query built from a chunk's sentence finds that chunk in the top 3 only 124 of 152 times on the real corpus (AC-12.1), and warm vector search has a p95 of 1.377 s against a 1 s target (NFR-02). See the [Phase 5 report](docs/PHASE_5_STATUS.md).
 
-## Reference corpus
+The selected local models are Ollama `qwen3:1.7b` and `nomic-embed-text:latest`. Installed metadata verifies the embedding model's BERT tokenizer family and 2,048-token input limit; its advertised `num_ctx=8192` does not override the API's metadata clamp. Exact provider token counting is unavailable, so chunks use recorded character counting plus a conservative UTF-8 bound: at most 1000 characters and 2,029 bytes, overlap 150, minimum 100. The generation tokenizer is independent. Offline tests and chunking never call a provider; embedding runs through local Ollama. OpenAI chunking profiles are accepted with `embedding_tokenizer = "tiktoken"` and a context window, but OpenAI embedding and generation are not implemented yet.
+
+**Jump to:** [Pipeline](#how-it-works) · [Search](#which-search-sees-what) · [Progress](#progress) · [Results](#measured-results) · [Commands](#command-guide)
+
+Select any section below to expand it.
+
+## How it works
+
+```mermaid
+flowchart LR
+  A[Local files<br/>approved web pages] -->|ingest| B[Registered]
+  B -->|process| C[Normalized<br/>active version]
+  C -->|chunk| D[Chunked]
+  D -->|index| E[Embedded<br/>and indexed]
+  D -->|search --mode bm25| F[BM25 results]
+  E -->|search --mode vector| G[Vector results]
+  F -.-> H[Answers with citations<br/>planned]
+  G -.-> H
+  classDef planned stroke-dasharray: 5 5
+  class H planned
+```
+
+The SQLite registry decides what may be returned on every search. The BM25 and Chroma indexes are derived from it and can be rebuilt.
+
+## Which search sees what
+
+```mermaid
+stateDiagram-v2
+  direction LR
+  Chunked --> Indexed: index
+  Indexed --> Chunked: chunk with new settings
+  Chunked --> Withdrawn: withdraw
+  Indexed --> Withdrawn: withdraw
+  Withdrawn --> Chunked: re-ingest
+  Indexed --> Superseded: changed content processed
+  Chunked --> Superseded: changed content processed
+  Withdrawn --> Deleted: delete
+  Indexed --> Deleted: delete
+  Chunked --> Deleted: delete
+  Deleted --> [*]
+```
+
+| Version state | BM25 | Vector |
+|---|---|---|
+| Chunked | ✅ | ❌ until `index` runs |
+| Indexed | ✅ | ✅ |
+| Withdrawn, superseded or deleted | ❌ | ❌ |
+
+## Progress
+
+| Phase | Scope | Status |
+|---|---|---|
+| 1-3B | Setup, registration, online HTML, normalization | ✅ Done |
+| 4 | [Segmentation and chunking](docs/PHASE_4_STATUS.md) | ✅ Done |
+| 5 | [Search and document lifecycle](docs/PHASE_5_STATUS.md) | ✅ Built, 2 targets open |
+| 6 | Smoke benchmark and retrieval metrics | ⏭️ Next, needs a second reviewer |
+| 7-8 | Answers, citations and refusal | ⬜ Planned |
+| 9-10 | NLP enrichment, hybrid search, reranking | ⬜ Planned |
+| 11-12 | Operational verification, optional extras | ⬜ Planned |
+
+## Measured results
+
+| Check on the real corpus | Target | Result | |
+|---|---|---|---|
+| Top-5 after restart and rebuild | Identical | Identical | ✅ |
+| Model calls on a repeat `index` or rebuild | 0 | 0 | ✅ |
+| Technical identifiers at rank 1 | All tested | 8 of 8 | ✅ |
+| BM25 warm p95 | At most 1 s | 0.138 s | ✅ |
+| Vector warm p95 | At most 1 s | 1.377 s | ❌ |
+| Sentence query finds its chunk in the top 3 | All | 124 of 152 | ❌ |
+
+```mermaid
+pie showData title Chunks indexed
+  "Public reference" : 816
+  "Private DDIA supplement" : 1919
+```
+
+## Command guide
+
+<a id="reference-corpus"></a>
+<details>
+<summary><strong>Reference corpus</strong></summary>
 
 The [2026-10-24 corpus report](docs/REFERENCE_CORPUS_STATUS.md) records 20 frozen public/openly licensed documents plus the existing private DDIA supplement: 21 documents, 2,700,598 bytes, five domains, four Markdown, 13 HTML, three text-based PDF excerpts and one TXT. Every selected version is normalized, finalized and active. The public selection meets the format/size/domain requirements without relying on DDIA's unverified permissions. See the [manifest](datasets/corpus_manifest.json) and [reproduction/verification instructions](datasets/README.md). Source material stays under ignored `data/`; the manifest contains provenance and hashes only.
 
-## Offline chunking
+</details>
+
+<a id="offline-chunking"></a>
+<details>
+<summary><strong>Offline chunking</strong></summary>
 
 Use explicit version IDs to chunk the frozen public selection, excluding DDIA and the rejected registry candidate:
 
@@ -23,9 +108,13 @@ $referenceVersionIds = @($referenceManifest.documents | Where-Object evaluation_
 .\.venv\Scripts\python.exe datasets/verify_corpus.py
 ```
 
-The private DDIA version was also chunked locally and remains excluded from public evaluation. `chunk` without IDs processes all active finalized nonduplicate registry versions; review selection is expressed by the version IDs. Repeating the same config verifies and skips existing chunks. To change size/overlap/unit, edit TOML or supply the existing `--profile`, then explicitly run `chunk` again. Previous artifacts stay retained, and only the successful new artifact becomes active. No source text is printed by the CLI or sent to a provider.
+The private DDIA version was also chunked locally and remains excluded from public evaluation. `chunk` without IDs processes all active finalized nonduplicate registry versions; review selection is expressed by the version IDs. Repeating the same config verifies and skips existing chunks. To change size/overlap/unit, edit TOML or supply the existing `--profile`, then explicitly run `chunk` again. Previous artifacts stay retained, and only the successful new artifact becomes active. `chunk` prints no source text and sends none to a provider.
 
-## Setup
+</details>
+
+<a id="setup"></a>
+<details open>
+<summary><strong>Setup</strong></summary>
 
 Use Python 3.11–3.13; Windows Python 3.13.3 is the verified development environment. From this repository root in PowerShell:
 
@@ -39,9 +128,13 @@ py -3.13 -m venv .venv
 
 `config-check` validates settings without contacting providers. `config-check --require-models` succeeds for the selected default profile; it verifies selection, not connectivity or model quality. TOML settings are in [config/default.toml](config/default.toml). TECHDOCQA_CHAT_MODEL and TECHDOCQA_EMBEDDING_MODEL override model names. Changing embeddings requires a verified context/tokenizer/digest profile and explicit re-chunking; unsupported profiles fail safely. Relative paths resolve against the base configuration file.
 
-Keep credentials out of TOML, logs and version control. Local runtime data and virtual environments are ignored. Phase 3A uses LangChain's pinned `BSHTMLLoader`, BeautifulSoup, urllib3 and certifi. The archived loader package is a documented maintenance limitation; its network client is never used. Vector, NLP and reranking integrations remain later work.
+Keep credentials out of TOML, logs and version control. Local runtime data and virtual environments are ignored. Phase 3A uses LangChain's pinned `BSHTMLLoader`, BeautifulSoup, urllib3 and certifi. The archived loader package is a documented maintenance limitation; its network client is never used. NLP and reranking integrations remain later work.
 
-## Registration commands
+</details>
+
+<a id="registration-commands"></a>
+<details>
+<summary><strong>Registration commands</strong></summary>
 
 Put permitted local files under `data/corpus`, or configure other allowed directories. Missing input roots are not created by registration. Blank roots are invalid. Paths outside the configured roots, including symlink/junction escapes, are rejected. The default limits are 20 MiB per file, 500 PDF pages and 60 seconds for PDF structural preflight.
 
@@ -61,7 +154,11 @@ An unchanged source reuses its document/version IDs and increments the run's ski
 
 The registry is `data/registry.sqlite3` under the configured data directory. After a crashed registration, the next ingestion marks pending orphan attempts `RUN_INTERRUPTED` and safely reuses already committed registrations. Private paths are omitted from CLI records/errors; source URL credentials/query strings/fragments are removed before persistence. Licensing declarations are retained but not independently verified.
 
-## Controlled online ingestion
+</details>
+
+<a id="controlled-online-ingestion"></a>
+<details>
+<summary><strong>Controlled online ingestion</strong></summary>
 
 The single source catalog is `[[online.sources]]` in [config/default.toml](config/default.toml). Kafka and Airflow are enabled; PostgreSQL, Spark, Redis and Docker are catalogued but disabled. There is no crawling, sitemap expansion, page-link discovery or JavaScript execution. Kafka's redirect-only entry is retained, while its default page is the explicitly configured official 4.3 introduction.
 
@@ -89,7 +186,11 @@ The default suite blocks outbound sockets and sets `TECHDOCQA_OFFLINE=1` for wor
 
 Set `TECHDOCQA_OFFLINE=1` yourself to disable worker fetching outside tests. Live smoke snapshots are temporary ignored test data. No provider key, model or Ollama server is needed.
 
-## Offline normalization and finalization
+</details>
+
+<a id="offline-normalization-and-finalization"></a>
+<details>
+<summary><strong>Offline normalization and finalization</strong></summary>
 
 After local registration or an online fetch/extraction, process the returned provisional version ID, or omit IDs to process the latest candidate of every registered source:
 
@@ -104,11 +205,15 @@ Prose uses LF, Unicode NFC and conservative whitespace cleanup. Headings, paragr
 
 `raw_hash` always hashes original bytes. `content_hash` hashes UTF-8 normalized text (ordered PDF pages joined by two LF characters); metadata is separate. Changed normalized text finalizes the new candidate and supersedes the previous active version atomically. Equivalent normalized text resolves to the existing finalized version; the byte candidate and its source provenance/history stay available without an extra finalized version. Different sources retain distinct identities and authoritative `duplicate_of` links. Failed processing retains the prior active version; the next run recovers interrupted attempts.
 
-`status`/`list` still show the latest requested byte candidate, which can be failed or a nonfinalized duplicate. A duplicate's `processing.resolved_version_id` identifies its finalized content version; `history` exposes all candidates and active flags. `normalized` means eligible for later processing, not indexed/searchable. Finalized files remain private under `data/processing` and local byte snapshots under `data/local`; no document bodies enter SQLite. The schema and dependencies are unchanged. Older application readers cannot read the new metadata fields.
+`status`/`list` still show the latest requested byte candidate, which can be failed or a nonfinalized duplicate. A duplicate's `processing.resolved_version_id` identifies its finalized content version; `history` exposes all candidates and active flags. `normalized` means eligible for later processing, not indexed/searchable. Finalized files remain private under `data/processing` and local byte snapshots under `data/local`; no document bodies enter SQLite. Older application readers cannot read the new metadata fields.
 
-## Indexing and search
+</details>
 
-Requires the local Ollama service for embedding. Run after `chunk`:
+<a id="indexing-and-search"></a>
+<details>
+<summary><strong>Indexing and search</strong></summary>
+
+Requires the local Ollama service with the pinned `nomic-embed-text:latest` for embedding. Run after `chunk`:
 
 ```powershell
 .\.venv\Scripts\techdocqa.exe index --json
@@ -120,9 +225,13 @@ Requires the local Ollama service for embedding. Run after `chunk`:
 
 `index` embeds only chunks without a stored vector, so a repeat run needs no provider. `--rebuild` restores the whole vector index from stored vectors, also with no model call. BM25 needs no provider and serves chunked versions straight away; vector search needs `index` first. Filters are `--document-id`, `--technology`, `--category` and `--entity`. Unfiltered search includes every active document, including any private ones you have indexed. `hybrid` is not implemented yet. After changing the embedding model, run `chunk` and then `index`; each model keeps its own collection.
 
-Everything stays on this machine under the Ollama profile. Known limits and measured results are in the [Phase 5 report](docs/PHASE_5_STATUS.md).
+`search` prints matching chunk text. Everything stays on this machine under the Ollama profile. A one-off CLI search takes about 4 to 5 seconds, including startup. Known limits and measured results are in the [Phase 5 report](docs/PHASE_5_STATUS.md).
 
-## Withdrawing and deleting documents
+</details>
+
+<a id="withdrawing-and-deleting-documents"></a>
+<details>
+<summary><strong>Withdrawing and deleting documents</strong></summary>
 
 ```powershell
 .\.venv\Scripts\techdocqa.exe withdraw doc_ID --reason "License under review"
@@ -130,6 +239,8 @@ Everything stays on this machine under the Ollama profile. Known limits and meas
 ```
 
 `withdraw` removes a document from both searches immediately and keeps its data. Re-ingesting the same content reactivates it; run `index` to return it to vector search. `delete` cannot be undone: it removes the document's registry records, chunks, vectors, index entries and stored snapshots, while keeping anything another source shares. It does not touch your original files or registry backups.
+
+</details>
 
 ## Source and plan
 
@@ -147,9 +258,11 @@ The source filename says v2, but its contents identify **Revision 3**; those con
 - [Phase 3A plan and contract boundaries](docs/PHASE_3A_PLAN.md)
 - [Phase 3A implementation checkpoint](docs/PHASE_3A_STATUS.md)
 - [Phase 3B implementation checkpoint](docs/PHASE_3B_STATUS.md)
+- [Phase 4 implementation checkpoint](docs/PHASE_4_STATUS.md)
+- [Phase 5 implementation checkpoint](docs/PHASE_5_STATUS.md)
 - [Development log](DEVELOPMENT_LOG.md)
 - [LangChain loaders, corpus formats and metadata plan](docs/LANGCHAIN_INGESTION_PLAN.md)
 - [Local development setup](deployment/local_setup.md)
 - [Corpus preparation](datasets/README.md)
 
-The reference corpus is frozen as `techdocqa-reference-2026-10-24-v2` and the local models are selected. Next is Phase 5 lexical and vector retrieval. Hardware, budget and benchmark reviewer remain open.
+The reference corpus is frozen as `techdocqa-reference-2026-10-24-v2` and the local models are selected. Next is Phase 6, the smoke benchmark and retrieval metrics. Hardware, budget and benchmark reviewer remain open.
