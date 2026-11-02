@@ -1,5 +1,9 @@
 # Requirements traceability
 
+## Implemented acceptance slices - Phase 5
+
+2026-11-02: `tests/test_indexing.py` covers AC-11.1-11.4, AC-12.1-12.7 and AC-13.1, 13.2, 13.4 and 13.5 with a counting fake embedder, plus AC-02.5, AC-20.4 and AC-21.2, filters, seeded entity memberships, invalid vectors, provider failure, reactivation, duplicate promotion, shared-file deletion, schema migration and CLI errors. `datasets/verify_index.py` covers the real corpus: AC-02.3, AC-02.5, AC-11.1, AC-11.5, AC-12.1, AC-12.6, AC-12.7 and AC-13.1. AC-13.3 and AC-11.3 were run against an unreachable provider through the CLI. **AC-12.1 on the real corpus is open at 124 of 152.** AC-11.4 used no real second model. AC-21.1 and AC-21.3 wait for Phases 8 and 6. See the [Phase 5 report](PHASE_5_STATUS.md). Original source AC text below is unchanged.
+
 ## Implemented acceptance slices - Phase 4
 
 2026-11-02 review corrections: `tests/test_versioning.py` covers duplicate promotion and status history (FR-05, FR-20.1); `tests/test_normalization.py` covers page furniture and idempotence (AC-04.2, AC-04.3); `tests/test_loaders.py` covers BOM titles, damaged UTF-8 and HTML cleaning (AC-02.4, AC-03.2, AC-03.5); `tests/test_chunking.py` covers sentence and word boundaries and the combined size bound (FR-10).

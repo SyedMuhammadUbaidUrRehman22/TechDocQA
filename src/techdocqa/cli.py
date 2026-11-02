@@ -12,7 +12,7 @@ from techdocqa import __version__
 from techdocqa.errors import TechDocQAError
 from techdocqa.ingestion.pipeline import register_paths
 from techdocqa.registry import Registry
-from techdocqa.schemas import ProcessingStatus, RegistrationMetadata
+from techdocqa.schemas import ProcessingStatus, RegistrationMetadata, SearchFilters, SearchRequest
 from techdocqa.settings import load_settings
 
 
@@ -60,7 +60,23 @@ def make_parser() -> argparse.ArgumentParser:
     processing.add_argument("version_ids", nargs="*")
     chunking = commands.add_parser("chunk", help="offline segmentation/chunking of active finalized nonduplicate versions")
     chunking.add_argument("version_ids", nargs="*")
-    for command in (check, ingest, status, listing, history, processing, chunking):
+    indexing = commands.add_parser("index", help="embed active chunks and update the vector index; unchanged chunks make no model call")
+    indexing.add_argument("version_ids", nargs="*")
+    indexing.add_argument("--rebuild", action="store_true", help="restore the whole vector index from stored embeddings")
+    searching = commands.add_parser("search", help="search active chunks by BM25 or vector similarity")
+    searching.add_argument("query", help="query text; put -- first if it begins with a dash")
+    searching.add_argument("--mode", choices=["bm25", "vector", "hybrid"])
+    searching.add_argument("--top-k", type=int)
+    for field in SearchFilters.model_fields:
+        searching.add_argument("--" + field.replace("_", "-"))
+    withdrawal = commands.add_parser("withdraw", help="remove a document from search immediately; re-ingesting reactivates it")
+    withdrawal.add_argument("document_id")
+    withdrawal.add_argument("--reason", required=True)
+    deletion = commands.add_parser("delete", help="permanently remove a document, its versions, chunks, embeddings and index entries")
+    deletion.add_argument("document_id")
+    deletion.add_argument("--reason", required=True)
+    deletion.add_argument("--yes", action="store_true", help="confirm this cannot be undone")
+    for command in (check, ingest, status, listing, history, processing, chunking, indexing, searching, withdrawal, deletion):
         command.add_argument("--config", type=Path, default=Path("config/default.toml"))
         command.add_argument("--profile", type=Path)
         command.add_argument("--json", action="store_true", default=argparse.SUPPRESS,
@@ -94,6 +110,16 @@ def main(argv: list[str] | None = None) -> int:
                 "provider_connection_checked": False,
             }))
             return 0
+        if args.command == "delete" and not args.yes:
+            raise TechDocQAError("CONFIRMATION_REQUIRED", "Deletion cannot be undone; repeat with --yes to confirm.", stage="arguments")
+        request = None
+        if args.command == "search":
+            try:
+                request = SearchRequest(query=args.query, mode=args.mode or settings.retrieval.mode,
+                    top_k=settings.retrieval.top_k if args.top_k is None else args.top_k,
+                    filters=SearchFilters(**{field: getattr(args, field) for field in SearchFilters.model_fields}))
+            except ValidationError:
+                raise TechDocQAError("INVALID_ARGUMENT", "Query must be 1 to 1000 characters and top-k positive.", stage="arguments") from None
         metadata = None
         if args.command == "ingest":
             try:
@@ -109,6 +135,24 @@ def main(argv: list[str] | None = None) -> int:
                 result = chunk_versions(args.version_ids, settings, registry)
                 emit(result)
                 return 1 if result.run.failed else 0
+            if args.command == "index":
+                from techdocqa.indexing.pipeline import index_versions
+                result = index_versions(args.version_ids, settings, registry, rebuild=args.rebuild)
+                emit(result)
+                return 1 if result.run.failed else 0
+            if args.command == "search":
+                from techdocqa.retrieval.search import search
+                emit(search(request, settings, registry))
+                return 0
+            if args.command == "withdraw":
+                from techdocqa.indexing.lifecycle import withdraw_document
+                emit(withdraw_document(args.document_id, args.reason, registry))
+                return 0
+            if args.command == "delete":
+                from techdocqa.indexing.lifecycle import delete_document
+                result = delete_document(args.document_id, args.reason, settings, registry)
+                emit(result)
+                return 1 if result.warnings else 0
             if args.command == "process":
                 from techdocqa.ingestion.processing import process_versions
                 result = process_versions(args.version_ids, settings, registry)

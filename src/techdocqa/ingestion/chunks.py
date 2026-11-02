@@ -93,6 +93,14 @@ def active_chunks(version_id, settings, registry) -> list[dict]:
     return verify_chunking(record, settings, registry)['chunks'] if record.chunking else []
 
 
+def stored_chunks(record, settings) -> list[dict]:
+    """Search-time read: the hash proves the artifact is the one verified when it was activated."""
+    info = record.chunking
+    raw = read_snapshot(Path(settings.data_directory).resolve(), info.snapshot_path, info.snapshot_hash,
+                        settings.ingestion.max_file_bytes * 8)
+    return json.loads(raw)['chunks']
+
+
 def chunk_versions(version_ids, settings, registry) -> ChunkingBatchResult:
     root = Path(settings.data_directory).resolve()
     config_id, config = effective_config(settings.chunking, settings.model)

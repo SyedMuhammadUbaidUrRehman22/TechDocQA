@@ -1,5 +1,7 @@
 # TechDocQA implementation roadmap
 
+Phase 5 checkpoint 2026-11-02: [search and lifecycle evidence](PHASE_5_STATUS.md) records all 2,735 chunks embedded and indexed with `nomic-embed-text`, restart and rebuild reproducing identical top-5 results, and BM25 working without a provider. AC-12.1 on the real corpus (124 of 152) and the NFR-02 vector target (p95 1.377 s) are open. Next is Phase 6, which needs a second reviewer.
+
 Phase 4 checkpoint 2026-10-24: [segmentation/chunking evidence](PHASE_4_STATUS.md) records the implemented offline chunk layer, 816 public-reference chunks, explicit character fallback and the verified local Ollama embedding input profile. Index-dependent acceptance remains Phase 5. The phase plans and earlier checkpoints below remain historical.
 
 Corpus update 2026-10-24: [reference-corpus evidence](REFERENCE_CORPUS_STATUS.md) now covers 20 frozen public documents plus one private DDIA supplement, all successfully processed. The numeric format/size/technology selection gate is satisfied; DDIA permissions remain unverified and it is excluded from the public reference. Hardware, budget, human benchmark review, model selection and Phase 4 onward remain separate gates. Earlier zero-corpus statements below are historical.
@@ -152,4 +154,4 @@ Phase 3B is the user's name for this remaining Phase 3 work; the original roadma
 
 ## Recommended next action
 
-Next is Phase 5 lexical/vector retrieval and lifecycle work, consuming verified active chunks. Corpus selection and local model installation are recorded; provider generation/embedding quality, indexes, benchmark review and performance gates remain unverified. Do not treat the private DDIA supplement as part of the public reference or silently count it toward the approximate 3,000-chunk target.
+Next is Phase 6, the smoke benchmark and retrieval metrics. It needs a second reviewer for the benchmark labels, and its runs must exclude the private DDIA supplement, which is in the index and competes in unfiltered search. Do not treat DDIA as part of the public reference or silently count it toward the approximate 3,000-chunk target. Generation quality, benchmark review and performance gates remain unverified.

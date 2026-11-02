@@ -17,7 +17,7 @@ from techdocqa.schemas import (
 )
 
 APPLICATION_ID = 0x54445141
-SCHEMA_VERSION = 1
+SCHEMA_VERSION = 2
 SCHEMA = """
 CREATE TABLE documents (
     document_id TEXT PRIMARY KEY,
@@ -88,6 +88,58 @@ CREATE TABLE events (
 );
 CREATE INDEX events_document ON events(document_id,event_id);
 """
+# Additive: stored vectors let the derived vector store be rebuilt without a model.
+SCHEMA_V2 = """
+CREATE TABLE embedding_profiles (
+    profile_id TEXT PRIMARY KEY,
+    provider TEXT NOT NULL,
+    embedding_model_id TEXT NOT NULL,
+    dimension INTEGER NOT NULL CHECK(dimension > 0),
+    normalization TEXT NOT NULL,
+    metric TEXT NOT NULL,
+    collection TEXT NOT NULL,
+    created_at TEXT NOT NULL
+);
+CREATE TABLE embeddings (
+    chunk_key TEXT PRIMARY KEY,
+    profile_id TEXT NOT NULL REFERENCES embedding_profiles(profile_id),
+    text_hash TEXT NOT NULL,
+    vector BLOB NOT NULL,
+    created_at TEXT NOT NULL
+);
+CREATE INDEX embeddings_text ON embeddings(text_hash);
+CREATE TABLE chunk_embeddings (
+    chunk_id TEXT NOT NULL,
+    profile_id TEXT NOT NULL REFERENCES embedding_profiles(profile_id),
+    version_id TEXT NOT NULL REFERENCES registrations(version_id),
+    chunk_key TEXT NOT NULL,
+    chunking_config_id TEXT NOT NULL,
+    status TEXT NOT NULL CHECK(status IN ('embedded','embedding_failed')),
+    reason TEXT,
+    updated_at TEXT NOT NULL,
+    PRIMARY KEY(chunk_id,profile_id)
+);
+CREATE INDEX chunk_embeddings_version ON chunk_embeddings(version_id);
+CREATE INDEX chunk_embeddings_key ON chunk_embeddings(chunk_key);
+CREATE TABLE verified_entities (
+    chunk_id TEXT NOT NULL,
+    version_id TEXT NOT NULL REFERENCES registrations(version_id),
+    entity TEXT NOT NULL,
+    PRIMARY KEY(chunk_id,entity)
+);
+CREATE INDEX verified_entities_entity ON verified_entities(entity);
+"""
+RUN_STARTED = {"normalization": "PROCESSING_RUN_STARTED", "chunking": "CHUNKING_RUN_STARTED", "indexing": "INDEXING_RUN_STARTED"}
+# A version eligible for retrieval; indexing state is checked separately per retriever.
+ELIGIBLE = "r.finalized=1 AND r.is_active=1 AND r.duplicate_of IS NULL"
+SQL_BATCH = 400
+ARTIFACT_FIELDS = {"processing": ("snapshot_path", "extracted_path", "normalized_path", "documents_path"),
+                   "chunking": ("snapshot_path",), "online": ("snapshot_path", "extracted_path", "normalized_path")}
+
+
+def artifact_paths(values: dict) -> set[str]:
+    return {values[section][field] for section, fields in ARTIFACT_FIELDS.items() if values.get(section)
+            for field in fields if values[section].get(field)}
 
 
 def utc_now() -> str:
@@ -122,10 +174,11 @@ class Registry:
                 if version == 0 and app_id == 0:
                     if self.execute("SELECT name FROM sqlite_master WHERE name NOT LIKE 'sqlite_%'").fetchone():
                         raise TechDocQAError("REGISTRY_SCHEMA_MISMATCH", "Registry schema is not recognized.", stage="registry")
-                    for statement in SCHEMA.split(";"):
-                        if statement.strip():
-                            self.execute(statement)
+                    self.apply_schema(SCHEMA + SCHEMA_V2)
                     self.execute(f"PRAGMA application_id={APPLICATION_ID}")
+                    self.execute(f"PRAGMA user_version={SCHEMA_VERSION}")
+                elif version == 1 and app_id == APPLICATION_ID:
+                    self.apply_schema(SCHEMA_V2)
                     self.execute(f"PRAGMA user_version={SCHEMA_VERSION}")
                 elif version != SCHEMA_VERSION or app_id != APPLICATION_ID:
                     raise TechDocQAError("REGISTRY_SCHEMA_MISMATCH", "Registry schema version is unsupported.", stage="registry")
@@ -137,6 +190,11 @@ class Registry:
         except Exception:
             self.close()
             raise
+
+    def apply_schema(self, schema: str):
+        for statement in schema.split(";"):
+            if statement.strip():
+                self.execute(statement)
 
     def __enter__(self):
         return self
@@ -207,9 +265,8 @@ class Registry:
             self.execute("INSERT INTO runs(run_id,status,started_at) VALUES (?,'running',?)", (run_id, utc_now()))
             for index, attempt_id in enumerate(attempts):
                 self.execute("INSERT INTO attempts(attempt_id,run_id,input_index) VALUES (?,?,?)", (attempt_id, run_id, index))
-            if stage in {"normalization", "chunking"}:
-                decision = "CHUNKING_RUN_STARTED" if stage == "chunking" else "PROCESSING_RUN_STARTED"
-                self.event(run_id=run_id, decision=decision, reason="Offline candidate processing.", stage=stage)
+            if stage in RUN_STARTED:
+                self.event(run_id=run_id, decision=RUN_STARTED[stage], reason="Offline candidate processing.", stage=stage)
         return run_id, attempts
 
     def pending_attempt(self, attempt_id: str):
@@ -263,12 +320,18 @@ class Registry:
             deduplicated = bool(deduplicated)
             if existing:
                 version_id, duplicate_of = existing["version_id"], existing["duplicate_of"]
-                decision = "DUPLICATE_SKIPPED" if deduplicated else "RETRY_REGISTERED"
-                reason = "Unchanged bytes; existing registration metadata retained." if deduplicated else "Retry reused the existing byte registration."
+                resolved = json.loads(existing["metadata_json"]).get("processing", {}).get("resolved_version_id")
+                reactivated = self.reactivate(resolved or version_id)
+                decision = "DOCUMENT_REACTIVATED" if reactivated else "DUPLICATE_SKIPPED" if deduplicated else "RETRY_REGISTERED"
+                reason = ("Re-ingesting withdrawn content reactivated it." if reactivated else
+                          "Unchanged bytes; existing registration metadata retained." if deduplicated else "Retry reused the existing byte registration.")
                 if not deduplicated and existing["status"] not in {"failed", "extraction_failed"}:
                     raise TechDocQAError("INVALID_STATE", "This processing state requires the later ingestion pipeline.", document_id=document_id)
                 if not existing["finalized"] and existing["status"] != "normalized":
                     self.execute("UPDATE registrations SET status='registered' WHERE version_id=?", (version_id,))
+                if reactivated:
+                    deduplicated = False
+                    duplicate_of = self.execute("SELECT duplicate_of FROM registrations WHERE version_id=?", (version_id,)).fetchone()[0]
             else:
                 version_id = new_id("ver")
                 match = self.execute("SELECT document_id FROM registrations WHERE raw_hash=? AND document_id<>? ORDER BY ingested_at,version_id LIMIT 1", (source.raw_hash, document_id)).fetchone()
@@ -372,11 +435,13 @@ class Registry:
                     values["title"] = safe_title(processing.original_title)[:1000]
                 if duplicate:
                     self.execute("UPDATE registrations SET status='normalized',metadata_json=? WHERE version_id=?", (json.dumps(values), version_id))
+                    if candidate.processing is None and self.reactivate(resolved):
+                        self.event(run_id=attempt["run_id"], attempt_id=attempt_id, document_id=candidate.document_id,
+                                   version_id=resolved, status=self.get_version(resolved).status, decision="DOCUMENT_REACTIVATED",
+                                   reason="Re-ingesting withdrawn content reactivated it.", stage="normalization")
                 else:
                     # Only a source still serving this content can own it; superseded history cannot.
-                    other = self.execute("""SELECT document_id FROM registrations WHERE content_hash=? AND finalized=1 AND is_active=1
-                                            AND duplicate_of IS NULL AND document_id<>?
-                                            ORDER BY ingested_at,version_id LIMIT 1""", (processing.normalized_hash, candidate.document_id)).fetchone()
+                    other = self.content_owner(processing.normalized_hash, candidate.document_id)
                     previous = self.execute("SELECT version_id FROM registrations WHERE document_id=? AND is_active=1", (candidate.document_id,)).fetchone()
                     self.execute("UPDATE registrations SET is_active=0,status='superseded' WHERE document_id=? AND is_active=1", (candidate.document_id,))
                     if previous:
@@ -385,7 +450,7 @@ class Registry:
                                    reason="A changed normalized version became active.", stage="normalization")
                         self.promote_duplicates(candidate.document_id, processing.normalized_hash, attempt)
                     self.execute("""UPDATE registrations SET status='normalized',finalized=1,is_active=1,content_hash=?,metadata_json=?,duplicate_of=?
-                                    WHERE version_id=?""", (processing.normalized_hash, json.dumps(values), other[0] if other else None, version_id))
+                                    WHERE version_id=?""", (processing.normalized_hash, json.dumps(values), other, version_id))
             target = self.get_version(resolved)
             result = RegistrationResult(document_id=target.document_id, version_id=target.version_id, status=target.status,
                 deduplicated=duplicate, duplicate_of=target.duplicate_of, run_id=attempt["run_id"],
@@ -404,7 +469,23 @@ class Registry:
                        stage="normalization")
         return result
 
-    def promote_duplicates(self, document_id: str, content_hash: str, attempt):
+    def content_owner(self, content_hash: str, document_id: str) -> str | None:
+        row = self.execute("""SELECT document_id FROM registrations WHERE content_hash=? AND finalized=1 AND is_active=1
+                              AND duplicate_of IS NULL AND document_id<>?
+                              ORDER BY ingested_at,version_id LIMIT 1""", (content_hash, document_id)).fetchone()
+        return row[0] if row else None
+
+    def reactivate(self, version_id: str) -> bool:
+        """Caller holds a transaction and logs the outcome. A newer active version keeps precedence over withdrawn content."""
+        row = self.execute("SELECT * FROM registrations WHERE version_id=?", (version_id,)).fetchone()
+        if row is None or row["status"] != "withdrawn" or self.active_version(row["document_id"]):
+            return False
+        status = "chunked" if json.loads(row["metadata_json"]).get("chunking") else "normalized"
+        self.execute("UPDATE registrations SET is_active=1,status=?,duplicate_of=? WHERE version_id=?",
+                     (status, self.content_owner(row["content_hash"], row["document_id"]), version_id))
+        return True
+
+    def promote_duplicates(self, document_id: str, content_hash: str, attempt, *, stage="normalization"):
         """Caller holds a transaction. The earliest copy takes over content its original stopped serving."""
         copies = self.execute("""SELECT version_id,document_id FROM registrations
                                  WHERE duplicate_of=? AND finalized=1 AND is_active=1 AND content_hash<>?
@@ -417,7 +498,7 @@ class Registry:
             self.execute("UPDATE registrations SET duplicate_of=? WHERE version_id=?", (heir["document_id"], copy["version_id"]))
         self.event(run_id=attempt["run_id"], attempt_id=attempt["attempt_id"], document_id=heir["document_id"],
                    version_id=heir["version_id"], decision="DUPLICATE_PROMOTED",
-                   reason="The original source changed; this copy now serves the content.", stage="normalization")
+                   reason="The original source changed; this copy now serves the content.", stage=stage)
 
     def begin_chunking(self, version_id: str, attempt_id: str):
         with self.transaction():
@@ -446,6 +527,173 @@ class Registry:
                 version_id=version_id, status=status, decision='CHUNKING_SKIPPED' if skipped else 'CHUNKS_ACTIVATED',
                 reason=f"Verified {info.chunk_count} chunks for configuration {info.chunking_config_id}; "
                        + ('unchanged artifact reused.' if skipped else 'new artifact activated atomically.'), stage='chunking')
+
+    def eligible_versions(self) -> list[DocumentRecord]:
+        rows = self.execute(f"""SELECT r.*,d.source_key,d.filename FROM registrations r JOIN documents d USING(document_id)
+                                WHERE {ELIGIBLE} AND json_extract(r.metadata_json,'$.chunking') IS NOT NULL
+                                ORDER BY r.document_id""").fetchall()
+        return [self.document_record(row) for row in rows]
+
+    def active_version(self, document_id: str) -> str | None:
+        row = self.execute("SELECT version_id FROM registrations WHERE document_id=? AND is_active=1", (document_id,)).fetchone()
+        return row[0] if row else None
+
+    def entity_chunks(self, entity: str) -> set[str]:
+        rows = self.execute("SELECT chunk_id FROM verified_entities WHERE entity=?", (entity.casefold(),)).fetchall()
+        return {row[0] for row in rows}
+
+    def save_embedding_profile(self, profile: dict):
+        with self.transaction():
+            self.execute("""INSERT OR IGNORE INTO embedding_profiles(profile_id,provider,embedding_model_id,dimension,normalization,metric,collection,created_at)
+                            VALUES (?,?,?,?,?,?,?,?)""", (profile["profile_id"], profile["provider"], profile["embedding_model_id"], profile["dimension"],
+                                                         profile["normalization"], profile["metric"], profile["collection"], utc_now()))
+
+    def stored_keys(self, profile_id: str, keys: list[str]) -> set[str]:
+        found = set()
+        for start in range(0, len(keys), SQL_BATCH):
+            batch = keys[start:start + SQL_BATCH]
+            marks = ",".join("?" * len(batch))
+            found.update(row[0] for row in self.execute(f"SELECT chunk_key FROM embeddings WHERE profile_id=? AND chunk_key IN ({marks})", (profile_id, *batch)).fetchall())
+        return found
+
+    def load_vectors(self, keys: list[str]) -> dict[str, bytes]:
+        vectors = {}
+        unique = list(dict.fromkeys(keys))
+        for start in range(0, len(unique), SQL_BATCH):
+            batch = unique[start:start + SQL_BATCH]
+            marks = ",".join("?" * len(batch))
+            vectors.update((row[0], row[1]) for row in self.execute(f"SELECT chunk_key,vector FROM embeddings WHERE chunk_key IN ({marks})", batch).fetchall())
+        return vectors
+
+    def record_embeddings(self, version_id: str, profile_id: str, rows: list[dict]):
+        """One outcome per chunk occurrence; several occurrences can share one stored vector."""
+        now = utc_now()
+        with self.transaction():
+            for row in rows:
+                chunk = row["chunk"]
+                if row["vector"] is not None:
+                    self.execute("INSERT OR IGNORE INTO embeddings(chunk_key,profile_id,text_hash,vector,created_at) VALUES (?,?,?,?,?)",
+                                 (row["key"], profile_id, chunk["text_hash"], row["vector"], now))
+                self.execute("""INSERT OR REPLACE INTO chunk_embeddings(chunk_id,profile_id,version_id,chunk_key,chunking_config_id,status,reason,updated_at)
+                                VALUES (?,?,?,?,?,?,?,?)""", (chunk["chunk_id"], profile_id, version_id, row["key"], chunk["chunking_config_id"],
+                                                             "embedding_failed" if row["reason"] else "embedded", row["reason"], now))
+
+    def text_embedded_elsewhere(self, profile_id: str, text_hashes: set[str]) -> bool:
+        items = list(text_hashes)
+        for start in range(0, len(items), SQL_BATCH):
+            batch = items[start:start + SQL_BATCH]
+            marks = ",".join("?" * len(batch))
+            if self.execute(f"SELECT 1 FROM embeddings WHERE profile_id<>? AND text_hash IN ({marks}) LIMIT 1", (profile_id, *batch)).fetchone():
+                return True
+        return False
+
+    def document_embedded_before(self, record, profile_id: str) -> bool:
+        return self.execute("""SELECT 1 FROM chunk_embeddings c JOIN registrations r USING(version_id)
+                               WHERE r.document_id=? AND c.version_id<>? AND c.profile_id=? AND c.status='embedded' LIMIT 1""",
+                            (record.document_id, record.version_id, profile_id)).fetchone() is not None
+
+    def indexed_chunk_ids(self, profile_id: str) -> set[str]:
+        rows = self.execute(f"""SELECT c.chunk_id FROM chunk_embeddings c JOIN registrations r USING(version_id)
+                                WHERE c.profile_id=? AND c.status='embedded' AND r.status='indexed' AND {ELIGIBLE}
+                                AND json_extract(r.metadata_json,'$.chunking.chunking_config_id')=c.chunking_config_id""", (profile_id,)).fetchall()
+        return {row[0] for row in rows}
+
+    def indexable(self, version_id: str) -> DocumentRecord:
+        record = self.get_version(version_id)
+        if not record.finalized or not record.is_active or record.duplicate_of or not record.chunking:
+            raise TechDocQAError("INVALID_STATE", "Indexing requires an active chunked nonduplicate version.", stage="indexing", document_id=record.document_id)
+        return record
+
+    def begin_indexing(self, version_id: str, attempt_id: str) -> DocumentRecord:
+        with self.transaction():
+            self.pending_attempt(attempt_id)
+            record = self.indexable(version_id)
+            self.execute("UPDATE attempts SET document_id=?,version_id=? WHERE attempt_id=?", (record.document_id, version_id, attempt_id))
+        return record
+
+    def log_embedding(self, record, attempt_id: str, decision: str, reason: str):
+        with self.transaction():
+            attempt = self.pending_attempt(attempt_id)
+            self.event(run_id=attempt["run_id"], attempt_id=attempt_id, document_id=record.document_id, version_id=record.version_id,
+                       decision=decision, reason=reason, stage="embedding")
+
+    def set_index_status(self, version_id: str, status: str, attempt_id: str):
+        """Records embedded; an already indexed version stays searchable during a rerun."""
+        with self.transaction():
+            attempt = self.pending_attempt(attempt_id)
+            record = self.indexable(version_id)
+            if record.status == "chunked":
+                self.execute("UPDATE registrations SET status=? WHERE version_id=?", (status, version_id))
+                self.event(run_id=attempt["run_id"], attempt_id=attempt_id, document_id=record.document_id, version_id=version_id,
+                           status=status, decision="CHUNKS_EMBEDDED", reason="Every chunk has one valid stored embedding.", stage="embedding")
+
+    def complete_indexing(self, version_id: str, attempt_id: str, *, skipped: bool, entries: int):
+        with self.transaction():
+            attempt = self.pending_attempt(attempt_id)
+            record = self.indexable(version_id)
+            self.execute("UPDATE registrations SET status='indexed' WHERE version_id=?", (version_id,))
+            result = RegistrationResult(document_id=record.document_id, version_id=version_id, status="indexed",
+                deduplicated=skipped, run_id=attempt["run_id"], finalized=True, is_active=True)
+            self.execute("UPDATE attempts SET status=?,result_json=? WHERE attempt_id=?",
+                         ("skipped" if skipped else "processed", result.model_dump_json(), attempt_id))
+            self.event(run_id=attempt["run_id"], attempt_id=attempt_id, document_id=record.document_id, version_id=version_id, status="indexed",
+                       decision="INDEX_SKIPPED" if skipped else "VERSION_INDEXED",
+                       reason="Index entries already current." if skipped else f"{entries} vector entries written.", stage="indexing")
+
+    def withdraw(self, document_id: str, reason: str) -> str:
+        """Takes effect for search as this transaction commits, whatever the derived indexes still hold."""
+        with self.transaction():
+            self.get_document(document_id)
+            version_id = self.active_version(document_id)
+            if version_id is None:
+                raise TechDocQAError("NO_ACTIVE_VERSION", "This document has no active version to withdraw.", stage="lifecycle", document_id=document_id)
+            self.execute("UPDATE registrations SET is_active=0,status='withdrawn' WHERE version_id=?", (version_id,))
+            self.promote_duplicates(document_id, "", {"run_id": None, "attempt_id": None}, stage="lifecycle")
+            self.event(document_id=document_id, version_id=version_id, status="withdrawn",
+                       decision="DOCUMENT_WITHDRAWN", reason=safe_text(reason), stage="lifecycle")
+        return version_id
+
+    def document_collections(self, document_id: str) -> list[str]:
+        rows = self.execute("""SELECT DISTINCT p.collection FROM chunk_embeddings c JOIN embedding_profiles p USING(profile_id)
+                               JOIN registrations r USING(version_id) WHERE r.document_id=? ORDER BY p.collection""", (document_id,)).fetchall()
+        return [row[0] for row in rows]
+
+    def registered_files(self, where: str, parameters=()) -> set[str]:
+        files = set()
+        for row in self.execute(f"SELECT raw_hash,doc_type,metadata_json FROM registrations WHERE {where}", parameters).fetchall():
+            files |= artifact_paths(json.loads(row["metadata_json"])) | {f"local/snapshots/{row['raw_hash']}.{row['doc_type']}"}
+        for row in self.execute(f"SELECT result_json FROM attempts WHERE result_json IS NOT NULL AND {where}", parameters).fetchall():
+            files |= artifact_paths(json.loads(row[0]))
+        return files
+
+    def document_files(self, document_id: str) -> set[str]:
+        return self.registered_files("document_id=?", (document_id,))
+
+    def all_files(self) -> set[str]:
+        return self.registered_files("1=1")
+
+    def delete_document(self, document_id: str, reason: str):
+        """Keeps run counts and one anonymous audit event; everything naming the document goes."""
+        with self.transaction():
+            self.get_document(document_id)
+            versions = "SELECT version_id FROM registrations WHERE document_id=?"
+            keys = [row[0] for row in self.execute(f"SELECT DISTINCT chunk_key FROM chunk_embeddings WHERE version_id IN ({versions})", (document_id,)).fetchall()]
+            self.execute(f"DELETE FROM verified_entities WHERE version_id IN ({versions})", (document_id,))
+            self.execute(f"DELETE FROM chunk_embeddings WHERE version_id IN ({versions})", (document_id,))
+            for start in range(0, len(keys), SQL_BATCH):
+                batch = keys[start:start + SQL_BATCH]
+                marks = ",".join("?" * len(batch))
+                # A vector stays while another source's identical chunk still uses it.
+                self.execute(f"""DELETE FROM embeddings WHERE chunk_key IN ({marks})
+                                 AND chunk_key NOT IN (SELECT chunk_key FROM chunk_embeddings WHERE chunk_key IN ({marks}))""", (*batch, *batch))
+            self.execute(f"DELETE FROM events WHERE document_id=? OR version_id IN ({versions})", (document_id, document_id))
+            self.execute(f"""UPDATE attempts SET document_id=NULL,version_id=NULL,result_json=NULL
+                             WHERE document_id=? OR version_id IN ({versions})""", (document_id, document_id))
+            self.execute("UPDATE registrations SET duplicate_of=NULL WHERE duplicate_of=?", (document_id,))
+            self.execute("UPDATE documents SET current_version_id=NULL WHERE document_id=?", (document_id,))
+            self.execute("DELETE FROM registrations WHERE document_id=?", (document_id,))
+            self.execute("DELETE FROM documents WHERE document_id=?", (document_id,))
+            self.event(decision="DOCUMENT_DELETED", reason=f"{document_id}: {safe_text(reason)}", stage="lifecycle")
 
     def fail_registration(self, version_id: str):
         """Record a later processing failure without superseding another registration."""
@@ -499,7 +747,7 @@ class Registry:
                 error=ErrorDetail.model_validate_json(attempt["error_json"]) if attempt["error_json"] else None,
                 online=OnlineProvenance.model_validate(online_values) if online_values is not None else None,
             ))
-        processing = self.execute("SELECT stage FROM events WHERE run_id=? AND decision IN ('PROCESSING_RUN_STARTED','CHUNKING_RUN_STARTED') LIMIT 1", (run_id,)).fetchone()
+        processing = self.execute("SELECT stage FROM events WHERE run_id=? AND decision IN ('PROCESSING_RUN_STARTED','CHUNKING_RUN_STARTED','INDEXING_RUN_STARTED') LIMIT 1", (run_id,)).fetchone()
         return BatchResult(run=RunSummary(**dict(row), stage=processing[0] if processing else "registration"), outcomes=outcomes)
 
     def document_record(self, row) -> DocumentRecord:
