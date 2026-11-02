@@ -94,6 +94,35 @@ def test_pdf_does_not_remove_repeated_body_or_short_document_lines():
     assert "Header" in normalize_documents([Document(page_content="Header\nBody\nFooter", metadata={"page": 1})])[0].page_content
 
 
+def test_pdf_standalone_number_in_page_body_is_content():
+    text = "SELECT count(*) FROM weather;\ncount\n-----\n46\n(1 row)\nMore body text follows here."
+    assert "\n46\n" in normalize(text, page=1, doc_type="pdf").page_content
+    assert normalize("7\n" + text + "\nPage 8", page=7, doc_type="pdf").page_content == text
+
+
+def test_pdf_header_below_page_number_and_multi_line_furniture_are_removed_idempotently():
+    below = [Document(page_content=f"{i}\nPostgreSQL Manual\nBody {i} one\nBody {i} two\nBody {i} three", metadata={"page": i})
+             for i in range(1, 7)]
+    assert all(doc.page_content == f"Body {i} one\nBody {i} two\nBody {i} three"
+               for i, doc in enumerate(normalize_documents(below), 1))
+    two_lines = [Document(page_content=f"Manual  Title\nChapter One\nBody {i} one\nBody {i} two\nBody {i} three\nFooter", metadata={"page": i})
+                 for i in range(1, 7)]
+    output = normalize_documents(two_lines)
+    assert all("Chapter One" not in doc.page_content and "Footer" not in doc.page_content and "Title" not in doc.page_content for doc in output)
+    assert normalize_documents(output) == output
+
+
+def test_pdf_code_placeholder_lines_are_never_removed_as_furniture():
+    pages = [Document(page_content=f"`shared`\nBody {i} one\nBody {i} two\nBody {i} three", metadata={"page": i}) for i in range(1, 5)]
+    assert all(doc.page_content.startswith("`shared`") for doc in normalize_documents(pages))
+
+
+@pytest.mark.parametrize("metadata", [{"doc_type": "txt"}, {"doc_type": "pdf", "page": 1}])
+def test_hash_lines_are_not_headings_outside_markdown_and_html(metadata):
+    assert normalize("# install the broker first\nrun it\n", **metadata).metadata["headings"] == []
+    assert normalize("# Heading\nbody\n", doc_type="md").metadata["headings"][0]["section_path"] == ["Heading"]
+
+
 def test_hyphenation_uses_document_vocabulary_and_leaves_unknown_compounds():
     result = normalize("consumer uses consum-\ner. key-value and unknown-\nword.")
     assert result.page_content == "consumer uses consumer. key-value and unknown-\nword."

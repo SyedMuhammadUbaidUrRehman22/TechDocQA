@@ -8,14 +8,40 @@ from pathlib import Path
 import re
 from uuid import uuid4
 
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup, NavigableString
 # shortcut: pinned archived framework loader, replace when a maintained HTML integration is selected.
 from langchain_community.document_loaders.html_bs import BSHTMLLoader
 
 from techdocqa.errors import TechDocQAError
-from techdocqa.privacy import safe_text
+from techdocqa.privacy import safe_text, safe_title
 
-EXTRACTION_POLICY = "html-structure-v1"
+EXTRACTION_POLICY = "html-structure-v2"
+CHROME_LABEL = re.compile(r"cookie|banner", re.IGNORECASE)
+CHROME_TAGS = {"div", "p", "ul", "ol", "dialog"}
+CHROME_MAX_CHARACTERS = 1000
+
+
+def is_cookie_or_banner(element) -> bool:
+    """Short notice containers only: a documentation section about cookies or banners is content."""
+    classes = element.get("class") or []
+    if element.name not in CHROME_TAGS or "section" in classes:
+        return False
+    label = " ".join([element.get("id") or "", *classes])
+    return bool(CHROME_LABEL.search(label)) and len(element.get_text(strip=True)) <= CHROME_MAX_CHARACTERS
+
+
+def collapse_heading_whitespace(heading):
+    """Keep source-formatted headings on the one line that heading markers describe."""
+    strings = [item for item in heading.find_all(string=True)
+               if type(item) is NavigableString and not item.find_parent(["code", "pre"])]
+    for index, item in enumerate(strings):
+        # ASCII only: non-breaking spaces are part of the source text.
+        value = re.sub(r"[ \t\r\n\f]+", " ", item)
+        if index == 0:
+            value = value.lstrip(" ")
+        if index == len(strings) - 1:
+            value = value.rstrip(" ")
+        item.replace_with(value)
 
 
 def extract_html(raw: bytes, directory: Path, minimum: int, content_type_header: str = "text/html") -> dict:
@@ -36,10 +62,11 @@ def extract_html(raw: bytes, directory: Path, minimum: int, content_type_header:
     if soup.body is None or soup.find(["p", "pre", "h1", "h2", "article", "main"]) is None:
         raise TechDocQAError("MALFORMED_HTML", "A usable HTML document body is required.", stage="extraction")
     warnings = []
-    titles = soup.find_all("title")
+    # An inline SVG <title> labels an icon, not the page.
+    titles = [item for item in soup.find_all("title") if item.find_parent("svg") is None]
     title = None
     if len(titles) == 1 and not titles[0].find(True):
-        title = safe_text(titles[0].get_text()) or None
+        title = safe_title(titles[0].get_text()) or None
         if title is not None and len(title) > 1000:
             title = None
     if title is None:
@@ -47,7 +74,7 @@ def extract_html(raw: bytes, directory: Path, minimum: int, content_type_header:
     encoding = encoding or soup.original_encoding
     for element in list(soup.select("script, style, nav, header, footer, aside, form, button, [role=navigation], [role=banner], [role=dialog]")):
         element.decompose()
-    for element in list(soup.select('[id*="cookie" i], [class*="cookie" i], [id*="banner" i], [class*="cookie-consent" i]')):
+    for element in soup.find_all(is_cookie_or_banner):
         element.decompose()
     root = soup.find("main") or soup.find("article") or soup.body
     if root is None:
@@ -56,7 +83,10 @@ def extract_html(raw: bytes, directory: Path, minimum: int, content_type_header:
     hierarchy = []
     for heading in root.find_all(re.compile(r"^h[1-6]$")):
         level = int(heading.name[1])
+        collapse_heading_whitespace(heading)
         text = heading.get_text()
+        if not text.strip():
+            continue
         hierarchy = [(depth, value) for depth, value in hierarchy if depth < level]
         hierarchy.append((level, text))
         headings.append({"level": level, "text": safe_text(text),

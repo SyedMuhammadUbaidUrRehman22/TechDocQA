@@ -3,9 +3,9 @@ TechDocQA is a domain-specific RAG project for answering software and data engin
 
 ## Current status
 
-Phase 4 adds offline sentence spans and LangChain chunks with source, heading, page and offset provenance. `ingest` registers, `process` normalizes/finalizes, and explicit `chunk` runs atomically activate a verified chunk artifact. The 20-document public reference has 1,609 chunks; the private DDIA supplement adds 3,934. See [Phase 4 evidence and limits](docs/PHASE_4_STATUS.md) and the earlier [Phase 3B checkpoint](docs/PHASE_3B_STATUS.md). Embeddings, indexes, retrieval and answer generation remain Phase 5 onward.
+Phase 4 adds offline sentence spans and LangChain chunks with source, heading, page and offset provenance. `ingest` registers, `process` normalizes/finalizes, and explicit `chunk` runs atomically activate a verified chunk artifact. The 20-document public reference has 816 chunks; the private DDIA supplement adds 1,919. See [Phase 4 evidence and limits](docs/PHASE_4_STATUS.md) and the earlier [Phase 3B checkpoint](docs/PHASE_3B_STATUS.md). Embeddings, indexes, retrieval and answer generation remain Phase 5 onward.
 
-The selected local models are Ollama `qwen3:1.7b` and `nomic-embed-text:latest`. Installed metadata verifies the embedding model's BERT tokenizer family and 2,048-token input limit; its advertised `num_ctx=8192` does not override the API's metadata clamp. Exact provider token counting is unavailable, so chunks use recorded character counting and a conservative UTF-8 bound: requested size 1000 becomes an effective 507 characters, overlap 150, minimum 100. The generation tokenizer is independent. Offline tests and chunking never call a provider. OpenAI model profiles remain a later integration requirement.
+The selected local models are Ollama `qwen3:1.7b` and `nomic-embed-text:latest`. Installed metadata verifies the embedding model's BERT tokenizer family and 2,048-token input limit; its advertised `num_ctx=8192` does not override the API's metadata clamp. Exact provider token counting is unavailable, so chunks use recorded character counting plus a conservative UTF-8 bound: at most 1000 characters and 2,029 bytes, overlap 150, minimum 100. The generation tokenizer is independent. Offline tests and chunking never call a provider. OpenAI chunking profiles are accepted with `embedding_tokenizer = "tiktoken"` and a context window; the OpenAI provider integration remains later work.
 
 ## Reference corpus
 
@@ -127,4 +127,4 @@ The source filename says v2, but its contents identify **Revision 3**; those con
 - [Local development setup](deployment/local_setup.md)
 - [Corpus preparation](datasets/README.md)
 
-The reference corpus manifest remains draft with zero selected documents, so Phase 1 still has open gates. Online HTML smoke snapshots do not satisfy the 15–30 document, 3–5 technology, <=50 MB or Markdown/PDF/TXT format requirements. Next is Phase 4 segmentation/framework chunking. Hardware, budget, reviewer and model selection remain deferred.
+The reference corpus is frozen as `techdocqa-reference-2026-10-24-v2` and the local models are selected. Next is Phase 5 lexical and vector retrieval. Hardware, budget and benchmark reviewer remain open.

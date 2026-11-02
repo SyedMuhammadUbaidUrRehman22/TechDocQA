@@ -110,6 +110,48 @@ def test_different_sources_identical_normalized_text_keep_identity_and_duplicate
     assert b.duplicate_of == a.document_id and a.is_active and b.is_active
 
 
+def test_changed_original_hands_content_to_earliest_copy_and_later_copies_follow(corpus, settings, registry, fast_worker):
+    original = register(corpus / "one.txt", settings, registry)
+    first = register(corpus / "two.txt", settings, registry)
+    second = register(corpus / "three.txt", settings, registry)
+    process_versions([original.version_id, first.version_id, second.version_id], settings, registry)
+    assert registry.get_version(second.version_id).duplicate_of == original.document_id
+    changed = register(corpus / "one.txt", settings, registry, (TEXT + "Changed content.").encode())
+    process_versions([changed.version_id], settings, registry)
+    assert registry.get_version(first.version_id).duplicate_of is None
+    assert registry.get_version(second.version_id).duplicate_of == first.document_id
+    assert registry.get_version(changed.version_id).duplicate_of is None
+    decisions = [event["decision"] for event in registry.history(first.document_id)["events"]]
+    assert "DUPLICATE_PROMOTED" in decisions
+
+
+def test_new_source_is_not_a_duplicate_of_superseded_or_copied_content(corpus, settings, registry, fast_worker):
+    original = register(corpus / "one.txt", settings, registry)
+    process_versions([original.version_id], settings, registry)
+    changed = register(corpus / "one.txt", settings, registry, (TEXT + "Changed content.").encode())
+    process_versions([changed.version_id], settings, registry)
+    late = register(corpus / "two.txt", settings, registry)
+    process_versions([late.version_id], settings, registry)
+    assert registry.get_version(late.version_id).duplicate_of is None
+    copy = register(corpus / "three.txt", settings, registry)
+    process_versions([copy.version_id], settings, registry)
+    assert registry.get_version(copy.version_id).duplicate_of == late.document_id
+
+
+def test_status_history_records_supersession_start_and_failure(corpus, settings, registry, fast_worker):
+    first = register(corpus / "one.txt", settings, registry)
+    process_versions([first.version_id], settings, registry)
+    second = register(corpus / "one.txt", settings, registry, (TEXT + "Changed content.").encode())
+    process_versions([second.version_id], settings, registry)
+    events = registry.history(first.document_id)["events"]
+    assert any(e["version_id"] == first.version_id and e["status"] == "superseded" and e["timestamp"] for e in events)
+    assert any(e["version_id"] == second.version_id and e["status"] == "extracting" for e in events)
+    bad = register(corpus / "one.txt", settings, registry, b"   \r\n")
+    process_versions([bad.version_id], settings, registry)
+    events = registry.history(first.document_id)["events"]
+    assert any(e["version_id"] == bad.version_id and e["status"] == "extraction_failed" for e in events)
+
+
 @pytest.mark.parametrize("bad,code,status", [(b"   \r\n", "NO_TEXT_EXTRACTED", "extraction_failed"),
     ((TEXT + "\ufffd").encode(), "INVALID_EXTRACTED_CONTENT", "failed")])
 def test_failed_candidate_does_not_replace_valid_version(bad, code, status, corpus, settings, registry, fast_worker):

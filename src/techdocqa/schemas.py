@@ -90,8 +90,8 @@ class RegistrationMetadata(StrictModel):
     @field_validator("title", "technology", "category", "version_label", "license")
     @classmethod
     def normalize_metadata(cls, value: str | None) -> str | None:
-        from techdocqa.privacy import safe_text
-        return (safe_text(value) or None) if value is not None else None
+        from techdocqa.privacy import safe_title
+        return (safe_title(value) or None) if value is not None else None
 
     @field_validator("language")
     @classmethod

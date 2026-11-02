@@ -73,6 +73,31 @@ def test_two_valid_one_invalid_directory(corpus, settings, registry):
     assert (result.run.processed, result.run.failed) == (2, 1)
 
 
+def test_undecodable_filename_fails_alone_and_batch_continues(corpus, settings, registry, monkeypatch):
+    from techdocqa.ingestion import pipeline
+    from techdocqa.ingestion.safety import ValidatedSource
+    good = corpus / "good.md"
+    good.write_text("Valid document text.", encoding="utf-8")
+    original = pipeline.validate_file
+    def surrogate_name(path, current):
+        if path.name == "bad.md":
+            return ValidatedSource(path.with_name("bad\udc80.md"), "a" * 64, "md", 10)
+        return original(path, current)
+    monkeypatch.setattr(pipeline, "validate_file", surrogate_name)
+    result = register_paths([corpus / "bad.md", good], settings, registry)
+    assert (result.run.processed, result.run.failed) == (1, 1)
+    assert result.outcomes[0].error.code == "INVALID_METADATA"
+
+
+def test_descriptive_metadata_keeps_label_prose_but_masks_credentials():
+    from techdocqa.privacy import safe_text, safe_title
+    assert RegistrationMetadata(title="Password: Best Practices").title == "Password: Best Practices"
+    assert safe_title("Authorization: how tokens work") == "Authorization: how tokens work"
+    assert RegistrationMetadata(title="password=abc123 guide").title == "password=[REDACTED] guide"
+    assert safe_title("api_key:abc123") == "api_key:[REDACTED]"
+    assert safe_text("password: abc123") == "password: [REDACTED]"
+
+
 def test_metadata_is_preserved_and_sensitive_url_parts_removed(corpus, settings, registry, monkeypatch):
     marker = "key-" + corpus.parent.name
     monkeypatch.setenv("OPENAI_API_KEY", marker)

@@ -1,11 +1,11 @@
 {
   "schema_version": 1,
   "status": "frozen",
-  "dataset_id": "techdocqa-reference-2026-10-24-v1",
+  "dataset_id": "techdocqa-reference-2026-10-24-v2",
   "frozen_date": "2026-10-24",
   "path_base": "repository_root",
   "freeze_scope": "20 public/openly licensed reference documents; DDIA is an excluded private supplement",
-  "reference_fingerprint_sha256": "a09e71fae4751538ce0b65b2a2341792a2bb4f0358805c1c8505f03f69c0d303",
+  "reference_fingerprint_sha256": "40229e3caebc8816d6ad98d36bddc10eb133deb7d3b1c416f8a1331b9d75591a",
   "technologies": [
     "Apache Airflow",
     "Apache Kafka",
@@ -1071,7 +1071,7 @@
       "source_url": "https://www.postgresql.org/files/documentation/pdf/18/postgresql-18-A4.pdf",
       "license": "PostgreSQL",
       "raw_hash": "632a2f93ea7d8817dca9c413896cb43a9ffbd44a82d1812b905cd56a16e7eff6",
-      "content_hash": "ca1f1d7b4efef97adf6ae2bf4fb715a9104ce0e7a9373b9c551a1e4a8ea09dd3",
+      "content_hash": "643b92b4de66dcbbf687e26b853d8a8a1fc7449644c1c8f3749a538f22a5a750",
       "size_bytes": 32673,
       "page_count": 11,
       "finalized": true,
@@ -1083,8 +1083,8 @@
       "evaluation_included": true,
       "local_path": "data/corpus/postgresql-18-tutorial-sql-language.pdf",
       "snapshot_path": "data/local/snapshots/632a2f93ea7d8817dca9c413896cb43a9ffbd44a82d1812b905cd56a16e7eff6.pdf",
-      "normalized_path": "data/processing/normalized/ca1f1d7b4efef97adf6ae2bf4fb715a9104ce0e7a9373b9c551a1e4a8ea09dd3.txt",
-      "normalized_documents_path": "data/processing/documents/6927c94ed288447636092b1cdc584569603e88a6cb5cd0effbc12472103865aa.json",
+      "normalized_path": "data/processing/normalized/643b92b4de66dcbbf687e26b853d8a8a1fc7449644c1c8f3749a538f22a5a750.txt",
+      "normalized_documents_path": "data/processing/documents/0fa8f0099a83ef2e4a00830a1d64014065d73530de2bfcc25ebbaa51f04dbfe8.json",
       "provenance": "Official upstream source, acquired locally",
       "review_status": "accepted",
       "license_review": {
@@ -1503,6 +1503,7 @@
     "Review performed by Codex; no second human or benchmark review is claimed.",
     "HTML and stable documentation URLs can drift; hashes identify the frozen local bytes. Reacquisition must detect changes rather than silently update this manifest.",
     "PDFs are three nonoverlapping tutorial chapters extracted from one official manual, each retaining its legal-notice page; not three independently published PDF manuals.",
-    "Chunk count, embeddings, indexing, retrieval and QA are unimplemented and unmeasured."
+    "Chunk count, embeddings, indexing, retrieval and QA are unimplemented and unmeasured.",
+    "v2 (2026-11-02): normalization policy technical-text-v2 restored one table value in 'PostgreSQL 18 Tutorial: 2. The SQL Language', changing its content_hash and the reference fingerprint. Source bytes and document selection are unchanged; the other documents normalize identically and keep their technical-text-v1 provenance."
   ]
 }

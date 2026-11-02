@@ -8,7 +8,8 @@ from langchain_core.documents import Document
 
 from techdocqa.errors import TechDocQAError
 
-NORMALIZATION_POLICY = "technical-text-v1"
+NORMALIZATION_POLICY = "technical-text-v2"
+PAGE_NUMBER = re.compile(r"\s*(?:Page\s+)?\d+\s*")
 
 
 def code_spans(text: str, explicit: list[dict] | None = None) -> list[dict]:
@@ -65,6 +66,43 @@ def headings(text: str, spans: list[dict]) -> list[dict]:
     return result
 
 
+def strip_page_furniture(pages: list[tuple[list[str], str]], *, repeated_lines: bool):
+    """Blank page numbers and repeated lines at page edges, peeling inward until stable.
+
+    Only edges qualify: a standalone number or repeated line in a page body is content.
+    Lines holding a code placeholder are never removed and stop peeling on that side.
+    """
+    def edges(lines):
+        nonempty = [i for i, line in enumerate(lines) if line.strip()]
+        return set(nonempty[:1] + nonempty[-1:])
+
+    def key(line):
+        return unicodedata.normalize("NFC", " ".join(line.split()))
+
+    while True:
+        changed = False
+        for lines, sentinel in pages:
+            numbers = [i for i in edges(lines) if sentinel not in lines[i] and PAGE_NUMBER.fullmatch(lines[i])]
+            while numbers:
+                changed = True
+                for i in numbers:
+                    lines[i] = ""
+                numbers = [i for i in edges(lines) if sentinel not in lines[i] and PAGE_NUMBER.fullmatch(lines[i])]
+        counts = Counter()
+        if repeated_lines:
+            for lines, sentinel in pages:
+                if sum(1 for line in lines if line.strip() and sentinel not in line) >= 3:
+                    counts.update({key(lines[i]) for i in edges(lines) if sentinel not in lines[i]})
+        repeated = {line for line, count in counts.items() if count * 2 >= len(pages)}
+        for lines, sentinel in pages:
+            for i in edges(lines):
+                if sentinel not in lines[i] and key(lines[i]) in repeated:
+                    lines[i] = ""
+                    changed = True
+        if not changed:
+            return
+
+
 def normalize_documents(documents: list[Document], *, minimum: int = 1) -> list[Document]:
     if not documents or any(not isinstance(doc, Document) or not isinstance(doc.page_content, str) for doc in documents):
         raise TechDocQAError("INVALID_EXTRACTED_CONTENT", "Extracted documents are invalid.", stage="normalization")
@@ -75,19 +113,6 @@ def normalize_documents(documents: list[Document], *, minimum: int = 1) -> list[
                or 0xd800 <= ord(char) <= 0xdfff or char == "\ufffd" for char in text):
             raise TechDocQAError("INVALID_EXTRACTED_CONTENT", "Extracted text contains invalid characters.", stage="normalization")
         protected.append(code_spans(text, document.metadata.get("code_spans")))
-    # Only page-edge lines are candidates: repeated body lines are not boilerplate.
-    edges = Counter()
-    if len(documents) >= 3 and all("page" in doc.metadata for doc in documents):
-        for document, spans in zip(documents, protected, strict=True):
-            lines = document.page_content.splitlines(keepends=True)
-            offsets, cursor = [], 0
-            for line in lines:
-                if line.strip() and not any(s["start"] < cursor + len(line) and s["end"] > cursor for s in spans):
-                    offsets.append(line.strip())
-                cursor += len(line)
-            if len(offsets) >= 3:
-                edges.update(set(offsets[:1] + offsets[-1:]))
-    repeated = {line for line, count in edges.items() if count * 2 >= len(documents)}
     vocabulary = set()
     for document, spans in zip(documents, protected, strict=True):
         cursor = 0
@@ -95,7 +120,7 @@ def normalize_documents(documents: list[Document], *, minimum: int = 1) -> list[
             vocabulary.update(re.findall(r"\b[a-zA-Z]+\b", document.page_content[cursor:span["start"]]))
             cursor = span["end"]
         vocabulary.update(re.findall(r"\b[a-zA-Z]+\b", document.page_content[cursor:]))
-    normalized = []
+    prepared = []
     for document, spans in zip(documents, protected, strict=True):
         text = document.page_content
         # Private-use sentinels are selected outside the input and removed before output.
@@ -110,15 +135,12 @@ def normalize_documents(documents: list[Document], *, minimum: int = 1) -> list[
             cursor = span["end"]
         parts.append(text[cursor:])
         prose = unicodedata.normalize("NFC", "".join(parts).replace("\r\n", "\n").replace("\r", "\n"))
-        lines = prose.split("\n")
-        nonempty = [i for i, line in enumerate(lines) if line.strip()]
-        edges_at = set(nonempty[:1] + nonempty[-1:])
+        prepared.append((document, prose.split("\n"), sentinel, values))
+    pages = [(lines, sentinel) for document, lines, sentinel, _ in prepared if "page" in document.metadata]
+    strip_page_furniture(pages, repeated_lines=len(documents) >= 3 and len(pages) == len(documents))
+    normalized = []
+    for document, lines, sentinel, values in prepared:
         for i, line in enumerate(lines):
-            if "page" in document.metadata and sentinel not in line and (
-                    re.fullmatch(r"\s*(?:Page\s+)?\d+\s*", line)
-                    or (i in edges_at and line.strip() in repeated)):
-                lines[i] = ""
-                continue
             indent = re.match(r"[ \t]*", line)[0]
             body = re.sub(r"[ \t]+", " ", line[len(indent):]).rstrip(" ")
             hard_break = "  " if document.metadata.get("doc_type") == "md" and body and line.endswith("  ") else ""
@@ -137,8 +159,10 @@ def normalize_documents(documents: list[Document], *, minimum: int = 1) -> list[
             cursor = match.end()
         parts.append(prose[cursor:])
         output = "".join(parts)
+        # A leading "#" is only heading syntax in Markdown and the markers inserted for HTML.
+        plain = document.metadata.get("doc_type") in {"txt", "pdf"} or "page" in document.metadata
         metadata = {**document.metadata, "code_spans": output_spans,
-                    "headings": headings(output, output_spans), "normalization_policy": NORMALIZATION_POLICY}
+                    "headings": [] if plain else headings(output, output_spans), "normalization_policy": NORMALIZATION_POLICY}
         normalized.append(Document(page_content=output, metadata=metadata))
     if sum(not char.isspace() for doc in normalized for char in doc.page_content) < minimum:
         raise TechDocQAError("NO_TEXT_EXTRACTED", "Document contains too little usable text.", stage="normalization")

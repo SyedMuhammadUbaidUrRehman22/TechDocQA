@@ -12,6 +12,11 @@ def test_technical_exceptions(text):
     assert sentence_spans(text) == [{"start": 0, "end": len(text)}]
 
 
+@pytest.mark.parametrize("text", ["Is the leader in cluster A? Yes it is.", "Run it on node B! Then stop."])
+def test_abbreviation_exception_only_applies_to_periods(text):
+    assert len(sentence_spans(text)) == 2
+
+
 def test_offsets_reconstruct_and_repeat_without_touching_code():
     text = 'First sentence. Second?\n\n```python\nprint("Ignore. Code!")\n```\nLast sentence.'
     runs = [sentence_spans(text) for _ in range(3)]

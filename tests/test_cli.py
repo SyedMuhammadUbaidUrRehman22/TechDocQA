@@ -139,3 +139,22 @@ def test_help_and_version_remain_successful():
     for command in ("config-check", "ingest", "status", "list", "history"):
         assert command in result.stdout
     assert run_cli("--version").returncode == 0
+
+
+def test_non_ascii_results_print_on_a_legacy_code_page(tmp_path, monkeypatch):
+    import io
+    from techdocqa import cli
+    from techdocqa.ingestion import processing
+    from techdocqa.schemas import AttemptOutcome, OnlineProvenance, RunSummary
+    title = "Latency ≤ 5 ms → ok"
+    monkeypatch.setattr(processing, "process_versions", lambda *_: processing.ProcessingBatchResult(
+        run=RunSummary(run_id="run", status="completed", started_at="now"),
+        outcomes=[AttemptOutcome(attempt_id="att", input_index=0, status="processed",
+                                 online=OnlineProvenance(source_id="source", canonical_url="https://example.org/", original_title=title))]))
+    config = tmp_path / "config.toml"
+    config.write_text('allowed_directories=["corpus"]\ndata_directory="runtime"\n', encoding="utf-8")
+    output = io.TextIOWrapper(io.BytesIO(), encoding="cp1252")
+    monkeypatch.setattr(sys, "stdout", output)
+    assert cli.main(["process", "--config", str(config)]) == 0
+    output.seek(0)
+    assert json.loads(output.read())["outcomes"][0]["online"]["original_title"] == title

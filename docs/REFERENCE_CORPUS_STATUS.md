@@ -1,8 +1,8 @@
 # Reference corpus assembly and verification
 
-Later checkpoint: [Phase 4](PHASE_4_STATUS.md) has progressed the selected versions to `chunked`. Source selection and byte/content hashes remain frozen. Processing-status and runtime-storage figures below describe the earlier assembly checkpoint.
+Later checkpoint: [Phase 4](PHASE_4_STATUS.md) has progressed the selected versions to `chunked`. Source selection and byte hashes remain frozen; dataset version 2 changed one PDF's content hash after a [normalization correction](DECISIONS.md#review-corrections-2026-11-02). Processing-status and runtime-storage figures below describe the earlier assembly checkpoint.
 
-Reviewed 2026-10-24 on Windows/Python 3.13.3. Dataset: `techdocqa-reference-2026-10-24-v1`.
+Reviewed 2026-10-24 on Windows/Python 3.13.3. Dataset: `techdocqa-reference-2026-10-24-v2`.
 
 **21 selected local documents, 2,700,598 bytes (2.700598 MB; about 2.58 MiB), across five domains.** All are normalized, finalized and active, with distinct raw and normalized content hashes and no `duplicate_of` links. Source-byte size counts each selected document once; registry files, processed copies, preparation files and rejected candidates are not counted as additional corpus documents.
 
@@ -134,4 +134,4 @@ No numeric document/format/technology/size requirement remains unmet for the 20-
 
 The approximate <=3,000-chunk target is unmeasured because chunking is not implemented. Hardware/budget/model selection, independent human review and benchmark preparation remain later gates. No chunking, embeddings, vector/BM25 indexes, retrieval, answer generation, model call, DDIA upload, public commit or push was performed.
 
-Reference fingerprint: `a09e71fae4751538ce0b65b2a2341792a2bb4f0358805c1c8505f03f69c0d303`.
+Reference fingerprint: `40229e3caebc8816d6ad98d36bddc10eb133deb7d3b1c416f8a1331b9d75591a`.

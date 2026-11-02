@@ -10,7 +10,7 @@ from uuid import uuid4
 
 from techdocqa.errors import TechDocQAError
 from techdocqa.ingestion.safety import ValidatedSource
-from techdocqa.privacy import safe_text
+from techdocqa.privacy import safe_text, safe_title
 from techdocqa.schemas import (
     AttemptOutcome, BatchResult, DocumentRecord, ErrorDetail, RegistrationMetadata,
     OnlineProvenance, ProcessingProvenance, RegistrationResult, RunSummary, ChunkingProvenance,
@@ -311,12 +311,14 @@ class Registry:
             context = json.dumps({"online": online.model_dump()}) if online is not None else None
             self.execute("UPDATE attempts SET status='failed',error_json=?,result_json=? WHERE attempt_id=?", (error.model_dump_json(), context, attempt_id))
             self.execute("UPDATE runs SET failed=failed+1 WHERE run_id=?", (attempt["run_id"],))
+            recorded = None
             if attempt["version_id"]:
                 status = "extraction_failed" if error.stage == "extraction" else "failed"
-                self.execute("UPDATE registrations SET status=? WHERE version_id=? AND finalized=0 AND status='extracting'",
-                             (status, attempt["version_id"]))
+                cursor = self.execute("UPDATE registrations SET status=? WHERE version_id=? AND finalized=0 AND status='extracting'",
+                                      (status, attempt["version_id"]))
+                recorded = status if cursor.rowcount else None
             self.event(run_id=attempt["run_id"], attempt_id=attempt_id,
-                       document_id=attempt["document_id"], version_id=attempt["version_id"],
+                       document_id=attempt["document_id"], version_id=attempt["version_id"], status=recorded,
                        decision="PROCESSING_FAILED" if attempt["version_id"] else "REGISTRATION_FAILED",
                        reason=error.message, stage=error.stage, error=error)
 
@@ -335,10 +337,12 @@ class Registry:
             if not record.finalized and current != version_id:
                 raise TechDocQAError("STALE_CANDIDATE", "Only the latest byte candidate can be finalized.", stage="normalization", document_id=record.document_id)
             self.execute("UPDATE attempts SET document_id=?,version_id=? WHERE attempt_id=?", (record.document_id, version_id, attempt_id))
+            status = None
             if not record.finalized and not (record.processing and record.processing.resolved_version_id):
+                status = "extracting"
                 self.execute("UPDATE registrations SET status='extracting' WHERE version_id=?", (version_id,))
             self.event(run_id=attempt["run_id"], attempt_id=attempt_id, document_id=record.document_id,
-                       version_id=version_id, decision="PROCESSING_STARTED", reason="Candidate processing started.", stage="normalization")
+                       version_id=version_id, status=status, decision="PROCESSING_STARTED", reason="Candidate processing started.", stage="normalization")
 
     def finalize(self, version_id: str, processing: ProcessingProvenance, attempt_id: str) -> RegistrationResult:
         """Caller verifies immutable artifacts first; lifecycle, outcome and counts commit together."""
@@ -365,13 +369,21 @@ class Registry:
                     values["online"].update(normalized_path=processing.normalized_path, normalized_hash=processing.normalized_hash)
                 if processing.original_title and (candidate.title_explicit is False or (
                         candidate.title_explicit is None and candidate.title == candidate.filename)):
-                    values["title"] = safe_text(processing.original_title)[:1000]
+                    values["title"] = safe_title(processing.original_title)[:1000]
                 if duplicate:
                     self.execute("UPDATE registrations SET status='normalized',metadata_json=? WHERE version_id=?", (json.dumps(values), version_id))
                 else:
-                    other = self.execute("""SELECT document_id FROM registrations WHERE content_hash=? AND finalized=1 AND document_id<>?
+                    # Only a source still serving this content can own it; superseded history cannot.
+                    other = self.execute("""SELECT document_id FROM registrations WHERE content_hash=? AND finalized=1 AND is_active=1
+                                            AND duplicate_of IS NULL AND document_id<>?
                                             ORDER BY ingested_at,version_id LIMIT 1""", (processing.normalized_hash, candidate.document_id)).fetchone()
+                    previous = self.execute("SELECT version_id FROM registrations WHERE document_id=? AND is_active=1", (candidate.document_id,)).fetchone()
                     self.execute("UPDATE registrations SET is_active=0,status='superseded' WHERE document_id=? AND is_active=1", (candidate.document_id,))
+                    if previous:
+                        self.event(run_id=attempt["run_id"], attempt_id=attempt_id, document_id=candidate.document_id,
+                                   version_id=previous[0], status="superseded", decision="VERSION_SUPERSEDED",
+                                   reason="A changed normalized version became active.", stage="normalization")
+                        self.promote_duplicates(candidate.document_id, processing.normalized_hash, attempt)
                     self.execute("""UPDATE registrations SET status='normalized',finalized=1,is_active=1,content_hash=?,metadata_json=?,duplicate_of=?
                                     WHERE version_id=?""", (processing.normalized_hash, json.dumps(values), other[0] if other else None, version_id))
             target = self.get_version(resolved)
@@ -391,6 +403,21 @@ class Registry:
                        reason="Normalized content resolves to an existing version; no reactivation." if duplicate else "Validated normalized content finalized atomically.",
                        stage="normalization")
         return result
+
+    def promote_duplicates(self, document_id: str, content_hash: str, attempt):
+        """Caller holds a transaction. The earliest copy takes over content its original stopped serving."""
+        copies = self.execute("""SELECT version_id,document_id FROM registrations
+                                 WHERE duplicate_of=? AND finalized=1 AND is_active=1 AND content_hash<>?
+                                 ORDER BY ingested_at,version_id""", (document_id, content_hash)).fetchall()
+        if not copies:
+            return
+        heir = copies[0]
+        self.execute("UPDATE registrations SET duplicate_of=NULL WHERE version_id=?", (heir["version_id"],))
+        for copy in copies[1:]:
+            self.execute("UPDATE registrations SET duplicate_of=? WHERE version_id=?", (heir["document_id"], copy["version_id"]))
+        self.event(run_id=attempt["run_id"], attempt_id=attempt["attempt_id"], document_id=heir["document_id"],
+                   version_id=heir["version_id"], decision="DUPLICATE_PROMOTED",
+                   reason="The original source changed; this copy now serves the content.", stage="normalization")
 
     def begin_chunking(self, version_id: str, attempt_id: str):
         with self.transaction():

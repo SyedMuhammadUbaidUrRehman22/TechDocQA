@@ -135,7 +135,7 @@ def process_versions(version_ids: list[str], settings: Settings, registry: Regis
         if not version_ids:
             version_ids = [record.version_id for record in registry.list_documents()]
         if not version_ids:
-            raise TechDocQAError("INVALID_ARGUMENT", "No registered candidates are available.", stage="arguments")
+            raise TechDocQAError("NO_ELIGIBLE_VERSIONS", "No registered candidates are available.", stage="normalization")
         run_id, attempts = registry.start_run(len(version_ids), stage="normalization")
         for version_id, attempt_id in zip(version_ids, attempts, strict=True):
             record = None

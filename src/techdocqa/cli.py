@@ -27,6 +27,11 @@ class SafeArgumentParser(argparse.ArgumentParser):
         raise TechDocQAError("INVALID_ARGUMENT", "Invalid command or arguments. Use --help for accepted syntax.", stage="arguments")
 
 
+def emit(result, *, file=None) -> None:
+    # ASCII escapes keep JSON printable on any console or pipe encoding (Windows defaults to a legacy code page).
+    print(json.dumps(result.model_dump(), ensure_ascii=True), file=file or sys.stdout)
+
+
 def make_parser() -> argparse.ArgumentParser:
     parser = SafeArgumentParser(description="TechDocQA configuration and documentation ingestion")
     parser.add_argument("--version", action="version", version=__version__)
@@ -102,12 +107,12 @@ def main(argv: list[str] | None = None) -> int:
             if args.command == "chunk":
                 from techdocqa.ingestion.chunks import chunk_versions
                 result = chunk_versions(args.version_ids, settings, registry)
-                print(result.model_dump_json())
+                emit(result)
                 return 1 if result.run.failed else 0
             if args.command == "process":
                 from techdocqa.ingestion.processing import process_versions
                 result = process_versions(args.version_ids, settings, registry)
-                print(result.model_dump_json())
+                emit(result)
                 return 1 if result.run.failed or result.warnings else 0
             if args.command == "ingest":
                 if args.source or args.url:
@@ -115,7 +120,7 @@ def main(argv: list[str] | None = None) -> int:
                     result = ingest_online(args.source, args.url, settings, registry, metadata=metadata)
                 else:
                     result = register_paths(args.paths, settings, registry, metadata=metadata, logical_name=args.logical_name)
-                print(result.model_dump_json())
+                emit(result)
                 return 1 if result.run.failed or getattr(result, "warnings", []) else 0
             if args.command == "status" and args.run_id is not None:
                 output = registry.get_run(args.run_id).model_dump()
@@ -129,5 +134,5 @@ def main(argv: list[str] | None = None) -> int:
         print(json.dumps(output, ensure_ascii=True))
         return 0
     except TechDocQAError as error:
-        print(error.response.model_dump_json(), file=sys.stderr)
+        emit(error.response, file=sys.stderr)
         return 2 if error.response.error.code == "INVALID_ARGUMENT" else 1
