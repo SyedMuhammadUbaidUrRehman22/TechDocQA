@@ -211,7 +211,7 @@ Deploy the CLI on one laptop-class machine; local files/SQLite/Chroma and option
 | FR-23 | input limits/path/secrets, untrusted prompt | 2–3,7; URL 3A |
 | FR-24 | CLI recovery/check/structured logs | 12 |
 
-Rows through roadmap Phase 5 and the 3A URL slice are implemented to the limits in their status documents; later phases are planned. Early CLI/FR-23 slices are explicitly incomplete until QA dependencies land. Full original dependencies and acceptance coverage remain in traceability.
+Rows through roadmap Phase 6 and the 3A URL slice are implemented to the limits in their status documents; later phases are planned. Phase 6 implements the FR-19 smoke runner and metrics; its benchmark awaits second-person review. Early CLI/FR-23 slices are explicitly incomplete until QA dependencies land. Full original dependencies and acceptance coverage remain in traceability.
 
 ## 18. Decisions, trade-offs and unresolved questions
 

@@ -3,7 +3,9 @@ TechDocQA is a domain-specific RAG project for answering software and data engin
 
 ## Current status
 
-Phases 1-5 are implemented. You can ingest local files and approved web pages, normalize and chunk them, build a local index, search it by BM25 or vector similarity, and withdraw or delete documents. **TechDocQA cannot answer questions yet:** `ask` and `eval` arrive in later phases.
+Phases 1-6 are implemented. You can ingest local files and approved web pages, normalize and chunk them, build a local index, search it by BM25 or vector similarity, withdraw or delete documents, and measure retrieval with `eval`. **TechDocQA cannot answer questions yet:** `ask` arrives in Phase 7.
+
+On the 30-question smoke benchmark, BM25 reaches Recall@5 0.925 and MRR 0.708, and vector search reaches Recall@5 0.925 and MRR 0.783. A run takes about 40 s and repeats exactly. **These figures are provisional:** the questions are drafts that no second person has reviewed yet. See the [Phase 6 report](docs/PHASE_6_STATUS.md).
 
 All 2,735 chunks are indexed: 816 from the 20-document public reference and 1,919 from the private DDIA supplement. Results survive a restart and a full rebuild unchanged. Two targets are not met: a query built from a chunk's sentence finds that chunk in the top 3 only 124 of 152 times on the real corpus (AC-12.1), and warm vector search has a p95 of 1.377 s against a 1 s target (NFR-02). See the [Phase 5 report](docs/PHASE_5_STATUS.md).
 
@@ -62,8 +64,8 @@ stateDiagram-v2
 | 1-3B | Setup, registration, online HTML, normalization | ✅ Done |
 | 4 | [Segmentation and chunking](docs/PHASE_4_STATUS.md) | ✅ Done |
 | 5 | [Search and document lifecycle](docs/PHASE_5_STATUS.md) | ✅ Built, 2 targets open |
-| 6 | Smoke benchmark and retrieval metrics | ⏭️ Next, needs a second reviewer |
-| 7-8 | Answers, citations and refusal | ⬜ Planned |
+| 6 | [Smoke benchmark and retrieval metrics](docs/PHASE_6_STATUS.md) | ✅ Built, benchmark awaits review |
+| 7-8 | Answers, citations and refusal | ⏭️ Next |
 | 9-10 | NLP enrichment, hybrid search, reranking | ⬜ Planned |
 | 11-12 | Operational verification, optional extras | ⬜ Planned |
 
@@ -77,6 +79,9 @@ stateDiagram-v2
 | BM25 warm p95 | At most 1 s | 0.138 s | ✅ |
 | Vector warm p95 | At most 1 s | 1.377 s | ❌ |
 | Sentence query finds its chunk in the top 3 | All | 124 of 152 | ❌ |
+| Smoke benchmark, both modes | Under 5 min | 35 to 40 s | ✅ |
+| Two benchmark runs, same inputs | Identical metrics | Identical | ✅ |
+| Benchmark reviewed by a second person | Reviewed | Not yet | ❌ |
 
 ```mermaid
 pie showData title Chunks indexed
@@ -229,6 +234,24 @@ Requires the local Ollama service with the pinned `nomic-embed-text:latest` for 
 
 </details>
 
+<a id="smoke-benchmark"></a>
+<details>
+<summary><strong>Smoke benchmark</strong></summary>
+
+Requires Ollama for vector mode; BM25 mode needs no provider.
+
+```powershell
+.\.venv\Scripts\techdocqa.exe eval
+.\.venv\Scripts\techdocqa.exe eval --mode bm25
+.\.venv\Scripts\techdocqa.exe eval --report-dir reports\evaluation
+```
+
+`eval` runs [the smoke questions](datasets/benchmark_smoke.jsonl) through the same search as `search`, limited to the documents the [frozen manifest](datasets/corpus_manifest.json) includes for evaluation, so the private DDIA supplement is left out. It prints a JSON summary and writes a JSON and a Markdown report, by default to the ignored `data\evaluation`. Reports contain chunk IDs, not chunk text. Two runs on unchanged inputs print the same `results_fingerprint`.
+
+Labels point at a document and a quoted passage, not at chunk IDs, so they survive re-chunking. If you withdraw or delete a labeled document, the next run flags its questions and leaves them out of the metrics; the benchmark file is not changed. Review status and the reviewer checklist are in the [review log](datasets/review_log.md).
+
+</details>
+
 <a id="withdrawing-and-deleting-documents"></a>
 <details>
 <summary><strong>Withdrawing and deleting documents</strong></summary>
@@ -260,9 +283,10 @@ The source filename says v2, but its contents identify **Revision 3**; those con
 - [Phase 3B implementation checkpoint](docs/PHASE_3B_STATUS.md)
 - [Phase 4 implementation checkpoint](docs/PHASE_4_STATUS.md)
 - [Phase 5 implementation checkpoint](docs/PHASE_5_STATUS.md)
+- [Phase 6 implementation checkpoint](docs/PHASE_6_STATUS.md)
 - [Development log](DEVELOPMENT_LOG.md)
 - [LangChain loaders, corpus formats and metadata plan](docs/LANGCHAIN_INGESTION_PLAN.md)
 - [Local development setup](deployment/local_setup.md)
 - [Corpus preparation](datasets/README.md)
 
-The reference corpus is frozen as `techdocqa-reference-2026-10-24-v2` and the local models are selected. Next is Phase 6, the smoke benchmark and retrieval metrics. Hardware, budget and benchmark reviewer remain open.
+The reference corpus is frozen as `techdocqa-reference-2026-10-24-v2` and the local models are selected. The smoke benchmark needs a second reviewer before Phase 8 uses it for refusal calibration; Phase 7 answering is next. Hardware and budget remain open.

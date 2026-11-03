@@ -1,5 +1,17 @@
 # TechDocQA architectural decisions
 
+## Phase 6 contracts (2026-11-03)
+
+These rules implement the Q-12 and Q-13 proposals as written. **Neither has been formally approved**, so each run records the policy ID `q13-proposed-v1`, and a later approval or amendment changes that ID. Evidence is in [Phase 6](PHASE_6_STATUS.md).
+
+- **Q-12.** The smoke set is exactly 20 answerable and 10 unanswerable questions. Every report checks this, along with DS-06's 30 to 50 questions and FR-19's minimum of 10 unanswerable.
+- **Q-13 labels.** A relevant item is a manifest `source_key` plus a verbatim `anchor` or a `section` heading path, graded 0, 1 or 2. Anchors match case-insensitively with whitespace collapsed, against the current chunks of the active version, on every run. Grades 1 and 2 count as relevant in P0. Grade 0 never counts.
+- **Q-13 metrics.** Each retrieved chunk maps to the labeled items it contains, and an item found more than once counts once. Recall@K is relevant items found in the top K divided by relevant items labeled. MRR uses the first result matching any relevant item, cut at rank 5. Both are macro-averaged over evaluated answerable questions. Unanswerable questions get no recall or MRR, only top-score spreads per mode for FR-18 calibration.
+- **Q-13 invalidated labels (AC-21.3).** A label whose source was deleted, is not active, is outside the evaluation manifest, or whose anchor matches no chunk flags its question. The whole question is excluded from the metrics and listed with its reason. Benchmark files are never edited. Deletion is recognized through the manifest's `document_id` and the `DOCUMENT_DELETED` audit event, because deletion removes the source key.
+- **Evaluation scope.** `search()` takes an optional set of source keys that limits the corpus itself, so BM25 statistics also come only from the frozen public reference. The private DDIA supplement is never searched or labeled during evaluation. The CLI's own search is unscoped and unchanged.
+- **Repeatability (AC-19.4).** `results_fingerprint` hashes the dataset hash, the corpus fingerprint, the metric policy, each configuration's ID and metrics, and every question's ranked chunk IDs and scores. Run ID, dates and timings are excluded. Two runs with identical inputs must have equal fingerprints.
+- **Run records.** A run is a JSON report plus a Markdown rendering, by default under the ignored `data/evaluation`. Reports name chunk IDs, not chunk text. Evaluation does not write to the registry's `runs` table, whose stages cover ingestion and indexing only.
+
 ## Phase 5 contracts (2026-11-02)
 
 These rules resolve the Phase 5 portions of Q-02, Q-03, Q-06, Q-08, Q-15 and Q-16, and take precedence over earlier wording. Evidence is in [Phase 5](PHASE_5_STATUS.md).

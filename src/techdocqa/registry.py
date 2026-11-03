@@ -542,6 +542,11 @@ class Registry:
         rows = self.execute("SELECT chunk_id FROM verified_entities WHERE entity=?", (entity.casefold(),)).fetchall()
         return {row[0] for row in rows}
 
+    def deleted_document_ids(self) -> set[str]:
+        """The anonymous audit event is all that names a deleted document; its reason starts with the ID."""
+        rows = self.execute("SELECT reason FROM events WHERE decision='DOCUMENT_DELETED'").fetchall()
+        return {row[0].split(":", 1)[0] for row in rows if row[0]}
+
     def save_embedding_profile(self, profile: dict):
         with self.transaction():
             self.execute("""INSERT OR IGNORE INTO embedding_profiles(profile_id,provider,embedding_model_id,dimension,normalization,metric,collection,created_at)
