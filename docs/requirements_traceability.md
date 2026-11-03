@@ -1,5 +1,9 @@
 # Requirements traceability
 
+## Implemented acceptance slices - Phase 6
+
+2026-11-03: `tests/test_evaluation.py` covers AC-19.3 with hand-computed examples, AC-19.5 and the other loader rules, AC-19.4 repeat runs, the evaluation scope that excludes documents outside the manifest, failed-provider isolation, the `eval` CLI, and AC-21.3: deleted, withdrawn, out-of-scope and unresolved labels are flagged without changing the benchmark file. On the real corpus, `techdocqa eval` meets AC-19.1 (35 to 40 s) and AC-19.4 (identical fingerprints over two runs). **FR-19 P0 is not complete:** the 30 questions are drafts without second-person review, and Q-12/Q-13 are unapproved. AC-21.3 was not run against the real registry. AC-22.1 and AC-22.3 still need `ask`. See the [Phase 6 report](PHASE_6_STATUS.md). Original source AC text below is unchanged.
+
 ## Implemented acceptance slices - Phase 5
 
 2026-11-02: `tests/test_indexing.py` covers AC-11.1-11.4, AC-12.1-12.7 and AC-13.1, 13.2, 13.4 and 13.5 with a counting fake embedder, plus AC-02.5, AC-20.4 and AC-21.2, filters, seeded entity memberships, invalid vectors, provider failure, reactivation, duplicate promotion, shared-file deletion, schema migration and CLI errors. `datasets/verify_index.py` covers the real corpus: AC-02.3, AC-02.5, AC-11.1, AC-11.5, AC-12.1, AC-12.6, AC-12.7 and AC-13.1. AC-13.3 and AC-11.3 were run against an unreachable provider through the CLI. **AC-12.1 on the real corpus is open at 124 of 152.** AC-11.4 used no real second model. AC-21.1 and AC-21.3 wait for Phases 8 and 6. See the [Phase 5 report](PHASE_5_STATUS.md). Original source AC text below is unchanged.

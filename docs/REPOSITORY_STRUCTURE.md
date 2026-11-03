@@ -1,5 +1,7 @@
 # Proposed repository structure
 
+Phase 6 update 2026-11-03: actual additions are `evaluation/{dataset,metrics,runner}.py`, `datasets/{benchmark_smoke.jsonl,review_log.md}`, `reports/evaluation/` and `tests/test_evaluation.py`. Run reports go to the ignored `data/evaluation` unless `--report-dir` names another directory. See [Phase 6](PHASE_6_STATUS.md).
+
 Phase 5 update 2026-11-02: actual additions are `indexing/{embeddings,vector_store,pipeline,lifecycle}.py`, `retrieval/{lexical,search}.py`, `datasets/verify_index.py` and `tests/test_indexing.py`. Runtime vectors live in the ignored registry and `data/index/chroma`. See [Phase 5](PHASE_5_STATUS.md).
 
 Phase 4 update 2026-10-24: actual additions are package-root `segmentation.py` and `chunking.py`, `ingestion/chunks.py`, and `tests/test_{segmentation,chunking}.py`. They reuse the existing worker, registry JSON metadata and atomic snapshot helpers. Runtime chunk text/spans live under ignored `data/chunking/artifacts`, with active pointers in the registry. No SQL migration or empty indexing module tree was added. See [Phase 4](PHASE_4_STATUS.md).

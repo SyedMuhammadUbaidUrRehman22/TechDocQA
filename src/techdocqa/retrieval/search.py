@@ -85,7 +85,8 @@ def vector_results(request, settings, records, entity_chunks, profile) -> list[S
             for rank, (document, score) in enumerate(live[:request.top_k], 1)]
 
 
-def search(request: SearchRequest, settings, registry) -> SearchResponse:
+def search(request: SearchRequest, settings, registry, *, source_keys: frozenset[str] | None = None) -> SearchResponse:
+    """source_keys limits the corpus itself, so BM25 statistics also come only from those sources (evaluation scope)."""
     if request.mode == "hybrid" or request.rerank:
         raise TechDocQAError("MODE_NOT_AVAILABLE", "Hybrid search and reranking are not implemented yet; use bm25 or vector.", stage="search")
     profile = None
@@ -93,6 +94,8 @@ def search(request: SearchRequest, settings, registry) -> SearchResponse:
         from techdocqa.indexing.embeddings import embedding_profile
         profile = embedding_profile(settings.model)
     eligible = registry.eligible_versions()
+    if source_keys is not None:
+        eligible = [record for record in eligible if record.source_key in source_keys]
     records = filtered_records(request, eligible)
     # P0 has no entity extractor: a filter matches only verified associations, so none means no results.
     entity_chunks = registry.entity_chunks(request.filters.entity) if request.filters.entity is not None else None

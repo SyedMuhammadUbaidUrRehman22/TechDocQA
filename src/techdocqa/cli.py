@@ -76,7 +76,13 @@ def make_parser() -> argparse.ArgumentParser:
     deletion.add_argument("document_id")
     deletion.add_argument("--reason", required=True)
     deletion.add_argument("--yes", action="store_true", help="confirm this cannot be undone")
-    for command in (check, ingest, status, listing, history, processing, chunking, indexing, searching, withdrawal, deletion):
+    evaluation = commands.add_parser("eval", help="run the smoke benchmark: Recall@1/3/5 and MRR for BM25 and vector search")
+    evaluation.add_argument("--dataset", type=Path, default=Path("datasets/benchmark_smoke.jsonl"))
+    evaluation.add_argument("--manifest", type=Path, default=Path("datasets/corpus_manifest.json"),
+                            help="frozen corpus manifest; only its evaluation documents are searched")
+    evaluation.add_argument("--mode", action="append", choices=["bm25", "vector"], help="repeat to choose; default both")
+    evaluation.add_argument("--report-dir", type=Path, help="where the JSON and Markdown reports go (default: <data>/evaluation)")
+    for command in (check, ingest, status, listing, history, processing, chunking, indexing, searching, withdrawal, deletion, evaluation):
         command.add_argument("--config", type=Path, default=Path("config/default.toml"))
         command.add_argument("--profile", type=Path)
         command.add_argument("--json", action="store_true", default=argparse.SUPPRESS,
@@ -144,6 +150,12 @@ def main(argv: list[str] | None = None) -> int:
                 from techdocqa.retrieval.search import search
                 emit(search(request, settings, registry))
                 return 0
+            if args.command == "eval":
+                from techdocqa.evaluation.runner import run_evaluation, summary, write_report
+                report = run_evaluation(args.dataset, args.manifest, settings, registry, modes=args.mode)
+                files = write_report(report, args.report_dir or Path(settings.data_directory) / "evaluation")
+                print(json.dumps({**summary(report), "report_files": files}, ensure_ascii=True))
+                return 0 if all(row["status"] == "completed" for row in report["configurations"]) else 1
             if args.command == "withdraw":
                 from techdocqa.indexing.lifecycle import withdraw_document
                 emit(withdraw_document(args.document_id, args.reason, registry))
