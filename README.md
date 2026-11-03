@@ -1,17 +1,19 @@
 # TechDocQA
-TechDocQA is a domain-specific RAG project for answering software and data engineering questions from technical documentation with source citations. It uses LangChain, local embeddings, a persisted Chroma index and BM25 search. Answer generation with citations and NLP enrichment are planned.
+TechDocQA is a domain-specific RAG project for answering software and data engineering questions from technical documentation with source citations. It uses LangChain, local embeddings, a persisted Chroma index and BM25 search, and answers questions with a local Ollama model that cites the stored source of each claim. Calibrated refusal and NLP enrichment are planned.
 
 ## Current status
 
-Phases 1-6 are implemented. You can ingest local files and approved web pages, normalize and chunk them, build a local index, search it by BM25 or vector similarity, withdraw or delete documents, and measure retrieval with `eval`. **TechDocQA cannot answer questions yet:** `ask` arrives in Phase 7.
+Phases 1-7 are implemented. You can ingest local files and approved web pages, normalize and chunk them, build a local index, search it by BM25 or vector similarity, ask questions with `ask`, withdraw or delete documents, and measure retrieval with `eval`.
 
-On the 30-question smoke benchmark, BM25 reaches Recall@5 0.925 and MRR 0.708, and vector search reaches Recall@5 0.925 and MRR 0.783. A run takes about 40 s and repeats exactly. **These figures are provisional:** the questions are drafts that no second person has reviewed yet. See the [Phase 6 report](docs/PHASE_6_STATUS.md).
+On 10 smoke questions, `ask` answered all 10 with at least one verified citation, in a median of 17.8 s on this laptop. In a prompt-injection test, `qwen3:1.7b` ignored an injected instruction in 3 of 3 questions. **Answers are not yet released:** a person still has to rate whether the cited chunks support them (AC-16.6), and until Phase 8 calibrates a relevance threshold, `ask` also answers questions the documents do not cover, unless the model itself declines. See the [Phase 7 report](docs/PHASE_7_STATUS.md).
+
+On the 30-question smoke benchmark, BM25 reaches Recall@5 0.925 and MRR 0.708, and vector search reaches Recall@5 0.925 and MRR 0.783. A run takes about 40 s and repeats exactly. The questions were reviewed and accepted by the project owner on 2026-11-03. See the [Phase 6 report](docs/PHASE_6_STATUS.md).
 
 All 2,735 chunks are indexed: 816 from the 20-document public reference and 1,919 from the private DDIA supplement. Results survive a restart and a full rebuild unchanged. Two targets are not met: a query built from a chunk's sentence finds that chunk in the top 3 only 124 of 152 times on the real corpus (AC-12.1), and warm vector search has a p95 of 1.377 s against a 1 s target (NFR-02). See the [Phase 5 report](docs/PHASE_5_STATUS.md).
 
-The selected local models are Ollama `qwen3:1.7b` and `nomic-embed-text:latest`. Installed metadata verifies the embedding model's BERT tokenizer family and 2,048-token input limit; its advertised `num_ctx=8192` does not override the API's metadata clamp. Exact provider token counting is unavailable, so chunks use recorded character counting plus a conservative UTF-8 bound: at most 1000 characters and 2,029 bytes, overlap 150, minimum 100. The generation tokenizer is independent. Offline tests and chunking never call a provider; embedding runs through local Ollama. OpenAI chunking profiles are accepted with `embedding_tokenizer = "tiktoken"` and a context window, but OpenAI embedding and generation are not implemented yet.
+The selected local models are Ollama `qwen3:1.7b` and `nomic-embed-text:latest`. Installed metadata verifies the embedding model's BERT tokenizer family and 2,048-token input limit; its advertised `num_ctx=8192` does not override the API's metadata clamp. Exact provider token counting is unavailable, so chunks use recorded character counting plus a conservative UTF-8 bound: at most 1000 characters and 2,029 bytes, overlap 150, minimum 100. The generation tokenizer is independent. Offline tests and chunking never call a provider; embedding runs through local Ollama. OpenAI chunking profiles are accepted with `embedding_tokenizer = "tiktoken"` and a context window. The OpenAI chat adapter is wired, but its LangChain package is not installed, and OpenAI embeddings are not implemented.
 
-**Jump to:** [Pipeline](#how-it-works) · [Search](#which-search-sees-what) · [Progress](#progress) · [Results](#measured-results) · [Commands](#command-guide)
+**Jump to:** [Pipeline](#how-it-works) · [Search](#which-search-sees-what) · [Progress](#progress) · [Results](#measured-results) · [Ask](#asking-questions) · [Commands](#command-guide)
 
 Select any section below to expand it.
 
@@ -25,10 +27,11 @@ flowchart LR
   D -->|index| E[Embedded<br/>and indexed]
   D -->|search --mode bm25| F[BM25 results]
   E -->|search --mode vector| G[Vector results]
-  F -.-> H[Answers with citations<br/>planned]
-  G -.-> H
+  F -->|ask --mode bm25| H[Answers with<br/>verified citations]
+  G -->|ask| H
+  H -.-> I[Calibrated refusal<br/>planned]
   classDef planned stroke-dasharray: 5 5
-  class H planned
+  class I planned
 ```
 
 The SQLite registry decides what may be returned on every search. The BM25 and Chroma indexes are derived from it and can be rebuilt.
@@ -64,8 +67,9 @@ stateDiagram-v2
 | 1-3B | Setup, registration, online HTML, normalization | ✅ Done |
 | 4 | [Segmentation and chunking](docs/PHASE_4_STATUS.md) | ✅ Done |
 | 5 | [Search and document lifecycle](docs/PHASE_5_STATUS.md) | ✅ Built, 2 targets open |
-| 6 | [Smoke benchmark and retrieval metrics](docs/PHASE_6_STATUS.md) | ✅ Built, benchmark awaits review |
-| 7-8 | Answers, citations and refusal | ⏭️ Next |
+| 6 | [Smoke benchmark and retrieval metrics](docs/PHASE_6_STATUS.md) | ✅ Done, benchmark reviewed |
+| 7 | [Answers and citations](docs/PHASE_7_STATUS.md) | ✅ Built, human answer review open |
+| 8 | Calibrated refusal and P0 release | ⏭️ Next |
 | 9-10 | NLP enrichment, hybrid search, reranking | ⬜ Planned |
 | 11-12 | Operational verification, optional extras | ⬜ Planned |
 
@@ -81,7 +85,10 @@ stateDiagram-v2
 | Sentence query finds its chunk in the top 3 | All | 124 of 152 | ❌ |
 | Smoke benchmark, both modes | Under 5 min | 35 to 40 s | ✅ |
 | Two benchmark runs, same inputs | Identical metrics | Identical | ✅ |
-| Benchmark reviewed by a second person | Reviewed | Not yet | ❌ |
+| Benchmark reviewed by a second person | Reviewed | All 30 accepted | ✅ |
+| Smoke questions answered with a citation | 10 of 10 | 10 of 10 | ✅ |
+| Injected instruction ignored by the model | Not followed | 3 of 3 | ✅ |
+| Answers rated supported by a person | At least 8 of 10 | Not yet rated | ❌ |
 
 ```mermaid
 pie showData title Chunks indexed
@@ -252,6 +259,26 @@ Labels point at a document and a quoted passage, not at chunk IDs, so they survi
 
 </details>
 
+<a id="asking-questions"></a>
+<details>
+<summary><strong>Asking questions</strong></summary>
+
+Requires Ollama with `qwen3:1.7b`; vector mode also needs `nomic-embed-text`.
+
+```powershell
+.\.venv\Scripts\techdocqa.exe ask "What is the default transaction isolation level in PostgreSQL?" --text
+.\.venv\Scripts\techdocqa.exe ask "What does linger.ms do?" --mode bm25 --technology "Apache Kafka"
+.\.venv\Scripts\techdocqa.exe eval --answers 10 --report-dir reports\evaluation
+```
+
+`ask` retrieves the top 5 chunks, keeps as many as fit the model's 8,192-token window, and asks the model to answer only from them and cite them as `[C1]`, `[C2]` and so on. Each citation is checked against the chunks actually supplied, and its title, section, page and source come from the registry, never from the model. With `--text` it prints the status, the answer and the numbered citations; without it, JSON. The status is `answered`, `no_evidence` (nothing matched, the model said the sources are insufficient, or no citation was valid) or `generation_error` (a model or index failure, with a reason code; exit code 1). The filters are the same as for `search`. Like `search`, `ask` includes every active document, including any private ones you have indexed.
+
+Questions and document text stay on this machine. Each question adds a line to the ignored `data\logs\qa.jsonl` with chunk IDs, configuration IDs and timings; the question and answer appear there only as hashes. The first answer after Ollama loads the model can take 20 s or more, and can exceed the 60 s timeout.
+
+`eval --answers 10` answers 10 smoke questions from the public reference and writes a report with an empty review column for AC-16.6. A review sheet with the cited chunk text is written to the ignored `data\evaluation`.
+
+</details>
+
 <a id="withdrawing-and-deleting-documents"></a>
 <details>
 <summary><strong>Withdrawing and deleting documents</strong></summary>
@@ -289,4 +316,4 @@ The source filename says v2, but its contents identify **Revision 3**; those con
 - [Local development setup](deployment/local_setup.md)
 - [Corpus preparation](datasets/README.md)
 
-The reference corpus is frozen as `techdocqa-reference-2026-10-24-v2` and the local models are selected. The smoke benchmark needs a second reviewer before Phase 8 uses it for refusal calibration; Phase 7 answering is next. Hardware and budget remain open.
+The reference corpus is frozen as `techdocqa-reference-2026-10-24-v2` and the local models are selected. The smoke benchmark is reviewed and Phase 7 answering is built; its 10 answers await a person's support rating, and Phase 8 calibrated refusal is next. Hardware and budget remain open.

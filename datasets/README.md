@@ -1,6 +1,6 @@
 # Reference corpus
 
-Phase 6 update: [benchmark_smoke.jsonl](benchmark_smoke.jsonl) holds the 30 draft smoke questions, and [review_log.md](review_log.md) records their review status, which is **not reviewed**. Labels name manifest `source_key`s and verbatim anchors, never chunk IDs. `techdocqa eval` searches only the `evaluation_included` documents below, so DDIA is excluded. See [Phase 6](../docs/PHASE_6_STATUS.md).
+Phase 6 update: [benchmark_smoke.jsonl](benchmark_smoke.jsonl) holds the 30 smoke questions, and [review_log.md](review_log.md) records their review: all 30 accepted on 2026-11-03. Labels name manifest `source_key`s and verbatim anchors, never chunk IDs. `techdocqa eval` searches only the `evaluation_included` documents below, so DDIA is excluded. See [Phase 6](../docs/PHASE_6_STATUS.md).
 
 Phase 4 update: the selected versions are now `chunked`; source bytes and the evaluation selection are unchanged. The public reference produces **816** chunks; private DDIA adds **1,919**. The verifier accepts later successful document stages. See [Phase 4](../docs/PHASE_4_STATUS.md) for the explicit CLI command, active chunk checks and model-input bound.
 

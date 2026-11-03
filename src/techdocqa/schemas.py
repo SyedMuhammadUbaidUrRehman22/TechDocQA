@@ -1,4 +1,4 @@
-"""Initial request and error contracts; persistence/QA schemas come with their phases."""
+"""Request, result and error contracts (section 8)."""
 
 from typing import Literal
 
@@ -57,6 +57,71 @@ class QuestionRequest(StrictModel):
     question: str = Field(min_length=1, max_length=1000, pattern=r"\S")
     filters: SearchFilters = Field(default_factory=SearchFilters)
     retrieval_config_id: str | None = None
+
+
+class Citation(StrictModel):
+    """Every field comes from the registry or the stored chunk artifact, never from model output (FR-17)."""
+    label: str
+    chunk_id: str
+    document_id: str
+    version_id: str
+    title: str | None = None
+    section_path: str | None = None
+    source: str
+    source_url: str | None = None
+    page: int | None = None
+
+
+class SourceReference(StrictModel):
+    document_id: str
+    version_id: str
+    title: str | None = None
+    source: str
+    source_url: str | None = None
+
+
+class QAWarning(StrictModel):
+    code: str
+    label: str | None = None
+
+
+class QALatency(StrictModel):
+    retrieval: int = 0
+    generation: int = 0
+    total: int = 0
+
+
+class QAUsage(StrictModel):
+    # Provider-reported counts, when the provider reports them; the bound is what the context budget assumed.
+    prompt_tokens: int | None = None
+    output_tokens: int | None = None
+    prompt_token_bound: int
+
+
+class QAResponse(StrictModel):
+    """Section 8.3 plus the Q-08 additions: sources, chunk counts, warnings and the generation configuration."""
+    status: Literal["answered", "no_evidence", "generation_error"]
+    reason: str | None = None
+    answer: str | None = None
+    citation_verified: bool = False
+    citations: list[Citation] = Field(default_factory=list)
+    # Non-strict mode only: the chunks the model was given, listed as context rather than per-claim support.
+    context_consulted: list[Citation] = Field(default_factory=list)
+    sources: list[SourceReference] = Field(default_factory=list)
+    # Chunk IDs placed in the prompt, in label order: evidence[0] is C1.
+    evidence: list[str] = Field(default_factory=list)
+    chunks_retrieved: int = 0
+    chunks_used: int = 0
+    mode: Literal["bm25", "vector"]
+    retrieval_config_id: str | None = None
+    generation_config_id: str | None = None
+    provider: str
+    model_id: str | None = None
+    retryable: bool = False
+    warnings: list[QAWarning] = Field(default_factory=list)
+    usage: QAUsage | None = None
+    latency_ms: QALatency = Field(default_factory=QALatency)
+    request_id: str
 
 
 class ErrorDetail(StrictModel):

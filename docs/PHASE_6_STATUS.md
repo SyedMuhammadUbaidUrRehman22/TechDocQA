@@ -2,7 +2,7 @@
 
 Implementation and evidence checkpoint 2026-11-03 on Windows, Python 3.13.3, local Ollama 0.40.13. Phase 6 adds the FR-19 smoke runner, Recall@1/3/5 and MRR for BM25 and vector search, the `eval` command and benchmark flags for deleted sources. Answering, refusal calibration, hybrid search and P1 metrics remain later phases.
 
-**Result:** the runner meets AC-19.1, AC-19.3, AC-19.4, AC-19.5 and AC-21.3 on the real corpus and in tests. **The benchmark itself is not reviewed.** Claude Code drafted all 30 questions at the project owner's request. FR-19 requires the team to write them and a second person to review them. Until both happen, every metric below is provisional and FR-19 P0 is not complete. See [Open items](#open-items).
+**Result:** the runner meets AC-19.1, AC-19.3, AC-19.4, AC-19.5 and AC-21.3 on the real corpus and in tests. Claude Code drafted all 30 questions at the project owner's request. **The project owner reviewed and accepted all 30 on 2026-11-03** without changes ([review log](../datasets/review_log.md)). Q-12 and Q-13 remain unapproved. See [Open items](#open-items).
 
 ## What was added
 
@@ -20,7 +20,7 @@ The label, metric and exclusion rules are recorded in [decisions](DECISIONS.md#p
 
 ## Measured results
 
-Committed report: [eval_81b33ca0e87744eabe3e2bd630477657](../reports/evaluation/eval_81b33ca0e87744eabe3e2bd630477657.md) ([JSON](../reports/evaluation/eval_81b33ca0e87744eabe3e2bd630477657.json)). Machine: 12.6 GB RAM, NVIDIA MX450 with 2 GB VRAM.
+Current report, on the reviewed benchmark (sha256 `11710120...ccfb92faa`, results fingerprint `130ea161...e141cc00a4`, 89.7 s): [eval_28a37a3f76d44568a7cf869ad21f02d0](../reports/evaluation/eval_28a37a3f76d44568a7cf869ad21f02d0.md). Its metrics equal those of the earlier draft run [eval_81b33ca0e87744eabe3e2bd630477657](../reports/evaluation/eval_81b33ca0e87744eabe3e2bd630477657.md), whose figures follow; only the review field and therefore the dataset hash changed. Machine: 12.6 GB RAM, NVIDIA MX450 with 2 GB VRAM.
 
 | Configuration | Evaluated | Recall@1 | Recall@3 | Recall@5 | MRR |
 |---|---|---|---|---|---|
@@ -66,7 +66,7 @@ Without `--report-dir`, reports go to the ignored `data\evaluation`. Two runs on
 | AC-19.3 | Met: hand-computed tests, including the source's MRR 0.5 example. |
 | AC-19.4 | Met on the real corpus and in tests. |
 | AC-19.5 | Met in tests. |
-| FR-19 P0 overall | **Not complete.** The benchmark is not team-written and not second-person reviewed. Q-12 and Q-13 are implemented as proposed but not formally approved. |
+| FR-19 P0 overall | Benchmark reviewed and accepted by the project owner. **Still open:** formal approval of Q-12 and Q-13, which are implemented as proposed. |
 | FR-19.4 and 19.5 records | Run ID, dataset ID and hash, corpus fingerprint, configuration IDs, provider and model with digest, library versions, code commit and dirty flag, dates and per-question results. Per-technology breakdowns are included, though they are P1. |
 | AC-21.3 | Met in tests: after a deletion, the next run flags the question as `SOURCE_DELETED`, excludes it and leaves the benchmark file byte-identical. Withdrawn, out-of-scope and unresolved labels are flagged too. **Not run against the real registry**, to avoid deleting a corpus document. |
 | FR-22 | `eval` added for the smoke slice. `ask` is still missing, so AC-22.1 and AC-22.3 stay incomplete. |
@@ -74,7 +74,7 @@ Without `--report-dir`, reports go to the ignored `data\evaluation`. Two runs on
 
 ## Open items
 
-- **Second-person review.** Use [review_log.md](../datasets/review_log.md). Accepting a question means changing `draft` to `reviewed`, which changes the dataset hash. Then rerun `eval` and commit the new report. Phase 8 calibration should use the reviewed set.
+- **Review done 2026-11-03**: all 30 accepted, logged in [review_log.md](../datasets/review_log.md). Phase 8 calibration uses this reviewed set.
 - **Q-12 and Q-13 approval.** An approval or amendment changes the metric policy ID.
 - **Question bias.** The questions were written after reading their passages, and some wording is close to the source, which favors BM25. Unanswerable questions are all clearly out of domain, as AC-18 asks. Only `smoke-ood-03` shares terms with the corpus.
 - **AC-12.1 and NFR-02 from Phase 5 remain open.** Phase 6 measures retrieval on questions, not sentence queries, so it does not close AC-12.1.

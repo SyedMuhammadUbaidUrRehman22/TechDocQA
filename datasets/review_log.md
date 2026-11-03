@@ -4,7 +4,7 @@ Benchmark: [benchmark_smoke.jsonl](benchmark_smoke.jsonl), 30 questions, 20 answ
 
 ## Status
 
-**Not reviewed.** All 30 questions are marked `"review": "draft"`. Claude Code drafted them on 2026-11-03 at the project owner's request, from the stored chunk text of the public reference. FR-19 requires that the team writes the benchmark and a second person reviews it, with disagreements resolved and logged here. Neither step has happened. Every run report counts the draft questions and labels its metrics provisional until they are reviewed.
+**Reviewed 2026-11-03.** Claude Code drafted all 30 questions on 2026-11-03 at the project owner's request, from the stored chunk text of the public reference. The project owner (Git user HMSalmanSaeed) reviewed them the same day and accepted all 30 without changes, so every question is now marked `"review": "reviewed"`. No disagreements were raised. The review was a person reviewing a machine-written draft; the record does not show which checks below were applied to each question.
 
 ## How labels work
 
@@ -42,7 +42,6 @@ For each unanswerable question, nothing in the 20 public documents answers it. T
 
 ## Disagreements
 
-None recorded, because no review has taken place.
-
 | Date | Question | Reviewer's position | Resolution |
 |---|---|---|---|
+| 2026-11-03 | All 30 | Accepted as drafted | No change |

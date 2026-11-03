@@ -11,20 +11,23 @@ from techdocqa.settings import Settings
 
 def pytest_addoption(parser):
     parser.addoption("--live", action="store_true", help="enable explicit live documentation smoke tests")
+    parser.addoption("--live-model", action="store_true", help="enable tests against the configured real model provider")
 
 
 def pytest_collection_modifyitems(config, items):
-    if not config.getoption("--live"):
-        for item in items:
-            if item.get_closest_marker("live"):
-                item.add_marker(pytest.mark.skip(reason="live network smoke requires --live"))
+    for marker, option in (("live", "--live"), ("live_model", "--live-model")):
+        if not config.getoption(option):
+            for item in items:
+                if item.get_closest_marker(marker):
+                    item.add_marker(pytest.mark.skip(reason=f"{marker} tests require {option}"))
 
 
 @pytest.fixture(autouse=True)
 def deny_unexpected_network(request, monkeypatch):
-    if request.node.get_closest_marker("live") and request.config.getoption("--live"):
-        monkeypatch.delenv("TECHDOCQA_OFFLINE", raising=False)
-        return
+    for marker, option in (("live", "--live"), ("live_model", "--live-model")):
+        if request.node.get_closest_marker(marker) and request.config.getoption(option):
+            monkeypatch.delenv("TECHDOCQA_OFFLINE", raising=False)
+            return
     def denied(*args, **kwargs):
         raise AssertionError("Unexpected outbound network access in an offline test")
     monkeypatch.setattr(socket, "getaddrinfo", denied)

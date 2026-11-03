@@ -27,8 +27,25 @@ class ModelSettings(StrictModel):
     embedding_batch_size: int = Field(default=32, gt=0)
     base_url: str = Field(default="http://127.0.0.1:11434", min_length=1)
     context_window: int | None = Field(default=None, gt=0)
+    chat_model_digest: str | None = Field(default=None, pattern=r"^[0-9a-f]{64}$")
+    # "byte-bpe": verified byte-level BPE, so UTF-8 bytes bound the token count. Other tokenizers need their own bound.
+    chat_tokenizer: Literal["byte-bpe"] | None = None
+    # Reserved for the chat template's role markers around the messages; verified per model.
+    chat_template_reserve_tokens: int = Field(default=96, ge=0)
+    max_output_tokens: int = Field(default=512, gt=0)
+    # None leaves the model's default; false disables a thinking model's reasoning output.
+    chat_reasoning: bool | None = None
     temperature: float = Field(default=0.0, ge=0.0, le=0.2)
-    timeout_seconds: int = Field(default=60, gt=0)
+    # Unset means the FR-16 default: 60 s for a local model, 30 s for an API.
+    timeout_seconds: int | None = Field(default=None, gt=0)
+
+    @model_validator(mode="after")
+    def check_generation_bounds(self) -> "ModelSettings":
+        if self.timeout_seconds is None:
+            self.timeout_seconds = 60 if self.provider == "ollama" else 30
+        if self.context_window is not None and self.max_output_tokens + self.chat_template_reserve_tokens >= self.context_window:
+            raise ValueError("max_output_tokens plus the template reserve must leave room in context_window")
+        return self
 
 
 class IngestionSettings(StrictModel):
@@ -71,6 +88,8 @@ class RetrievalSettings(StrictModel):
 class AnsweringSettings(StrictModel):
     max_question_characters: int = Field(default=1000, ge=1, le=1000)
     strict_citations: bool = True
+    # One JSON line per question under <data>/logs: IDs, hashes and outcomes, never document text or the question.
+    query_log: bool = True
 
 
 class OnlineSource(StrictModel):
@@ -146,6 +165,11 @@ class Settings(StrictModel):
         """Check selection only; provider availability is a later integration gate."""
         if not all((self.model.chat_model, self.model.embedding_model, self.model.context_window)):
             raise ValueError("chat_model, embedding_model and context_window must be selected")
+
+    def require_chat_profile(self) -> None:
+        """Answering needs a model, an explicit window and a verified way to bound prompt tokens."""
+        if not all((self.model.chat_model, self.model.context_window, self.model.chat_tokenizer)):
+            raise ValueError("chat_model, context_window and chat_tokenizer must be selected")
 
 
 def load_settings(path: Path, profile: Path | None = None) -> Settings:

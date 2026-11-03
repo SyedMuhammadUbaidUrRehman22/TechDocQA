@@ -36,4 +36,7 @@ where = ["src"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-q --basetemp=.pytest_tmp"
-markers = ["live: optional real-network documentation smoke; disabled without --live"]
+markers = [
+  "live: optional real-network documentation smoke; disabled without --live",
+  "live_model: optional test against the configured real model provider; disabled without --live-model",
+]
