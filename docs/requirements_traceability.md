@@ -1,5 +1,9 @@
 # Requirements traceability
 
+## Implemented acceptance slices - Phase 7
+
+2026-11-03: `tests/test_generation.py` covers AC-16.1 (response shape), AC-16.2 (prompt capture), AC-16.3 (unreachable, missing, changed and timed-out models, authentication, rate limits, other errors and an unreachable embedder), AC-16.4, AC-16.5, the FR-18.3 and FR-18.5 refusal slices, the FR-23.3 delimiting, AC-23.4 with a runtime secret, AC-22.1, the `ask` CLI and an offline AC-22.3 workflow. `tests/test_citations.py` covers AC-17.1 to AC-17.4, non-strict mode and a source withdrawn during generation. On the real corpus, `eval --answers 10` meets AC-16.1 (10 of 10), and the opt-in `--live-model` test passed AC-23.3 (3 of 3) at its second attempt. AC-16.6 human review is open. FR-18 calibration, the real-model AC-22.3 script and AC-22.4 remain later phases. See the [Phase 7 report](PHASE_7_STATUS.md).
+
 ## Implemented acceptance slices - Phase 6
 
 2026-11-03: `tests/test_evaluation.py` covers AC-19.3 with hand-computed examples, AC-19.5 and the other loader rules, AC-19.4 repeat runs, the evaluation scope that excludes documents outside the manifest, failed-provider isolation, the `eval` CLI, and AC-21.3: deleted, withdrawn, out-of-scope and unresolved labels are flagged without changing the benchmark file. On the real corpus, `techdocqa eval` meets AC-19.1 (35 to 40 s) and AC-19.4 (identical fingerprints over two runs). The project owner reviewed and accepted all 30 questions on 2026-11-03; Q-12/Q-13 remain unapproved. AC-21.3 was not run against the real registry. AC-22.1 and AC-22.3 still need `ask`. See the [Phase 6 report](PHASE_6_STATUS.md). Original source AC text below is unchanged.

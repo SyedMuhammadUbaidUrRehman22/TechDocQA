@@ -1,5 +1,21 @@
 # TechDocQA architectural decisions
 
+## Phase 7 contracts (2026-11-03)
+
+These rules implement FR-16, FR-17 and the FR-23 prompt slice, and resolve the QA parts of Q-08 and Q-15. Q-07 is untouched: no score threshold is applied in any mode until Phase 8 calibrates one. Evidence is in [Phase 7](PHASE_7_STATUS.md).
+
+- **Chain (C-01).** `ChatPromptTemplate | ChatOllama`, streamed, with prompt version `grounded-qa-v1`. Retrieval stays the registry-gated `search()`. Custom code covers only context fitting, citation verification and the query log.
+- **Token bound.** `chat_tokenizer = "byte-bpe"` is allowed only after the model's tokenizer is verified as byte-level BPE. For `qwen3:1.7b` the installed metadata says `tokenizer.ggml.model = gpt2`. The bound is the UTF-8 bytes of the message contents plus `chat_template_reserve_tokens` (96; the installed template adds at most about 60). Other tokenizers need their own verified bound. `context_window` (8192) is sent as `num_ctx` and `max_output_tokens` (512) as `num_predict`. The prompt must fit `context_window - max_output_tokens`.
+- **Trimming (FR-16.2).** The kept chunks are the longest top-ranked prefix that fits, so the lowest-ranked go first. If none fits, the result is `generation_error` / `CONTEXT_WINDOW_EXCEEDED` with no call. Labels are `C1` upward in rank order, and `evidence[i]` is label `C(i+1)`.
+- **Delimiting (FR-23.3).** Each chunk is enclosed in `<<<SOURCE Cn b>>>` and `<<<END Cn b>>>` lines, where `b` is the first 16 hex digits of SHA-256 over the question and every retrieved chunk ID and text. Chunk text is not altered. Header fields are collapsed to one line.
+- **Status mapping.** Request and configuration errors raise section 8.4 errors: `INVALID_QUESTION`, `MODE_NOT_AVAILABLE`, `RETRIEVAL_CONFIG_MISMATCH`, `CHAT_PROFILE_UNVERIFIED`. A provider or index failure during retrieval or generation is `generation_error`, with the failing code as `reason`, including embedding codes such as `EMBEDDING_PROVIDER_UNAVAILABLE`. That is how FR-18.4 is kept: a runtime failure is never `no_evidence`. CLI exit codes: 0 for `answered` and `no_evidence`, 1 for `generation_error` and errors, 2 for invalid syntax.
+- **Refusal slices before FR-18.** No results is `no_evidence` / `NO_MATCHING_DOCUMENTS` (FR-18.3). A reply containing `INSUFFICIENT_CONTEXT` anywhere is `no_evidence` / `INSUFFICIENT_CONTEXT` (FR-18.5). Both show fixed wording. Every response warns `SUFFICIENCY_NOT_CALIBRATED`.
+- **Citations (FR-17).** A marker is `[C1]`, `[C1, C2]` or `[C1; C2]`. An unknown label is removed from the answer text and from the citations, with one `INVALID_CITATION_REMOVED` per distinct label. After generation, each cited chunk must still belong to an eligible version's current artifact; otherwise it is removed with `CITATION_SOURCE_INACTIVE`. `source` is the registry `source_key`, and `source_url` is the stored URL or null. An answer left empty after removals is `NO_VALID_CITATIONS` in both modes.
+- **Timeouts.** One wall-clock deadline covers the streamed answer. An unset `timeout_seconds` is 60 s for Ollama and 30 s for OpenAI. A pinned `chat_model_digest` is checked against Ollama's model list before each answer.
+- **Providers.** `chat_reasoning = false` turns off qwen3's thinking output. The OpenAI branch imports `langchain-openai` lazily: the package is not installed or locked, so it returns `PROVIDER_NOT_INSTALLED`. The provider client reads `OPENAI_API_KEY` itself, and a missing key is `LLM_CREDENTIALS_MISSING` before any call. Embeddings stay Ollama only.
+- **Query log (FR-16.6, Q-15).** `data/logs/qa.jsonl`, one line per question. The question, answer and prompt appear only as SHA-256 hashes, and no chunk text is logged. `answering.query_log = false` turns it off.
+- **Answer review.** `eval --answers N` answers the first N answerable questions, round-robin by technology, scoped to the evaluation manifest. The committed report names chunk IDs, as Phase 6 reports do. The review sheet with cited text goes to the ignored `data/evaluation`.
+
 ## Phase 6 contracts (2026-11-03)
 
 These rules implement the Q-12 and Q-13 proposals as written. **Neither has been formally approved**, so each run records the policy ID `q13-proposed-v1`, and a later approval or amendment changes that ID. Evidence is in [Phase 6](PHASE_6_STATUS.md).

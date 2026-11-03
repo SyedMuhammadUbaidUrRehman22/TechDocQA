@@ -1,0 +1,861 @@
+{
+  "run_id": "answers_d724f334f9f0409884db95613c61663e",
+  "started_at": "2026-11-03T14:41:45.054183+00:00",
+  "finished_at": "2026-11-03T14:45:02.292523+00:00",
+  "duration_seconds": 197.238,
+  "dataset": {
+    "dataset_id": "benchmark_smoke",
+    "sha256": "11710120d0f8bd83f5988d78813cb979511bb7aba808b679c884db3ccfb92faa",
+    "questions": 30,
+    "reviewed": 30
+  },
+  "corpus": {
+    "manifest_dataset_id": "techdocqa-reference-2026-10-24-v2",
+    "manifest_status": "frozen",
+    "manifest_fingerprint": "40229e3caebc8816d6ad98d36bddc10eb133deb7d3b1c416f8a1331b9d75591a",
+    "scope_documents": 20,
+    "searchable_documents": 20,
+    "searchable_chunks": 816,
+    "excluded_eligible_documents": 1,
+    "unavailable": {},
+    "content_drift": [],
+    "corpus_fingerprint": "e8713f0c15eeb6db2c801a319c2324507302242c6265b8fff1ae67db63a2c4b5"
+  },
+  "selection": "first 10 answerable questions, round-robin by technology in file order",
+  "environment": {
+    "code": {
+      "package": "0.1.0",
+      "commit": "f8e7a444dcb14a3828e1cef06e5c62963bb809d3",
+      "dirty": true
+    },
+    "provider": "ollama",
+    "model_id": "ollama/qwen3:1.7b@8f68893c685c3ddff2aa3fffce2aa60a30bb2da65ca488b61fff134a4d1730e7",
+    "generation_config_id": "gc_a370881aa0eea90888767cd3908861e669277c3b909ec13cc0d10bc620141369",
+    "context_window": 8192,
+    "max_output_tokens": 512,
+    "temperature": 0.0,
+    "timeout_seconds": 60,
+    "strict_citations": true
+  },
+  "summary": {
+    "questions": 10,
+    "statuses": {
+      "answered": 10,
+      "no_evidence": 0,
+      "generation_error": 0
+    },
+    "ac_16_1": {
+      "met": true,
+      "answered_with_citation": 10
+    },
+    "cites_labeled_passage": 9,
+    "latency_ms": {
+      "retrieval": {
+        "median": 3082.0,
+        "p95": 8995,
+        "max": 8995
+      },
+      "generation": {
+        "median": 13519.5,
+        "p95": 26383,
+        "max": 26383
+      },
+      "total": {
+        "median": 17765.5,
+        "p95": 32208,
+        "max": 32208
+      }
+    },
+    "prompt_tokens": {
+      "max": 1544,
+      "max_bound": 5843,
+      "bound_held": true
+    },
+    "human_review": "pending: AC-16.6 needs a person to rate support against the cited chunks"
+  },
+  "questions": [
+    {
+      "id": "smoke-kafka-01",
+      "technology": "Apache Kafka",
+      "type": "identifier",
+      "question": "What does the linger.ms producer setting do, and what is its default value?",
+      "flags": [],
+      "response": {
+        "status": "answered",
+        "reason": null,
+        "answer": "The `linger.ms` producer setting allows the producer to wait for a specified amount of time before sending a batch of records, enabling batching of records that arrive between request transmissions. The default value is 5 milliseconds [C3].",
+        "citation_verified": true,
+        "citations": [
+          {
+            "label": "C3",
+            "chunk_id": "chk_84b7ce1745cb179e3ed9068d0bc3497708506c387d65f43954c3e373659f5c44",
+            "document_id": "doc_e908b26340164fa6a08b78348adb739c",
+            "version_id": "ver_397f457bf5b640c19a8dcddb97aa487a",
+            "title": "Producer Configs | Apache Kafka",
+            "section_path": "Producer Configs > linger.ms",
+            "source": "https://kafka.apache.org/43/configuration/producer-configs/",
+            "source_url": "https://kafka.apache.org/43/configuration/producer-configs/",
+            "page": null
+          }
+        ],
+        "context_consulted": [],
+        "sources": [
+          {
+            "document_id": "doc_e908b26340164fa6a08b78348adb739c",
+            "version_id": "ver_397f457bf5b640c19a8dcddb97aa487a",
+            "title": "Producer Configs | Apache Kafka",
+            "source": "https://kafka.apache.org/43/configuration/producer-configs/",
+            "source_url": "https://kafka.apache.org/43/configuration/producer-configs/"
+          }
+        ],
+        "evidence": [
+          "chk_d56f5ce42b8871ef5fc526dd8361b077241f36b4c8f43e62dd4a5c1e73b9e18c",
+          "chk_79e53c4da8b5c76672139b19d9fd70c946754e43d2e89116b294acf6c634bfe4",
+          "chk_84b7ce1745cb179e3ed9068d0bc3497708506c387d65f43954c3e373659f5c44",
+          "chk_ab365b4ed11831a2f1792baa89d071a66c67c9703f645efe5b528f0cc5dc72a1",
+          "chk_88e35ebe90df7279dc779c4f65064642b65bb46b9db9ec022e289b606f990bf2"
+        ],
+        "chunks_retrieved": 5,
+        "chunks_used": 5,
+        "mode": "vector",
+        "retrieval_config_id": "rc_5b4d2678757a1bbf3583ab41544220ad7afdbddefff2fb6bb1b9cef49f296de2",
+        "generation_config_id": "gc_a370881aa0eea90888767cd3908861e669277c3b909ec13cc0d10bc620141369",
+        "provider": "ollama",
+        "model_id": "ollama/qwen3:1.7b@8f68893c685c3ddff2aa3fffce2aa60a30bb2da65ca488b61fff134a4d1730e7",
+        "retryable": false,
+        "warnings": [
+          {
+            "code": "SUFFICIENCY_NOT_CALIBRATED",
+            "label": null
+          }
+        ],
+        "usage": {
+          "prompt_tokens": 1319,
+          "output_tokens": 47,
+          "prompt_token_bound": 5448
+        },
+        "latency_ms": {
+          "retrieval": 8995,
+          "generation": 12947,
+          "total": 22158
+        },
+        "request_id": "req_03160c28488045238cd92500c13afe2a"
+      },
+      "cites_labeled_passage": true,
+      "evidence_has_labeled_passage": true,
+      "review": {
+        "supported": null,
+        "reviewer": null,
+        "notes": null
+      }
+    },
+    {
+      "id": "smoke-airflow-01",
+      "technology": "Apache Airflow",
+      "type": "identifier",
+      "question": "How do I set a maximum runtime for an Airflow task with execution_timeout?",
+      "flags": [],
+      "response": {
+        "status": "answered",
+        "reason": null,
+        "answer": "Setting a maximum runtime for an Airflow task with `execution_timeout` involves configuring the task's `execution_timeout` attribute to a `datetime.timedelta` value. This attribute defines the maximum time allowed for the task to run. The value is specified as a timedelta object, which can be set in the task's configuration.\n\n[C1]",
+        "citation_verified": true,
+        "citations": [
+          {
+            "label": "C1",
+            "chunk_id": "chk_8bd8bc451a3b00115fe2c3f28696bba31028b56cedd0eb6070dd9a6c9c44287e",
+            "document_id": "doc_348e68dbf8dd49a1b7e11c8fb2980496",
+            "version_id": "ver_570b2b46ca86455ca087565c73465d48",
+            "title": "Tasks \u2014 Airflow 3.3.2 Documentation",
+            "section_path": "Tasks > Timeouts",
+            "source": "https://airflow.apache.org/docs/apache-airflow/stable/core-concepts/tasks.html",
+            "source_url": "https://airflow.apache.org/docs/apache-airflow/stable/core-concepts/tasks.html",
+            "page": null
+          }
+        ],
+        "context_consulted": [],
+        "sources": [
+          {
+            "document_id": "doc_348e68dbf8dd49a1b7e11c8fb2980496",
+            "version_id": "ver_570b2b46ca86455ca087565c73465d48",
+            "title": "Tasks \u2014 Airflow 3.3.2 Documentation",
+            "source": "https://airflow.apache.org/docs/apache-airflow/stable/core-concepts/tasks.html",
+            "source_url": "https://airflow.apache.org/docs/apache-airflow/stable/core-concepts/tasks.html"
+          }
+        ],
+        "evidence": [
+          "chk_8bd8bc451a3b00115fe2c3f28696bba31028b56cedd0eb6070dd9a6c9c44287e",
+          "chk_3f2ed6ae434433af198a1aefd12b761f6c67a8bb964f6e44d0cfc7213c4808a2",
+          "chk_b80aed55616faee93e5dde1b624ec55cff9bd4f2e9a257090327481dc8f157b7",
+          "chk_27716719c5095a18afa227d4230cd37e772b9b4e09ba9eb17953c28b5c91dddf",
+          "chk_71c85d879e710ec4cdeddd688d3f5f65d2c07e4be13b8ced69893160ca043495"
+        ],
+        "chunks_retrieved": 5,
+        "chunks_used": 5,
+        "mode": "vector",
+        "retrieval_config_id": "rc_5b4d2678757a1bbf3583ab41544220ad7afdbddefff2fb6bb1b9cef49f296de2",
+        "generation_config_id": "gc_a370881aa0eea90888767cd3908861e669277c3b909ec13cc0d10bc620141369",
+        "provider": "ollama",
+        "model_id": "ollama/qwen3:1.7b@8f68893c685c3ddff2aa3fffce2aa60a30bb2da65ca488b61fff134a4d1730e7",
+        "retryable": false,
+        "warnings": [
+          {
+            "code": "SUFFICIENCY_NOT_CALIBRATED",
+            "label": null
+          }
+        ],
+        "usage": {
+          "prompt_tokens": 1428,
+          "output_tokens": 68,
+          "prompt_token_bound": 5720
+        },
+        "latency_ms": {
+          "retrieval": 1525,
+          "generation": 14092,
+          "total": 15800
+        },
+        "request_id": "req_6c326d2f1ac44883b1bb83d02034c2f3"
+      },
+      "cites_labeled_passage": true,
+      "evidence_has_labeled_passage": true,
+      "review": {
+        "supported": null,
+        "reviewer": null,
+        "notes": null
+      }
+    },
+    {
+      "id": "smoke-spark-01",
+      "technology": "Apache Spark",
+      "type": "identifier",
+      "question": "What does spark.memory.fraction control and what is its default?",
+      "flags": [],
+      "response": {
+        "status": "answered",
+        "reason": null,
+        "answer": "`spark.memory.fraction` controls the size of `M` as a fraction of the (JVM heap space - 300MiB), and its default value is 0.6 [C1].",
+        "citation_verified": true,
+        "citations": [
+          {
+            "label": "C1",
+            "chunk_id": "chk_d5962cf83b7216efdb79f1327fa864b8ea819f074e0020c5bbbc95a93123c264",
+            "document_id": "doc_8e9694340baf4db4885f6cdd32831dbd",
+            "version_id": "ver_87c045ad95bf4df69122e5d3df264951",
+            "title": "Tuning Spark",
+            "section_path": "Memory Tuning > Memory Management Overview",
+            "source": "[\"spark-4.0.1-tuning.md\",null]",
+            "source_url": "https://raw.githubusercontent.com/apache/spark/v4.0.1/docs/tuning.md",
+            "page": null
+          }
+        ],
+        "context_consulted": [],
+        "sources": [
+          {
+            "document_id": "doc_8e9694340baf4db4885f6cdd32831dbd",
+            "version_id": "ver_87c045ad95bf4df69122e5d3df264951",
+            "title": "Tuning Spark",
+            "source": "[\"spark-4.0.1-tuning.md\",null]",
+            "source_url": "https://raw.githubusercontent.com/apache/spark/v4.0.1/docs/tuning.md"
+          }
+        ],
+        "evidence": [
+          "chk_d5962cf83b7216efdb79f1327fa864b8ea819f074e0020c5bbbc95a93123c264",
+          "chk_2b10548b6b3f6b5a73ade2ae5681be169b3049b8ab3d454941daa4e1765076ea",
+          "chk_73b836fe7569e3bbf590fa663b17170efd47a64c614b2025d5204d217decc2a1",
+          "chk_614d4fb602f420ff38e280e3e58f3f9ab3d39c959735864f64bfc83e2cc1b078",
+          "chk_c56939d9924b374c3e8a57716c9df284ee099bf913c86ef04b4156b9da702ae2"
+        ],
+        "chunks_retrieved": 5,
+        "chunks_used": 5,
+        "mode": "vector",
+        "retrieval_config_id": "rc_5b4d2678757a1bbf3583ab41544220ad7afdbddefff2fb6bb1b9cef49f296de2",
+        "generation_config_id": "gc_a370881aa0eea90888767cd3908861e669277c3b909ec13cc0d10bc620141369",
+        "provider": "ollama",
+        "model_id": "ollama/qwen3:1.7b@8f68893c685c3ddff2aa3fffce2aa60a30bb2da65ca488b61fff134a4d1730e7",
+        "retryable": false,
+        "warnings": [
+          {
+            "code": "SUFFICIENCY_NOT_CALIBRATED",
+            "label": null
+          }
+        ],
+        "usage": {
+          "prompt_tokens": 1215,
+          "output_tokens": 45,
+          "prompt_token_bound": 4975
+        },
+        "latency_ms": {
+          "retrieval": 1244,
+          "generation": 11150,
+          "total": 12648
+        },
+        "request_id": "req_e8b382385c3844218a999a7056b93910"
+      },
+      "cites_labeled_passage": true,
+      "evidence_has_labeled_passage": true,
+      "review": {
+        "supported": null,
+        "reviewer": null,
+        "notes": null
+      }
+    },
+    {
+      "id": "smoke-postgresql-01",
+      "technology": "PostgreSQL",
+      "type": "factual",
+      "question": "What is the default transaction isolation level in PostgreSQL?",
+      "flags": [],
+      "response": {
+        "status": "answered",
+        "reason": null,
+        "answer": "The default transaction isolation level in PostgreSQL is Read Committed [C4].",
+        "citation_verified": true,
+        "citations": [
+          {
+            "label": "C4",
+            "chunk_id": "chk_25179a9d3e3bfaf359f0ee59e9cee54b73c2111b9b5d25ef2522b0c131f5e213",
+            "document_id": "doc_65cd8ee6cb6b4b07aaed666fa4f66921",
+            "version_id": "ver_b8d5d693dafa4f5596345c058fa7a083",
+            "title": "PostgreSQL: Documentation: 18: 13.2.\u00a0Transaction Isolation",
+            "section_path": "13.2.\u00a0Transaction Isolation # > 13.2.1.\u00a0Read Committed Isolation Level #",
+            "source": "https://www.postgresql.org/docs/18/transaction-iso.html",
+            "source_url": "https://www.postgresql.org/docs/18/transaction-iso.html",
+            "page": null
+          }
+        ],
+        "context_consulted": [],
+        "sources": [
+          {
+            "document_id": "doc_65cd8ee6cb6b4b07aaed666fa4f66921",
+            "version_id": "ver_b8d5d693dafa4f5596345c058fa7a083",
+            "title": "PostgreSQL: Documentation: 18: 13.2.\u00a0Transaction Isolation",
+            "source": "https://www.postgresql.org/docs/18/transaction-iso.html",
+            "source_url": "https://www.postgresql.org/docs/18/transaction-iso.html"
+          }
+        ],
+        "evidence": [
+          "chk_8c9c4999c6aeba7a9f87c72148a94a08f15d83434c68a6a3c5ca6ee9b5e91ffd",
+          "chk_c061132714ba14c82e69188306b5814fe2e953994a34d346c7d82f2e23842f87",
+          "chk_9d6f765c3000647304eff384c7d1948f056a65dc5e081c44cf9d7e9d2f169e54",
+          "chk_25179a9d3e3bfaf359f0ee59e9cee54b73c2111b9b5d25ef2522b0c131f5e213",
+          "chk_3b03d4e8d941609e7494d64dd9f638e75cc73870f61846e4ed3e486b65cf2f32"
+        ],
+        "chunks_retrieved": 5,
+        "chunks_used": 5,
+        "mode": "vector",
+        "retrieval_config_id": "rc_5b4d2678757a1bbf3583ab41544220ad7afdbddefff2fb6bb1b9cef49f296de2",
+        "generation_config_id": "gc_a370881aa0eea90888767cd3908861e669277c3b909ec13cc0d10bc620141369",
+        "provider": "ollama",
+        "model_id": "ollama/qwen3:1.7b@8f68893c685c3ddff2aa3fffce2aa60a30bb2da65ca488b61fff134a4d1730e7",
+        "retryable": false,
+        "warnings": [
+          {
+            "code": "SUFFICIENCY_NOT_CALIBRATED",
+            "label": null
+          }
+        ],
+        "usage": {
+          "prompt_tokens": 1246,
+          "output_tokens": 16,
+          "prompt_token_bound": 5321
+        },
+        "latency_ms": {
+          "retrieval": 2616,
+          "generation": 10463,
+          "total": 14650
+        },
+        "request_id": "req_ac013a8c382c44bdbfc44b7b9de60c24"
+      },
+      "cites_labeled_passage": true,
+      "evidence_has_labeled_passage": true,
+      "review": {
+        "supported": null,
+        "reviewer": null,
+        "notes": null
+      }
+    },
+    {
+      "id": "smoke-kafka-02",
+      "technology": "Apache Kafka",
+      "type": "how_to",
+      "question": "How do I create a topic called quickstart-events from the command line?",
+      "flags": [],
+      "response": {
+        "status": "answered",
+        "reason": null,
+        "answer": "To create a topic called `quickstart-events` from the command line, you can use the following command:\n\n$ bin/kafka-topics.sh --create --topic quickstart-events --bootstrap-server localhost:9092\n\nThis command creates a new topic named `quickstart-events` with default settings. The topic will have one partition and a replication factor of 1. \n\nSource: [C1] [C3]",
+        "citation_verified": true,
+        "citations": [
+          {
+            "label": "C1",
+            "chunk_id": "chk_d2d64b3ce4469b0c409eb839fd9dbd3bff10308bcf6c3396b5b0010b60ef097b",
+            "document_id": "doc_4dd377efb44f4bf7a72ec52df02dee86",
+            "version_id": "ver_81c0200118744f9fbdbbddc3090ccd13",
+            "title": "Quick Start | Apache Kafka",
+            "section_path": "Quick Start > Step 3: Create a topic to store your events",
+            "source": "https://kafka.apache.org/43/getting-started/quickstart/",
+            "source_url": "https://kafka.apache.org/43/getting-started/quickstart/",
+            "page": null
+          },
+          {
+            "label": "C3",
+            "chunk_id": "chk_3345bc5cc3918ae99c71b4dd01376dc7b51a5ae15a2a12c852a773028a3fd01d",
+            "document_id": "doc_4dd377efb44f4bf7a72ec52df02dee86",
+            "version_id": "ver_81c0200118744f9fbdbbddc3090ccd13",
+            "title": "Quick Start | Apache Kafka",
+            "section_path": "Quick Start > Step 3: Create a topic to store your events",
+            "source": "https://kafka.apache.org/43/getting-started/quickstart/",
+            "source_url": "https://kafka.apache.org/43/getting-started/quickstart/",
+            "page": null
+          }
+        ],
+        "context_consulted": [],
+        "sources": [
+          {
+            "document_id": "doc_4dd377efb44f4bf7a72ec52df02dee86",
+            "version_id": "ver_81c0200118744f9fbdbbddc3090ccd13",
+            "title": "Quick Start | Apache Kafka",
+            "source": "https://kafka.apache.org/43/getting-started/quickstart/",
+            "source_url": "https://kafka.apache.org/43/getting-started/quickstart/"
+          }
+        ],
+        "evidence": [
+          "chk_d2d64b3ce4469b0c409eb839fd9dbd3bff10308bcf6c3396b5b0010b60ef097b",
+          "chk_fdfbb1a43e0fccf33517b2019c391583da2561cc94aa7b5a14870ef179af59a1",
+          "chk_3345bc5cc3918ae99c71b4dd01376dc7b51a5ae15a2a12c852a773028a3fd01d",
+          "chk_7e9f71377eaec24db8c5f390d678a1ed35c37c25bb540ae314b3646cb16d2322",
+          "chk_030b6a648e42c1012a3d7a827c3c7835384e28b24fdb80a756cd2eb7a803110a"
+        ],
+        "chunks_retrieved": 5,
+        "chunks_used": 5,
+        "mode": "vector",
+        "retrieval_config_id": "rc_5b4d2678757a1bbf3583ab41544220ad7afdbddefff2fb6bb1b9cef49f296de2",
+        "generation_config_id": "gc_a370881aa0eea90888767cd3908861e669277c3b909ec13cc0d10bc620141369",
+        "provider": "ollama",
+        "model_id": "ollama/qwen3:1.7b@8f68893c685c3ddff2aa3fffce2aa60a30bb2da65ca488b61fff134a4d1730e7",
+        "retryable": false,
+        "warnings": [
+          {
+            "code": "SUFFICIENCY_NOT_CALIBRATED",
+            "label": null
+          }
+        ],
+        "usage": {
+          "prompt_tokens": 1361,
+          "output_tokens": 88,
+          "prompt_token_bound": 5337
+        },
+        "latency_ms": {
+          "retrieval": 5229,
+          "generation": 26383,
+          "total": 32208
+        },
+        "request_id": "req_4e8c9e729b9c4cc1b2a541740a167277"
+      },
+      "cites_labeled_passage": true,
+      "evidence_has_labeled_passage": true,
+      "review": {
+        "supported": null,
+        "reviewer": null,
+        "notes": null
+      }
+    },
+    {
+      "id": "smoke-airflow-02",
+      "technology": "Apache Airflow",
+      "type": "factual",
+      "question": "How does Airflow decide whether a Dag run succeeded or failed?",
+      "flags": [],
+      "response": {
+        "status": "answered",
+        "reason": null,
+        "answer": "Airflow determines whether a Dag run succeeded or failed based on the states of its leaf nodes. A Dag run is marked as **success** if all leaf nodes are in a terminal state of **success** or **skipped**. If any leaf node is in a terminal state of **failed** or **upstream_failed**, the Dag run is marked as **failed** [C3].",
+        "citation_verified": true,
+        "citations": [
+          {
+            "label": "C3",
+            "chunk_id": "chk_a17aadcf406260ccfce562ea344ad57a41407901f926d63332391e69fbf7763c",
+            "document_id": "doc_c605cdca20214683af415003fa7676f9",
+            "version_id": "ver_fef9eb662b9343758c578d51c35223e9",
+            "title": "Dag Runs \u2014 Airflow 3.3.2 Documentation",
+            "section_path": "Dag Runs > Dag Run Status",
+            "source": "https://airflow.apache.org/docs/apache-airflow/stable/core-concepts/dag-run.html",
+            "source_url": "https://airflow.apache.org/docs/apache-airflow/stable/core-concepts/dag-run.html",
+            "page": null
+          }
+        ],
+        "context_consulted": [],
+        "sources": [
+          {
+            "document_id": "doc_c605cdca20214683af415003fa7676f9",
+            "version_id": "ver_fef9eb662b9343758c578d51c35223e9",
+            "title": "Dag Runs \u2014 Airflow 3.3.2 Documentation",
+            "source": "https://airflow.apache.org/docs/apache-airflow/stable/core-concepts/dag-run.html",
+            "source_url": "https://airflow.apache.org/docs/apache-airflow/stable/core-concepts/dag-run.html"
+          }
+        ],
+        "evidence": [
+          "chk_50b925dd7475847a1e313994a8a196b45a04e0896080348199d8105bae6de83c",
+          "chk_a619de7df6e0b525db5aceb35f171144881d403200d04b471eeadca9477486f3",
+          "chk_a17aadcf406260ccfce562ea344ad57a41407901f926d63332391e69fbf7763c",
+          "chk_f612c78c64cb14d0cf2f1b39f692021ae4136651e973094423e20eaa02ab9d06",
+          "chk_ff608f9cab28570440337c2ce8340890f7af4297c06c0581533fea7ae7a18cf5"
+        ],
+        "chunks_retrieved": 5,
+        "chunks_used": 5,
+        "mode": "vector",
+        "retrieval_config_id": "rc_5b4d2678757a1bbf3583ab41544220ad7afdbddefff2fb6bb1b9cef49f296de2",
+        "generation_config_id": "gc_a370881aa0eea90888767cd3908861e669277c3b909ec13cc0d10bc620141369",
+        "provider": "ollama",
+        "model_id": "ollama/qwen3:1.7b@8f68893c685c3ddff2aa3fffce2aa60a30bb2da65ca488b61fff134a4d1730e7",
+        "retryable": false,
+        "warnings": [
+          {
+            "code": "SUFFICIENCY_NOT_CALIBRATED",
+            "label": null
+          }
+        ],
+        "usage": {
+          "prompt_tokens": 1322,
+          "output_tokens": 80,
+          "prompt_token_bound": 5459
+        },
+        "latency_ms": {
+          "retrieval": 3923,
+          "generation": 19633,
+          "total": 23935
+        },
+        "request_id": "req_91ac78ca1f604498b149a2eb1d577225"
+      },
+      "cites_labeled_passage": true,
+      "evidence_has_labeled_passage": true,
+      "review": {
+        "supported": null,
+        "reviewer": null,
+        "notes": null
+      }
+    },
+    {
+      "id": "smoke-spark-02",
+      "technology": "Apache Spark",
+      "type": "how_to",
+      "question": "How do I switch a Spark application to Kryo serialization?",
+      "flags": [],
+      "response": {
+        "status": "answered",
+        "reason": null,
+        "answer": "To switch a Spark application to Kryo serialization, you can initialize your job with a `SparkConf` and call `conf.set(\"spark.serializer\", \"org.apache.spark.serializer.KryoSerializer\")` [C1]. This setting configures the serializer used for not only shuffling data between worker nodes but also when serializing RDDs to disk [C1]. \n\nFor custom class registration, use the `registerKryoClasses` method and pass an array of class references [C2].",
+        "citation_verified": true,
+        "citations": [
+          {
+            "label": "C1",
+            "chunk_id": "chk_d6b8ad1aa85d67b9cba9083643bb6a6903d28de2ddd89b62857e88c8ff948f2d",
+            "document_id": "doc_8e9694340baf4db4885f6cdd32831dbd",
+            "version_id": "ver_87c045ad95bf4df69122e5d3df264951",
+            "title": "Tuning Spark",
+            "section_path": "Data Serialization",
+            "source": "[\"spark-4.0.1-tuning.md\",null]",
+            "source_url": "https://raw.githubusercontent.com/apache/spark/v4.0.1/docs/tuning.md",
+            "page": null
+          },
+          {
+            "label": "C2",
+            "chunk_id": "chk_a2c3aea2b1fbbd52eeafb21b5b4d5dec4db0574df8095446a108343726015273",
+            "document_id": "doc_8e9694340baf4db4885f6cdd32831dbd",
+            "version_id": "ver_87c045ad95bf4df69122e5d3df264951",
+            "title": "Tuning Spark",
+            "section_path": "Data Serialization",
+            "source": "[\"spark-4.0.1-tuning.md\",null]",
+            "source_url": "https://raw.githubusercontent.com/apache/spark/v4.0.1/docs/tuning.md",
+            "page": null
+          }
+        ],
+        "context_consulted": [],
+        "sources": [
+          {
+            "document_id": "doc_8e9694340baf4db4885f6cdd32831dbd",
+            "version_id": "ver_87c045ad95bf4df69122e5d3df264951",
+            "title": "Tuning Spark",
+            "source": "[\"spark-4.0.1-tuning.md\",null]",
+            "source_url": "https://raw.githubusercontent.com/apache/spark/v4.0.1/docs/tuning.md"
+          }
+        ],
+        "evidence": [
+          "chk_d6b8ad1aa85d67b9cba9083643bb6a6903d28de2ddd89b62857e88c8ff948f2d",
+          "chk_a2c3aea2b1fbbd52eeafb21b5b4d5dec4db0574df8095446a108343726015273",
+          "chk_8a8111ed0ab6d3653ce371dfab35fded6107ef5054f608be30ff1f137456fe22",
+          "chk_c24530dca639686a0a549b843fe1b12ea6d546638e53774c211e65d9bf2424ea",
+          "chk_55d33297fe6af74297b329382e49b0f7880f747a74ab2b0d170a26d592be236a"
+        ],
+        "chunks_retrieved": 5,
+        "chunks_used": 5,
+        "mode": "vector",
+        "retrieval_config_id": "rc_5b4d2678757a1bbf3583ab41544220ad7afdbddefff2fb6bb1b9cef49f296de2",
+        "generation_config_id": "gc_a370881aa0eea90888767cd3908861e669277c3b909ec13cc0d10bc620141369",
+        "provider": "ollama",
+        "model_id": "ollama/qwen3:1.7b@8f68893c685c3ddff2aa3fffce2aa60a30bb2da65ca488b61fff134a4d1730e7",
+        "retryable": false,
+        "warnings": [
+          {
+            "code": "SUFFICIENCY_NOT_CALIBRATED",
+            "label": null
+          }
+        ],
+        "usage": {
+          "prompt_tokens": 1317,
+          "output_tokens": 100,
+          "prompt_token_bound": 5363
+        },
+        "latency_ms": {
+          "retrieval": 3674,
+          "generation": 18726,
+          "total": 22817
+        },
+        "request_id": "req_5a9248dd83d44780b0440ef6be5fe009"
+      },
+      "cites_labeled_passage": true,
+      "evidence_has_labeled_passage": true,
+      "review": {
+        "supported": null,
+        "reviewer": null,
+        "notes": null
+      }
+    },
+    {
+      "id": "smoke-postgresql-02",
+      "technology": "PostgreSQL",
+      "type": "factual",
+      "question": "When is a GIN index the right PostgreSQL index type?",
+      "flags": [],
+      "response": {
+        "status": "answered",
+        "reason": null,
+        "answer": "GIN indexes are appropriate for data values that contain multiple component values, such as arrays [C1]. They can efficiently handle queries that test for the presence of specific component values [C1]. GIN indexes are used when the data requires efficient handling of multiple component values, such as when using operators like @> or <@ [C2].",
+        "citation_verified": true,
+        "citations": [
+          {
+            "label": "C1",
+            "chunk_id": "chk_7921f9b458a637d7ee369043f94b03f7c74c05ed256d2fa808e9d00535b9011e",
+            "document_id": "doc_40c71a7e9bf7444882f1a4a3e1b064b5",
+            "version_id": "ver_0a64f5661a494ee7ad51280927048f61",
+            "title": "PostgreSQL: Documentation: 18: 11.2.\u00a0Index Types",
+            "section_path": "11.2.\u00a0Index Types # > 11.2.5.\u00a0GIN #",
+            "source": "https://www.postgresql.org/docs/18/indexes-types.html",
+            "source_url": "https://www.postgresql.org/docs/18/indexes-types.html",
+            "page": null
+          },
+          {
+            "label": "C2",
+            "chunk_id": "chk_e566b75f259463c6d948fa853a9bc75fd14ab47fc71a3f3a79738fcee90e778c",
+            "document_id": "doc_40c71a7e9bf7444882f1a4a3e1b064b5",
+            "version_id": "ver_0a64f5661a494ee7ad51280927048f61",
+            "title": "PostgreSQL: Documentation: 18: 11.2.\u00a0Index Types",
+            "section_path": "11.2.\u00a0Index Types # > 11.2.5.\u00a0GIN #",
+            "source": "https://www.postgresql.org/docs/18/indexes-types.html",
+            "source_url": "https://www.postgresql.org/docs/18/indexes-types.html",
+            "page": null
+          }
+        ],
+        "context_consulted": [],
+        "sources": [
+          {
+            "document_id": "doc_40c71a7e9bf7444882f1a4a3e1b064b5",
+            "version_id": "ver_0a64f5661a494ee7ad51280927048f61",
+            "title": "PostgreSQL: Documentation: 18: 11.2.\u00a0Index Types",
+            "source": "https://www.postgresql.org/docs/18/indexes-types.html",
+            "source_url": "https://www.postgresql.org/docs/18/indexes-types.html"
+          }
+        ],
+        "evidence": [
+          "chk_7921f9b458a637d7ee369043f94b03f7c74c05ed256d2fa808e9d00535b9011e",
+          "chk_e566b75f259463c6d948fa853a9bc75fd14ab47fc71a3f3a79738fcee90e778c",
+          "chk_6b2ff993117c5ee3bbd2621ab24ce9cc05edd309875e50f62f0c23a6a72afceb",
+          "chk_d4018438eae9e69881a83daeeafabf0bff531f934470325a31fb6e5c440c5a09",
+          "chk_da4b1f6cb52491996a726858c879e8b222147baa56835c73fe846312578a3af3"
+        ],
+        "chunks_retrieved": 5,
+        "chunks_used": 5,
+        "mode": "vector",
+        "retrieval_config_id": "rc_5b4d2678757a1bbf3583ab41544220ad7afdbddefff2fb6bb1b9cef49f296de2",
+        "generation_config_id": "gc_a370881aa0eea90888767cd3908861e669277c3b909ec13cc0d10bc620141369",
+        "provider": "ollama",
+        "model_id": "ollama/qwen3:1.7b@8f68893c685c3ddff2aa3fffce2aa60a30bb2da65ca488b61fff134a4d1730e7",
+        "retryable": false,
+        "warnings": [
+          {
+            "code": "SUFFICIENCY_NOT_CALIBRATED",
+            "label": null
+          }
+        ],
+        "usage": {
+          "prompt_tokens": 1332,
+          "output_tokens": 70,
+          "prompt_token_bound": 4862
+        },
+        "latency_ms": {
+          "retrieval": 1473,
+          "generation": 17455,
+          "total": 19490
+        },
+        "request_id": "req_841a219e345248a5af05c1456ab6733a"
+      },
+      "cites_labeled_passage": true,
+      "evidence_has_labeled_passage": true,
+      "review": {
+        "supported": null,
+        "reviewer": null,
+        "notes": null
+      }
+    },
+    {
+      "id": "smoke-kafka-03",
+      "technology": "Apache Kafka",
+      "type": "factual",
+      "question": "When does a message written to Kafka become visible to consumers?",
+      "flags": [],
+      "response": {
+        "status": "answered",
+        "reason": null,
+        "answer": "A message written to Kafka becomes visible to consumers once it has been committed by the producer [C4]. This means that the message is guaranteed to be delivered to consumers only after it has been successfully acknowledged by the producer.",
+        "citation_verified": true,
+        "citations": [
+          {
+            "label": "C4",
+            "chunk_id": "chk_b4fbf1ff0893bba2c1d06d449dc4a6e4e8949dbd595f0fbb9561d8f78e4d40e6",
+            "document_id": "doc_0b5b20f8046b43beacbc36997c619ef8",
+            "version_id": "ver_26b3f42f3f4f487895a4f42364dc3631",
+            "title": "Design | Apache Kafka",
+            "section_path": "Design > Message Delivery Semantics",
+            "source": "https://kafka.apache.org/43/design/design/",
+            "source_url": "https://kafka.apache.org/43/design/design/",
+            "page": null
+          }
+        ],
+        "context_consulted": [],
+        "sources": [
+          {
+            "document_id": "doc_0b5b20f8046b43beacbc36997c619ef8",
+            "version_id": "ver_26b3f42f3f4f487895a4f42364dc3631",
+            "title": "Design | Apache Kafka",
+            "source": "https://kafka.apache.org/43/design/design/",
+            "source_url": "https://kafka.apache.org/43/design/design/"
+          }
+        ],
+        "evidence": [
+          "chk_a91acaaf9e2aa6b2ab07ebaf210104dbedd74de4c66d02f936783be60b69a109",
+          "chk_5e53e59d238cb99cbe01f3736042ebf9a542533a3df0d888ddd80d75d02987a9",
+          "chk_cbb109fce0bffeb308a5dd5e7dc6fa165636c7babe60903fbd247d98ca93f216",
+          "chk_b4fbf1ff0893bba2c1d06d449dc4a6e4e8949dbd595f0fbb9561d8f78e4d40e6",
+          "chk_ec9f591c93ed16b66bc31ed0e33cbd2a26c4c906de55007e85415d6029d37eff"
+        ],
+        "chunks_retrieved": 5,
+        "chunks_used": 5,
+        "mode": "vector",
+        "retrieval_config_id": "rc_5b4d2678757a1bbf3583ab41544220ad7afdbddefff2fb6bb1b9cef49f296de2",
+        "generation_config_id": "gc_a370881aa0eea90888767cd3908861e669277c3b909ec13cc0d10bc620141369",
+        "provider": "ollama",
+        "model_id": "ollama/qwen3:1.7b@8f68893c685c3ddff2aa3fffce2aa60a30bb2da65ca488b61fff134a4d1730e7",
+        "retryable": false,
+        "warnings": [
+          {
+            "code": "SUFFICIENCY_NOT_CALIBRATED",
+            "label": null
+          }
+        ],
+        "usage": {
+          "prompt_tokens": 1304,
+          "output_tokens": 45,
+          "prompt_token_bound": 5620
+        },
+        "latency_ms": {
+          "retrieval": 3548,
+          "generation": 12243,
+          "total": 16041
+        },
+        "request_id": "req_b8a75dadd91c44b2971a3b96bd6285a6"
+      },
+      "cites_labeled_passage": false,
+      "evidence_has_labeled_passage": true,
+      "review": {
+        "supported": null,
+        "reviewer": null,
+        "notes": null
+      }
+    },
+    {
+      "id": "smoke-airflow-03",
+      "technology": "Apache Airflow",
+      "type": "factual",
+      "question": "What happens when catchup is enabled on a Dag?",
+      "flags": [],
+      "response": {
+        "status": "answered",
+        "reason": null,
+        "answer": "When catchup is enabled on a Dag, the scheduler creates a Dag Run for each data interval that has not been run since the last data interval. This allows the scheduler to execute all previously completed intervals sequentially [C3].",
+        "citation_verified": true,
+        "citations": [
+          {
+            "label": "C3",
+            "chunk_id": "chk_440a7c13ae5ddc358584fa45dca3dc0ea4aebe0cab75e4dc706dd5cb7f67ecbf",
+            "document_id": "doc_c605cdca20214683af415003fa7676f9",
+            "version_id": "ver_fef9eb662b9343758c578d51c35223e9",
+            "title": "Dag Runs \u2014 Airflow 3.3.2 Documentation",
+            "section_path": "Dag Runs > Re-run Dag > Catchup",
+            "source": "https://airflow.apache.org/docs/apache-airflow/stable/core-concepts/dag-run.html",
+            "source_url": "https://airflow.apache.org/docs/apache-airflow/stable/core-concepts/dag-run.html",
+            "page": null
+          }
+        ],
+        "context_consulted": [],
+        "sources": [
+          {
+            "document_id": "doc_c605cdca20214683af415003fa7676f9",
+            "version_id": "ver_fef9eb662b9343758c578d51c35223e9",
+            "title": "Dag Runs \u2014 Airflow 3.3.2 Documentation",
+            "source": "https://airflow.apache.org/docs/apache-airflow/stable/core-concepts/dag-run.html",
+            "source_url": "https://airflow.apache.org/docs/apache-airflow/stable/core-concepts/dag-run.html"
+          }
+        ],
+        "evidence": [
+          "chk_d1474f86bd6bfd0cce1eb7433769f1711437a11a40df110fb9126fe1fdfa8b8a",
+          "chk_ae45570c9b2482d4b65389a482b39a3f94be9f848e3ffb313b0bf45d97371c15",
+          "chk_440a7c13ae5ddc358584fa45dca3dc0ea4aebe0cab75e4dc706dd5cb7f67ecbf",
+          "chk_20b3e6b4569ef927e64b7dfa55401f58b132c98b9d80ecb0ce637bfdf0d11617",
+          "chk_035e5bbbf837297e54c75dbcf24a8d6570c773fbafc4221c13798f19dd1a0e1d"
+        ],
+        "chunks_retrieved": 5,
+        "chunks_used": 5,
+        "mode": "vector",
+        "retrieval_config_id": "rc_5b4d2678757a1bbf3583ab41544220ad7afdbddefff2fb6bb1b9cef49f296de2",
+        "generation_config_id": "gc_a370881aa0eea90888767cd3908861e669277c3b909ec13cc0d10bc620141369",
+        "provider": "ollama",
+        "model_id": "ollama/qwen3:1.7b@8f68893c685c3ddff2aa3fffce2aa60a30bb2da65ca488b61fff134a4d1730e7",
+        "retryable": false,
+        "warnings": [
+          {
+            "code": "SUFFICIENCY_NOT_CALIBRATED",
+            "label": null
+          }
+        ],
+        "usage": {
+          "prompt_tokens": 1544,
+          "output_tokens": 46,
+          "prompt_token_bound": 5843
+        },
+        "latency_ms": {
+          "retrieval": 1612,
+          "generation": 12910,
+          "total": 14840
+        },
+        "request_id": "req_bc26b4e900604b4e826971d99d90e6e2"
+      },
+      "cites_labeled_passage": true,
+      "evidence_has_labeled_passage": true,
+      "review": {
+        "supported": null,
+        "reviewer": null,
+        "notes": null
+      }
+    }
+  ]
+}

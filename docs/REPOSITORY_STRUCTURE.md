@@ -1,5 +1,7 @@
 # Proposed repository structure
 
+Phase 7 update 2026-11-03: actual additions are `answering/{generation,citations}.py`, `evaluation/answers.py`, `tests/test_{generation,citations}.py` and the `tests/fixtures/prompt_injection.md` fixture. `sufficiency.py` waits for Phase 8. The query log is the ignored `data/logs/qa.jsonl`; answer review sheets with cited text go to the ignored `data/evaluation`. See [Phase 7](PHASE_7_STATUS.md).
+
 Phase 6 update 2026-11-03: actual additions are `evaluation/{dataset,metrics,runner}.py`, `datasets/{benchmark_smoke.jsonl,review_log.md}`, `reports/evaluation/` and `tests/test_evaluation.py`. Run reports go to the ignored `data/evaluation` unless `--report-dir` names another directory. See [Phase 6](PHASE_6_STATUS.md).
 
 Phase 5 update 2026-11-02: actual additions are `indexing/{embeddings,vector_store,pipeline,lifecycle}.py`, `retrieval/{lexical,search}.py`, `datasets/verify_index.py` and `tests/test_indexing.py`. Runtime vectors live in the ignored registry and `data/index/chroma`. See [Phase 5](PHASE_5_STATUS.md).

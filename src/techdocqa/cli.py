@@ -1,4 +1,4 @@
-"""Configuration, local registration and bounded online ingestion CLI."""
+"""Command-line interface: configuration, ingestion, processing, search, answers, lifecycle and evaluation."""
 
 import argparse
 import json
@@ -32,8 +32,34 @@ def emit(result, *, file=None) -> None:
     print(json.dumps(result.model_dump(), ensure_ascii=True), file=file or sys.stdout)
 
 
+def print_text(text: str) -> None:
+    # Characters the console's code page cannot show become "?" instead of crashing the command.
+    encoding = getattr(sys.stdout, "encoding", None) or "utf-8"
+    print(text.encode(encoding, errors="replace").decode(encoding))
+
+
+def render_answer(response) -> str:
+    """FR-22.2: the status, the answer and the numbered citations with their sources."""
+    from techdocqa.answering.generation import FAILURES
+    lines = [f"Status: {response.status}" + (f" ({response.reason})" if response.reason else "")]
+    if response.status == "generation_error":
+        lines += ["", FAILURES.get(response.reason, ("A required provider or index failed; the reason code names it.",))[0]]
+    elif response.answer:
+        lines += ["", response.answer]
+    shown = response.citations or response.context_consulted
+    if shown:
+        lines += ["", "Citations:" if response.citations else "Context consulted (the answer's citations could not be verified):"]
+        for citation in shown:
+            where = " > ".join(part for part in (citation.title, citation.section_path) if part) or citation.source
+            page = f", page {citation.page}" if citation.page is not None else ""
+            lines += [f"  [{citation.label}] {where}{page}", f"       {citation.source_url or citation.source}"]
+    lines += ["", f"Chunks used: {response.chunks_used} of {response.chunks_retrieved}; "
+                  f"{response.latency_ms.total} ms; model {response.model_id}"]
+    return "\n".join(lines)
+
+
 def make_parser() -> argparse.ArgumentParser:
-    parser = SafeArgumentParser(description="TechDocQA configuration and documentation ingestion")
+    parser = SafeArgumentParser(description="TechDocQA: technical documentation search and question answering")
     parser.add_argument("--version", action="version", version=__version__)
     parser.add_argument("--json", action="store_true", help="emit JSON (also the default)")
     commands = parser.add_subparsers(dest="command", required=True)
@@ -69,6 +95,13 @@ def make_parser() -> argparse.ArgumentParser:
     searching.add_argument("--top-k", type=int)
     for field in SearchFilters.model_fields:
         searching.add_argument("--" + field.replace("_", "-"))
+    asking = commands.add_parser("ask", help="answer a question from active chunks, citing them; refusal thresholds arrive in Phase 8")
+    asking.add_argument("question", help="question text, 1 to 1000 characters; put -- first if it begins with a dash")
+    asking.add_argument("--mode", choices=["bm25", "vector", "hybrid"])
+    for field in SearchFilters.model_fields:
+        asking.add_argument("--" + field.replace("_", "-"))
+    asking.add_argument("--retrieval-config-id", help="answer only if this is the active retrieval configuration")
+    asking.add_argument("--text", action="store_true", help="print the answer, numbered citations and status as text instead of JSON")
     withdrawal = commands.add_parser("withdraw", help="remove a document from search immediately; re-ingesting reactivates it")
     withdrawal.add_argument("document_id")
     withdrawal.add_argument("--reason", required=True)
@@ -82,7 +115,10 @@ def make_parser() -> argparse.ArgumentParser:
                             help="frozen corpus manifest; only its evaluation documents are searched")
     evaluation.add_argument("--mode", action="append", choices=["bm25", "vector"], help="repeat to choose; default both")
     evaluation.add_argument("--report-dir", type=Path, help="where the JSON and Markdown reports go (default: <data>/evaluation)")
-    for command in (check, ingest, status, listing, history, processing, chunking, indexing, searching, withdrawal, deletion, evaluation):
+    evaluation.add_argument("--answers", type=int, metavar="N",
+                            help="instead of retrieval metrics, answer N answerable questions with the configured model for human review")
+    for command in (check, ingest, status, listing, history, processing, chunking, indexing, searching, asking, withdrawal,
+                    deletion, evaluation):
         command.add_argument("--config", type=Path, default=Path("config/default.toml"))
         command.add_argument("--profile", type=Path)
         command.add_argument("--json", action="store_true", default=argparse.SUPPRESS,
@@ -97,6 +133,8 @@ def main(argv: list[str] | None = None) -> int:
             online = bool(args.source or args.url)
             if bool(args.paths) == online or (online and (args.logical_name is not None or args.technology is not None or args.source_url is not None)):
                 raise TechDocQAError("INVALID_ARGUMENT", "Choose local paths or one online selection mode; online identity comes from the catalog.", stage="arguments")
+        if args.command == "eval" and args.answers is not None and (args.answers < 1 or len(args.mode or []) > 1):
+            raise TechDocQAError("INVALID_ARGUMENT", "--answers needs a positive count and at most one --mode.", stage="arguments")
         try:
             settings = load_settings(args.config, args.profile)
             if args.command == "config-check" and args.require_models:
@@ -150,6 +188,26 @@ def main(argv: list[str] | None = None) -> int:
                 from techdocqa.retrieval.search import search
                 emit(search(request, settings, registry))
                 return 0
+            if args.command == "ask":
+                from techdocqa.answering.generation import answer_question
+                response = answer_question(args.question, settings, registry, mode=args.mode,
+                    filters=SearchFilters(**{field: getattr(args, field) for field in SearchFilters.model_fields}),
+                    expected_config_id=args.retrieval_config_id)
+                if args.text:
+                    print_text(render_answer(response))
+                else:
+                    emit(response)
+                return 1 if response.status == "generation_error" else 0
+            if args.command == "eval" and args.answers is not None:
+                from techdocqa.evaluation.answers import run_answer_review, write_answer_report
+                report, texts = run_answer_review(args.dataset, args.manifest, settings, registry, count=args.answers,
+                                                  mode=args.mode[0] if args.mode else None)
+                # Cited chunk text stays in the ignored data directory, wherever the report goes.
+                files = write_answer_report(report, args.report_dir or Path(settings.data_directory) / "evaluation",
+                                            Path(settings.data_directory) / "evaluation", texts)
+                output = {key: value for key, value in report.items() if key != "questions"}
+                print(json.dumps({**output, "report_files": files}, ensure_ascii=True))
+                return 1 if report["summary"]["statuses"]["generation_error"] else 0
             if args.command == "eval":
                 from techdocqa.evaluation.runner import run_evaluation, summary, write_report
                 report = run_evaluation(args.dataset, args.manifest, settings, registry, modes=args.mode)

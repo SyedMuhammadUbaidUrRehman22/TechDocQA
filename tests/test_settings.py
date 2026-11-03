@@ -3,7 +3,7 @@ from pathlib import Path
 import pytest
 from pydantic import ValidationError
 
-from techdocqa.settings import ChunkingSettings, Settings, load_settings
+from techdocqa.settings import ChunkingSettings, ModelSettings, Settings, load_settings
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -19,6 +19,22 @@ def test_default_config_records_selected_local_models_and_paths():
     settings.require_models()
     with pytest.raises(ValueError, match="must be selected"):
         Settings().require_models()
+    assert (settings.model.context_window, settings.model.chat_tokenizer, settings.model.chat_reasoning) == (8192, "byte-bpe", False)
+    settings.require_chat_profile()
+    with pytest.raises(ValueError, match="chat_tokenizer"):
+        Settings().require_chat_profile()
+
+
+def test_timeout_defaults_follow_the_provider():
+    assert ModelSettings().timeout_seconds == 60
+    assert ModelSettings(provider="openai").timeout_seconds == 30
+    assert ModelSettings(provider="openai", timeout_seconds=45).timeout_seconds == 45
+
+
+def test_output_and_template_reserve_must_fit_the_window():
+    ModelSettings(context_window=1024, max_output_tokens=512, chat_template_reserve_tokens=96)
+    with pytest.raises(ValidationError, match="room in context_window"):
+        ModelSettings(context_window=600, max_output_tokens=512, chat_template_reserve_tokens=96)
 
 
 def test_profile_and_environment_precedence(tmp_path, monkeypatch):
