@@ -1,6 +1,6 @@
 # TechDocQA implementation roadmap
 
-Phase 6 checkpoint 2026-11-03: [smoke benchmark evidence](PHASE_6_STATUS.md) records the runner, metrics and `eval` command on the 20-document public reference, with DDIA excluded. BM25 Recall@5 is 0.925 with MRR 0.708; vector Recall@5 is 0.925 with MRR 0.783. A run takes 35 to 40 s, and two runs give identical results. AC-21.3 deletion flags pass in tests. **The 30 questions are drafts without second-person review**, and Q-12/Q-13 are unapproved, so FR-19 P0 stays incomplete and these metrics are provisional.
+Phase 6 checkpoint 2026-11-03: [smoke benchmark evidence](PHASE_6_STATUS.md) records the runner, metrics and `eval` command on the 20-document public reference, with DDIA excluded. BM25 Recall@5 is 0.925 with MRR 0.708; vector Recall@5 is 0.925 with MRR 0.783. A run takes 35 to 40 s, and two runs give identical results. AC-21.3 deletion flags pass in tests. The project owner reviewed and accepted all 30 questions on 2026-11-03. Q-12/Q-13 remain unapproved.
 
 Phase 5 checkpoint 2026-11-02: [search and lifecycle evidence](PHASE_5_STATUS.md) records all 2,735 chunks embedded and indexed with `nomic-embed-text`, restart and rebuild reproducing identical top-5 results, and BM25 working without a provider. AC-12.1 on the real corpus (124 of 152) and the NFR-02 vector target (p95 1.377 s) are open. Next is Phase 6, which needs a second reviewer.
 
@@ -156,4 +156,4 @@ Phase 3B is the user's name for this remaining Phase 3 work; the original roadma
 
 ## Recommended next action
 
-First, a second person reviews the smoke benchmark using [the review log](../datasets/review_log.md), and Q-12/Q-13 are approved or amended. Then rerun `eval` and commit the report. Phase 7, framework QA and citations, can start in parallel, but Phase 8 refusal calibration must use the reviewed set. Do not treat DDIA as part of the public reference or silently count it toward the approximate 3,000-chunk target. Generation quality and performance gates remain unverified.
+Next is Phase 7, framework QA and citations. Q-12/Q-13 still need approval or amendment; Phase 8 refusal calibration uses the [reviewed](../datasets/review_log.md) smoke set. Do not treat DDIA as part of the public reference or silently count it toward the approximate 3,000-chunk target. Generation quality and performance gates remain unverified.

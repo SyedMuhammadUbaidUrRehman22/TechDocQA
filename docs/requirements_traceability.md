@@ -2,7 +2,7 @@
 
 ## Implemented acceptance slices - Phase 6
 
-2026-11-03: `tests/test_evaluation.py` covers AC-19.3 with hand-computed examples, AC-19.5 and the other loader rules, AC-19.4 repeat runs, the evaluation scope that excludes documents outside the manifest, failed-provider isolation, the `eval` CLI, and AC-21.3: deleted, withdrawn, out-of-scope and unresolved labels are flagged without changing the benchmark file. On the real corpus, `techdocqa eval` meets AC-19.1 (35 to 40 s) and AC-19.4 (identical fingerprints over two runs). **FR-19 P0 is not complete:** the 30 questions are drafts without second-person review, and Q-12/Q-13 are unapproved. AC-21.3 was not run against the real registry. AC-22.1 and AC-22.3 still need `ask`. See the [Phase 6 report](PHASE_6_STATUS.md). Original source AC text below is unchanged.
+2026-11-03: `tests/test_evaluation.py` covers AC-19.3 with hand-computed examples, AC-19.5 and the other loader rules, AC-19.4 repeat runs, the evaluation scope that excludes documents outside the manifest, failed-provider isolation, the `eval` CLI, and AC-21.3: deleted, withdrawn, out-of-scope and unresolved labels are flagged without changing the benchmark file. On the real corpus, `techdocqa eval` meets AC-19.1 (35 to 40 s) and AC-19.4 (identical fingerprints over two runs). The project owner reviewed and accepted all 30 questions on 2026-11-03; Q-12/Q-13 remain unapproved. AC-21.3 was not run against the real registry. AC-22.1 and AC-22.3 still need `ask`. See the [Phase 6 report](PHASE_6_STATUS.md). Original source AC text below is unchanged.
 
 ## Implemented acceptance slices - Phase 5
 

@@ -5,7 +5,7 @@ TechDocQA is a domain-specific RAG project for answering software and data engin
 
 Phases 1-6 are implemented. You can ingest local files and approved web pages, normalize and chunk them, build a local index, search it by BM25 or vector similarity, withdraw or delete documents, and measure retrieval with `eval`. **TechDocQA cannot answer questions yet:** `ask` arrives in Phase 7.
 
-On the 30-question smoke benchmark, BM25 reaches Recall@5 0.925 and MRR 0.708, and vector search reaches Recall@5 0.925 and MRR 0.783. A run takes about 40 s and repeats exactly. **These figures are provisional:** the questions are drafts that no second person has reviewed yet. See the [Phase 6 report](docs/PHASE_6_STATUS.md).
+On the 30-question smoke benchmark, BM25 reaches Recall@5 0.925 and MRR 0.708, and vector search reaches Recall@5 0.925 and MRR 0.783. A run takes about 40 s and repeats exactly. The questions were reviewed and accepted by the project owner on 2026-11-03. See the [Phase 6 report](docs/PHASE_6_STATUS.md).
 
 All 2,735 chunks are indexed: 816 from the 20-document public reference and 1,919 from the private DDIA supplement. Results survive a restart and a full rebuild unchanged. Two targets are not met: a query built from a chunk's sentence finds that chunk in the top 3 only 124 of 152 times on the real corpus (AC-12.1), and warm vector search has a p95 of 1.377 s against a 1 s target (NFR-02). See the [Phase 5 report](docs/PHASE_5_STATUS.md).
 
@@ -64,7 +64,7 @@ stateDiagram-v2
 | 1-3B | Setup, registration, online HTML, normalization | ✅ Done |
 | 4 | [Segmentation and chunking](docs/PHASE_4_STATUS.md) | ✅ Done |
 | 5 | [Search and document lifecycle](docs/PHASE_5_STATUS.md) | ✅ Built, 2 targets open |
-| 6 | [Smoke benchmark and retrieval metrics](docs/PHASE_6_STATUS.md) | ✅ Built, benchmark awaits review |
+| 6 | [Smoke benchmark and retrieval metrics](docs/PHASE_6_STATUS.md) | ✅ Done, benchmark reviewed |
 | 7-8 | Answers, citations and refusal | ⏭️ Next |
 | 9-10 | NLP enrichment, hybrid search, reranking | ⬜ Planned |
 | 11-12 | Operational verification, optional extras | ⬜ Planned |
@@ -81,7 +81,7 @@ stateDiagram-v2
 | Sentence query finds its chunk in the top 3 | All | 124 of 152 | ❌ |
 | Smoke benchmark, both modes | Under 5 min | 35 to 40 s | ✅ |
 | Two benchmark runs, same inputs | Identical metrics | Identical | ✅ |
-| Benchmark reviewed by a second person | Reviewed | Not yet | ❌ |
+| Benchmark reviewed by a second person | Reviewed | All 30 accepted | ✅ |
 
 ```mermaid
 pie showData title Chunks indexed
@@ -289,4 +289,4 @@ The source filename says v2, but its contents identify **Revision 3**; those con
 - [Local development setup](deployment/local_setup.md)
 - [Corpus preparation](datasets/README.md)
 
-The reference corpus is frozen as `techdocqa-reference-2026-10-24-v2` and the local models are selected. The smoke benchmark needs a second reviewer before Phase 8 uses it for refusal calibration; Phase 7 answering is next. Hardware and budget remain open.
+The reference corpus is frozen as `techdocqa-reference-2026-10-24-v2` and the local models are selected. The smoke benchmark is reviewed; Phase 7 answering is next. Hardware and budget remain open.
