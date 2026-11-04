@@ -211,7 +211,7 @@ Deploy the CLI on one laptop-class machine; local files/SQLite/Chroma and option
 | FR-23 | input limits/path/secrets, untrusted prompt | 2–3,7; URL 3A |
 | FR-24 | CLI recovery/check/structured logs | 12 |
 
-Rows through roadmap Phase 7 and the 3A URL slice are implemented to the limits in their status documents; later phases are planned. Phase 6 implements the FR-19 smoke runner and metrics; its benchmark was reviewed on 2026-11-03. Phase 7 implements FR-16 and FR-17 answering and citations ahead of FR-18 calibration; see [Phase 7](PHASE_7_STATUS.md). Early CLI/FR-23 slices are explicitly incomplete until QA dependencies land. Full original dependencies and acceptance coverage remain in traceability.
+Rows through roadmap Phase 8 and the 3A URL slice are implemented to the limits in their status documents; later phases are planned. Phase 6 implements the FR-19 smoke runner and metrics; its benchmark was reviewed on 2026-11-03. Phase 7 implements FR-16 and FR-17 answering and citations. Phase 8 implements FR-18 with per-mode relevance scales and thresholds calibrated on the smoke benchmark, and reconciles every P0 acceptance criterion; two remain open, so P0 is not released. See [Phase 8](PHASE_8_STATUS.md). Full original dependencies and acceptance coverage remain in traceability.
 
 ## 18. Decisions, trade-offs and unresolved questions
 

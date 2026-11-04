@@ -1,5 +1,7 @@
 # Phase 7 question answering and citation verification
 
+Phase 8 update 2026-11-04: calibrated thresholds now apply in both P0 modes, so `SUFFICIENCY_NOT_CALIBRATED` appears only for a mode without a calibration that applies. Out-of-domain questions are refused before generation, and the cold-start question is settled. AC-16.6 is still open. See the [Phase 8 report](PHASE_8_STATUS.md).
+
 Implementation and evidence checkpoint 2026-11-03 on Windows, Python 3.13.3, local Ollama 0.40.13 with `qwen3:1.7b`. Phase 7 adds `ask`: a LangChain prompt and chat-model chain over the existing registry-gated search, a context fitted to the model's window, verified citations taken from stored metadata, explicit provider errors, and a query log without document text. Calibrated refusal (FR-18) is Phase 8, so **development answers are not a release**: no relevance threshold is applied yet, and every response carries the warning `SUFFICIENCY_NOT_CALIBRATED`.
 
 **Result:** AC-16.1 to AC-16.5, AC-17.1 to AC-17.4 and AC-23.4 are met in tests. AC-16.1 is also met on the real corpus, 10 of 10. AC-23.3 passed on the configured model, 3 of 3 questions, on the second attempt; the first attempt timed out on the session's first chat call, most likely during the model load. **AC-16.6 is open:** it needs a person to rate the 10 answers. See [Open items](#open-items).

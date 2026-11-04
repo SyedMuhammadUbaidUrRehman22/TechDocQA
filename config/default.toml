@@ -52,7 +52,23 @@ bm25_b = 0.75
 rrf_k = 60
 rerank = false
 rerank_max_candidates = 20
-# Sufficiency thresholds and calibration ID remain unset until evaluation.
+
+# FR-18 refusal thresholds, one set per mode on that mode's 0-1 relevance scale (Q-07), copied from the proposal in
+# reports/evaluation/eval_c4ab1f1397fa469489137f611b74cdf7.md. Each applies only while scoring_config_id names the
+# active scale: a new embedding model or BM25 setting needs a new eval run and a new section.
+[retrieval.sufficiency.bm25]
+min_top_score = 0.297285
+min_chunk_score = 0.297285
+min_supporting_chunks = 1
+calibration_run_id = "eval_c4ab1f1397fa469489137f611b74cdf7"
+scoring_config_id = "sc_be0c0c0942c7f01a9f79ec75effb0366f2cd39d5ec70ee4e71ba64b4a3f43507"
+
+[retrieval.sufficiency.vector]
+min_top_score = 0.858223
+min_chunk_score = 0.858223
+min_supporting_chunks = 1
+calibration_run_id = "eval_c4ab1f1397fa469489137f611b74cdf7"
+scoring_config_id = "sc_c40598d9e99ee950f32c22d25aff430b6602a18316cb48f50ee5996048005cb2"
 
 [answering]
 max_question_characters = 1000

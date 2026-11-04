@@ -46,6 +46,14 @@ def render_answer(response) -> str:
         lines += ["", FAILURES.get(response.reason, ("A required provider or index failed; the reason code names it.",))[0]]
     elif response.answer:
         lines += ["", response.answer]
+    gate = response.sufficiency
+    if response.reason == "LOW_RELEVANCE" and gate is not None:
+        lines += [f"Best match relevance {gate.top_score}; this mode needs {gate.min_top_score} "
+                  f"(calibration run {gate.calibration_run_id})."]
+    codes = {warning.code for warning in response.warnings}
+    if codes & {"SUFFICIENCY_NOT_CALIBRATED", "SUFFICIENCY_CALIBRATION_STALE"}:
+        lines += ["", "Warning: no calibrated relevance threshold applies to this retrieval mode, so this answer was not gated "
+                      "and questions the documents do not cover may still be answered."]
     shown = response.citations or response.context_consulted
     if shown:
         lines += ["", "Citations:" if response.citations else "Context consulted (the answer's citations could not be verified):"]
@@ -56,6 +64,21 @@ def render_answer(response) -> str:
     lines += ["", f"Chunks used: {response.chunks_used} of {response.chunks_retrieved}; "
                   f"{response.latency_ms.total} ms; model {response.model_id}"]
     return "\n".join(lines)
+
+
+def calibration_status(settings) -> dict:
+    """Per mode, whether its FR-18 thresholds apply to the configured score scale (AC-18.5); no provider is contacted."""
+    from techdocqa.answering.sufficiency import STALE, active_thresholds
+    from techdocqa.indexing.embeddings import embedding_profile
+    status = {}
+    for mode in ("bm25", "vector"):
+        try:
+            thresholds, warning = active_thresholds(mode, settings, embedding_profile(settings.model) if mode == "vector" else None)
+        except TechDocQAError:
+            # No verified embedding profile means no vector scale to calibrate against.
+            thresholds, warning = None, None
+        status[mode] = "calibrated" if thresholds else ("stale" if warning == STALE else "not_calibrated")
+    return status
 
 
 def make_parser() -> argparse.ArgumentParser:
@@ -95,7 +118,8 @@ def make_parser() -> argparse.ArgumentParser:
     searching.add_argument("--top-k", type=int)
     for field in SearchFilters.model_fields:
         searching.add_argument("--" + field.replace("_", "-"))
-    asking = commands.add_parser("ask", help="answer a question from active chunks, citing them; refusal thresholds arrive in Phase 8")
+    asking = commands.add_parser("ask", help="answer a question from active chunks, citing them; refuses without a model call "
+                                             "when no chunk meets the calibrated relevance threshold")
     asking.add_argument("question", help="question text, 1 to 1000 characters; put -- first if it begins with a dash")
     asking.add_argument("--mode", choices=["bm25", "vector", "hybrid"])
     for field in SearchFilters.model_fields:
@@ -109,14 +133,18 @@ def make_parser() -> argparse.ArgumentParser:
     deletion.add_argument("document_id")
     deletion.add_argument("--reason", required=True)
     deletion.add_argument("--yes", action="store_true", help="confirm this cannot be undone")
-    evaluation = commands.add_parser("eval", help="run the smoke benchmark: Recall@1/3/5 and MRR for BM25 and vector search")
+    evaluation = commands.add_parser("eval", help="run the smoke benchmark: Recall@1/3/5 and MRR for BM25 and vector search, "
+                                                  "with proposed refusal thresholds")
     evaluation.add_argument("--dataset", type=Path, default=Path("datasets/benchmark_smoke.jsonl"))
     evaluation.add_argument("--manifest", type=Path, default=Path("datasets/corpus_manifest.json"),
                             help="frozen corpus manifest; only its evaluation documents are searched")
     evaluation.add_argument("--mode", action="append", choices=["bm25", "vector"], help="repeat to choose; default both")
     evaluation.add_argument("--report-dir", type=Path, help="where the JSON and Markdown reports go (default: <data>/evaluation)")
-    evaluation.add_argument("--answers", type=int, metavar="N",
-                            help="instead of retrieval metrics, answer N answerable questions with the configured model for human review")
+    answer_runs = evaluation.add_mutually_exclusive_group()
+    answer_runs.add_argument("--answers", type=int, metavar="N",
+                             help="instead of retrieval metrics, answer N answerable questions with the configured model for human review")
+    answer_runs.add_argument("--refusal", action="store_true",
+                             help="instead of retrieval metrics, ask every question with the configured model and report AC-18.1/18.2")
     for command in (check, ingest, status, listing, history, processing, chunking, indexing, searching, asking, withdrawal,
                     deletion, evaluation):
         command.add_argument("--config", type=Path, default=Path("config/default.toml"))
@@ -135,6 +163,8 @@ def main(argv: list[str] | None = None) -> int:
                 raise TechDocQAError("INVALID_ARGUMENT", "Choose local paths or one online selection mode; online identity comes from the catalog.", stage="arguments")
         if args.command == "eval" and args.answers is not None and (args.answers < 1 or len(args.mode or []) > 1):
             raise TechDocQAError("INVALID_ARGUMENT", "--answers needs a positive count and at most one --mode.", stage="arguments")
+        if args.command == "eval" and args.refusal and len(args.mode or []) > 1:
+            raise TechDocQAError("INVALID_ARGUMENT", "--refusal takes at most one --mode.", stage="arguments")
         try:
             settings = load_settings(args.config, args.profile)
             if args.command == "config-check" and args.require_models:
@@ -152,6 +182,7 @@ def main(argv: list[str] | None = None) -> int:
                 "model_selection_complete": bool(settings.model.chat_model and settings.model.embedding_model
                                                  and settings.model.context_window),
                 "provider_connection_checked": False,
+                "sufficiency": calibration_status(settings),
             }))
             return 0
         if args.command == "delete" and not args.yes:
@@ -205,6 +236,13 @@ def main(argv: list[str] | None = None) -> int:
                 # Cited chunk text stays in the ignored data directory, wherever the report goes.
                 files = write_answer_report(report, args.report_dir or Path(settings.data_directory) / "evaluation",
                                             Path(settings.data_directory) / "evaluation", texts)
+                output = {key: value for key, value in report.items() if key != "questions"}
+                print(json.dumps({**output, "report_files": files}, ensure_ascii=True))
+                return 1 if report["summary"]["statuses"]["generation_error"] else 0
+            if args.command == "eval" and args.refusal:
+                from techdocqa.evaluation.answers import run_refusal_check, write_refusal_report
+                report = run_refusal_check(args.dataset, args.manifest, settings, registry, mode=args.mode[0] if args.mode else None)
+                files = write_refusal_report(report, args.report_dir or Path(settings.data_directory) / "evaluation")
                 output = {key: value for key, value in report.items() if key != "questions"}
                 print(json.dumps({**output, "report_files": files}, ensure_ascii=True))
                 return 1 if report["summary"]["statuses"]["generation_error"] else 0

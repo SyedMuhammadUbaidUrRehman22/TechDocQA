@@ -1,13 +1,13 @@
 # TechDocQA
-TechDocQA is a domain-specific RAG project for answering software and data engineering questions from technical documentation with source citations. It uses LangChain, local embeddings, a persisted Chroma index and BM25 search, and answers questions with a local Ollama model that cites the stored source of each claim. Calibrated refusal and NLP enrichment are planned.
+TechDocQA is a domain-specific RAG project for answering software and data engineering questions from technical documentation with source citations. It uses LangChain, local embeddings, a persisted Chroma index and BM25 search, and answers questions with a local Ollama model that cites the stored source of each claim. When no retrieved passage is relevant enough, it refuses without calling the model. NLP enrichment and hybrid search are planned.
 
 ## Current status
 
-Phases 1-7 are implemented. You can ingest local files and approved web pages, normalize and chunk them, build a local index, search it by BM25 or vector similarity, ask questions with `ask`, withdraw or delete documents, and measure retrieval with `eval`.
+Phases 1-8 are implemented. You can ingest local files and approved web pages, normalize and chunk them, build a local index, search it by BM25 or vector similarity, ask questions with `ask`, withdraw or delete documents, and measure retrieval and refusal with `eval`.
 
-On 10 smoke questions, `ask` answered all 10 with at least one verified citation, in a median of 17.8 s on this laptop. In a prompt-injection test, `qwen3:1.7b` ignored an injected instruction in 3 of 3 questions. **Answers are not yet released:** a person still has to rate whether the cited chunks support them (AC-16.6), and until Phase 8 calibrates a relevance threshold, `ask` also answers questions the documents do not cover, unless the model itself declines. See the [Phase 7 report](docs/PHASE_7_STATUS.md).
+`ask` now refuses a question when no retrieved chunk meets a relevance threshold calibrated on the smoke benchmark, and it makes no model call when it does. On all 30 smoke questions in vector mode, it refused 10 of 10 out-of-domain questions and answered 19 of 20 answerable ones, against targets of 90% and 85%. **P0 is not released yet:** a person still has to rate whether 10 answers are supported by their citations (AC-16.6), and sentence-query retrieval misses its target (AC-12.1). See the [Phase 8 report](docs/PHASE_8_STATUS.md).
 
-On the 30-question smoke benchmark, BM25 reaches Recall@5 0.925 and MRR 0.708, and vector search reaches Recall@5 0.925 and MRR 0.783. A run takes about 40 s and repeats exactly. The questions were reviewed and accepted by the project owner on 2026-11-03. See the [Phase 6 report](docs/PHASE_6_STATUS.md).
+On the 30-question smoke benchmark, BM25 reaches Recall@5 0.925 and MRR 0.708, and vector search reaches Recall@5 0.925 and MRR 0.783. A run takes 35 to 63 s and repeats exactly. The questions were reviewed and accepted by the project owner on 2026-11-03. See the [Phase 6 report](docs/PHASE_6_STATUS.md).
 
 All 2,735 chunks are indexed: 816 from the 20-document public reference and 1,919 from the private DDIA supplement. Results survive a restart and a full rebuild unchanged. Two targets are not met: a query built from a chunk's sentence finds that chunk in the top 3 only 124 of 152 times on the real corpus (AC-12.1), and warm vector search has a p95 of 1.377 s against a 1 s target (NFR-02). See the [Phase 5 report](docs/PHASE_5_STATUS.md).
 
@@ -27,11 +27,10 @@ flowchart LR
   D -->|index| E[Embedded<br/>and indexed]
   D -->|search --mode bm25| F[BM25 results]
   E -->|search --mode vector| G[Vector results]
-  F -->|ask --mode bm25| H[Answers with<br/>verified citations]
-  G -->|ask| H
-  H -.-> I[Calibrated refusal<br/>planned]
-  classDef planned stroke-dasharray: 5 5
-  class I planned
+  F -->|ask --mode bm25| S{Relevance at or above<br/>the calibrated threshold?}
+  G -->|ask| S
+  S -->|yes| H[Answers with<br/>verified citations]
+  S -->|no| I[no_evidence<br/>no model call]
 ```
 
 The SQLite registry decides what may be returned on every search. The BM25 and Chroma indexes are derived from it and can be rebuilt.
@@ -69,7 +68,7 @@ stateDiagram-v2
 | 5 | [Search and document lifecycle](docs/PHASE_5_STATUS.md) | ✅ Built, 2 targets open |
 | 6 | [Smoke benchmark and retrieval metrics](docs/PHASE_6_STATUS.md) | ✅ Done, benchmark reviewed |
 | 7 | [Answers and citations](docs/PHASE_7_STATUS.md) | ✅ Built, human answer review open |
-| 8 | Calibrated refusal and P0 release | ⏭️ Next |
+| 8 | [Calibrated refusal and P0 release gate](docs/PHASE_8_STATUS.md) | ✅ Built, P0 release blocked by 2 open criteria |
 | 9-10 | NLP enrichment, hybrid search, reranking | ⬜ Planned |
 | 11-12 | Operational verification, optional extras | ⬜ Planned |
 
@@ -83,12 +82,16 @@ stateDiagram-v2
 | BM25 warm p95 | At most 1 s | 0.138 s | ✅ |
 | Vector warm p95 | At most 1 s | 1.377 s | ❌ |
 | Sentence query finds its chunk in the top 3 | All | 124 of 152 | ❌ |
-| Smoke benchmark, both modes | Under 5 min | 35 to 40 s | ✅ |
+| Smoke benchmark, both modes | Under 5 min | 35 to 63 s | ✅ |
 | Two benchmark runs, same inputs | Identical metrics | Identical | ✅ |
 | Benchmark reviewed by a second person | Reviewed | All 30 accepted | ✅ |
 | Smoke questions answered with a citation | 10 of 10 | 10 of 10 | ✅ |
 | Injected instruction ignored by the model | Not followed | 3 of 3 | ✅ |
 | Answers rated supported by a person | At least 8 of 10 | Not yet rated | ❌ |
+| Out-of-domain smoke questions refused, each mode | At least 90% | 10 of 10 | ✅ |
+| Answerable smoke questions answered, each mode | At least 85% | 19 of 20 | ✅ |
+| Model calls when the relevance gate refuses | 0 | 0 | ✅ |
+| CLI workflow script with the real models | Every step | 9 of 9 | ✅ |
 
 ```mermaid
 pie showData title Chunks indexed
@@ -255,6 +258,8 @@ Requires Ollama for vector mode; BM25 mode needs no provider.
 
 `eval` runs [the smoke questions](datasets/benchmark_smoke.jsonl) through the same search as `search`, limited to the documents the [frozen manifest](datasets/corpus_manifest.json) includes for evaluation, so the private DDIA supplement is left out. It prints a JSON summary and writes a JSON and a Markdown report, by default to the ignored `data\evaluation`. Reports contain chunk IDs, not chunk text. Two runs on unchanged inputs print the same `results_fingerprint`.
 
+Each report also has a **Refusal calibration** section. For each mode it shows the top relevance of answerable and unanswerable questions, a proposed threshold, how many questions that threshold would pass or refuse, and leave-one-out errors as a check for small samples. It also shows how the active thresholds judge this run. Nothing changes until you copy the proposed `[retrieval.sufficiency.<mode>]` section into your configuration. The run that proposed it is then the calibration run, and its ID appears in every answer. Run `eval` again after changing the embedding model, BM25 settings or the corpus; until you adopt new thresholds, `ask` answers in that mode ungated and warns `SUFFICIENCY_CALIBRATION_STALE`.
+
 Labels point at a document and a quoted passage, not at chunk IDs, so they survive re-chunking. If you withdraw or delete a labeled document, the next run flags its questions and leaves them out of the metrics; the benchmark file is not changed. Review status and the reviewer checklist are in the [review log](datasets/review_log.md).
 
 </details>
@@ -269,13 +274,17 @@ Requires Ollama with `qwen3:1.7b`; vector mode also needs `nomic-embed-text`.
 .\.venv\Scripts\techdocqa.exe ask "What is the default transaction isolation level in PostgreSQL?" --text
 .\.venv\Scripts\techdocqa.exe ask "What does linger.ms do?" --mode bm25 --technology "Apache Kafka"
 .\.venv\Scripts\techdocqa.exe eval --answers 10 --report-dir reports\evaluation
+.\.venv\Scripts\techdocqa.exe eval --refusal --report-dir reports\evaluation
+powershell -ExecutionPolicy Bypass -File scripts\cli_smoke.ps1
 ```
 
-`ask` retrieves the top 5 chunks, keeps as many as fit the model's 8,192-token window, and asks the model to answer only from them and cite them as `[C1]`, `[C2]` and so on. Each citation is checked against the chunks actually supplied, and its title, section, page and source come from the registry, never from the model. With `--text` it prints the status, the answer and the numbered citations; without it, JSON. The status is `answered`, `no_evidence` (nothing matched, the model said the sources are insufficient, or no citation was valid) or `generation_error` (a model or index failure, with a reason code; exit code 1). The filters are the same as for `search`. Like `search`, `ask` includes every active document, including any private ones you have indexed.
+`ask` retrieves the top 5 chunks and keeps as many as fit the model's 8,192-token window. It then checks them against the relevance threshold calibrated for the retrieval mode. If the best kept chunk is below it, the answer is `no_evidence` / `LOW_RELEVANCE` and no model call is made. Otherwise the model is asked to answer only from the chunks and cite them as `[C1]`, `[C2]` and so on. Each citation is checked against the chunks actually supplied, and its title, section, page and source come from the registry, never from the model.
 
-Questions and document text stay on this machine. Each question adds a line to the ignored `data\logs\qa.jsonl` with chunk IDs, configuration IDs and timings; the question and answer appear there only as hashes. The first answer after Ollama loads the model can take 20 s or more, and can exceed the 60 s timeout.
+With `--text` it prints the status, the answer and the numbered citations; without it, JSON. The status is `answered`, `no_evidence` or `generation_error`. `no_evidence` means nothing matched, nothing was relevant enough, the model said the sources are insufficient, or no citation was valid. `generation_error` means a model or index failure, with a reason code and exit code 1. Every response shows the thresholds it used and their calibration run under `sufficiency`, and whether a model call was made under `llm_called`. The filters are the same as for `search`. Like `search`, `ask` includes every active document, including any private ones you have indexed, so a question the public documents cannot answer may still be answered from those.
 
-`eval --answers 10` answers 10 smoke questions from the public reference and writes a report with an empty review column for AC-16.6. A review sheet with the cited chunk text is written to the ignored `data\evaluation`.
+Questions and document text stay on this machine. Each question adds a line to the ignored `data\logs\qa.jsonl` with chunk IDs, configuration IDs, the sufficiency result and timings; the question and answer appear there only as hashes. The first answer after Ollama loads the models took 44 s in one measurement, within the 60 s timeout; a timeout returns a retryable `LLM_TIMEOUT`.
+
+`eval --answers 10` answers 10 smoke questions from the public reference and writes a report with an empty review column for AC-16.6. A review sheet with the cited chunk text is written to the ignored `data\evaluation`. `eval --refusal` asks all 30 smoke questions and reports AC-18.1 and AC-18.2. Both load the chat model first, so a cold start does not count against the first answer. `scripts\cli_smoke.ps1` runs ingest, process, chunk, index, search, ask, withdraw and ask again with the real models, in a temporary directory that it deletes afterwards.
 
 </details>
 
@@ -311,9 +320,11 @@ The source filename says v2, but its contents identify **Revision 3**; those con
 - [Phase 4 implementation checkpoint](docs/PHASE_4_STATUS.md)
 - [Phase 5 implementation checkpoint](docs/PHASE_5_STATUS.md)
 - [Phase 6 implementation checkpoint](docs/PHASE_6_STATUS.md)
+- [Phase 7 implementation checkpoint](docs/PHASE_7_STATUS.md)
+- [Phase 8 implementation checkpoint and P0 reconciliation](docs/PHASE_8_STATUS.md)
 - [Development log](DEVELOPMENT_LOG.md)
 - [LangChain loaders, corpus formats and metadata plan](docs/LANGCHAIN_INGESTION_PLAN.md)
 - [Local development setup](deployment/local_setup.md)
 - [Corpus preparation](datasets/README.md)
 
-The reference corpus is frozen as `techdocqa-reference-2026-10-24-v2` and the local models are selected. The smoke benchmark is reviewed and Phase 7 answering is built; its 10 answers await a person's support rating, and Phase 8 calibrated refusal is next. Hardware and budget remain open.
+The reference corpus is frozen as `techdocqa-reference-2026-10-24-v2` and the local models are selected. The smoke benchmark is reviewed, and Phases 7 and 8 answering and calibrated refusal are built. P0 release waits for a person's support rating of 10 answers (AC-16.6) and for AC-12.1 to be met or amended. Hardware and budget remain open.

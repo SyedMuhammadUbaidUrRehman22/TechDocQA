@@ -1,5 +1,7 @@
 # Proposed repository structure
 
+Phase 8 update 2026-11-04: actual additions are `answering/sufficiency.py`, `tests/test_sufficiency.py` and `scripts/cli_smoke.ps1`, the AC-22.3 real-model CLI workflow. Thresholds live in `[retrieval.sufficiency.*]` in `config/default.toml`. `eval --refusal` writes `refusal_*` reports next to the other evaluation reports. No calibration or context-integration module was split out of `generation.py`, because the gate is a few lines there. See [Phase 8](PHASE_8_STATUS.md).
+
 Phase 7 update 2026-11-03: actual additions are `answering/{generation,citations}.py`, `evaluation/answers.py`, `tests/test_{generation,citations}.py` and the `tests/fixtures/prompt_injection.md` fixture. `sufficiency.py` waits for Phase 8. The query log is the ignored `data/logs/qa.jsonl`; answer review sheets with cited text go to the ignored `data/evaluation`. See [Phase 7](PHASE_7_STATUS.md).
 
 Phase 6 update 2026-11-03: actual additions are `evaluation/{dataset,metrics,runner}.py`, `datasets/{benchmark_smoke.jsonl,review_log.md}`, `reports/evaluation/` and `tests/test_evaluation.py`. Run reports go to the ignored `data/evaluation` unless `--report-dir` names another directory. See [Phase 6](PHASE_6_STATUS.md).

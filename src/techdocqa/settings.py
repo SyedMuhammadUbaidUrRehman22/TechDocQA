@@ -68,6 +68,22 @@ class ChunkingSettings(StrictModel):
         return self
 
 
+class SufficiencyThresholds(StrictModel):
+    """One mode's calibrated FR-18 gate. It applies only while scoring_config_id names the active score scale (Q-07)."""
+    min_top_score: float = Field(ge=0, le=1)
+    min_chunk_score: float = Field(ge=0, le=1)
+    min_supporting_chunks: int = Field(default=1, ge=1)
+    # The evaluation run whose scores chose these values.
+    calibration_run_id: str = Field(pattern=r"^[A-Za-z0-9_-]{1,100}$")
+    scoring_config_id: str = Field(pattern=r"^sc_[0-9a-f]{64}$")
+
+
+class SufficiencySettings(StrictModel):
+    # Hybrid and reranked scores need their own calibration (P1); no mode borrows another's thresholds.
+    bm25: SufficiencyThresholds | None = None
+    vector: SufficiencyThresholds | None = None
+
+
 class RetrievalSettings(StrictModel):
     mode: Literal["bm25", "vector", "hybrid"] = "vector"
     candidate_depth: int = Field(default=20, gt=0)
@@ -77,11 +93,15 @@ class RetrievalSettings(StrictModel):
     rrf_k: int = Field(default=60, gt=0)
     rerank: bool = False
     rerank_max_candidates: int = Field(default=20, gt=0)
+    sufficiency: SufficiencySettings = Field(default_factory=SufficiencySettings)
 
     @model_validator(mode="after")
     def check_depth(self) -> "RetrievalSettings":
         if self.top_k > self.candidate_depth:
             raise ValueError("top_k cannot exceed candidate_depth")
+        for thresholds in (self.sufficiency.bm25, self.sufficiency.vector):
+            if thresholds is not None and thresholds.min_supporting_chunks > self.top_k:
+                raise ValueError("min_supporting_chunks cannot exceed top_k")
         return self
 
 

@@ -1,9 +1,10 @@
 """Grounded answers through a LangChain prompt | chat-model chain (FR-16), with prompt-injection delimiting (FR-23).
 
 The registry-gated search() supplies the evidence. The context is fitted to the configured window before the call,
-so every chunk reported as evidence was in the prompt. Provider failures, including the query embedding, become
-generation_error and never no_evidence. Sufficiency thresholds arrive with FR-18 calibration in Phase 8; until then
-every response carries SUFFICIENCY_NOT_CALIBRATED.
+so every chunk reported as evidence was in the prompt. The calibrated sufficiency gate (FR-18) then judges the kept
+chunks and refuses without a model call when they are not relevant enough. Provider failures, including the query
+embedding, become generation_error and never no_evidence. A mode with no calibration that applies answers ungated
+and says so with a warning.
 """
 
 from contextlib import closing
@@ -19,6 +20,7 @@ from uuid import uuid4
 
 from langchain_core.prompts import ChatPromptTemplate
 
+from techdocqa.answering import sufficiency
 from techdocqa.answering.citations import cited_labels, remove_labels, resolve_citations, unique_sources
 from techdocqa.errors import TechDocQAError
 from techdocqa.retrieval.search import retrieval_config_id, search
@@ -47,6 +49,7 @@ PROMPT = ChatPromptTemplate.from_messages([("system", SYSTEM), ("human", HUMAN)]
 # Fixed wording for refusals (FR-18.2, FR-22.2); the model's own text is never shown for them.
 MESSAGES = {
     "NO_MATCHING_DOCUMENTS": "No active document matches this question and its filters.",
+    "LOW_RELEVANCE": "No retrieved passage is relevant enough to answer this question, so no answer was generated.",
     "INSUFFICIENT_CONTEXT": "The retrieved documents do not contain enough evidence to answer this question.",
     "NO_VALID_CITATIONS": "No answer could be verified against the retrieved sources, so none is shown.",
 }
@@ -64,6 +67,8 @@ FAILURES = {
     "LLM_ERROR": ("The language model failed.", False),
 }
 THINKING = re.compile(r"<think>.*?</think>", re.S)
+# Loading a model is not answering, so a warm-up gets a longer bound than an answer.
+WARM_UP_TIMEOUT_SECONDS = 300
 
 
 def failure(code: str) -> TechDocQAError:
@@ -114,6 +119,28 @@ def check_installed(model) -> None:
         raise failure("LLM_MODEL_NOT_FOUND")
     if installed[model.chat_model] != model.chat_model_digest:
         raise failure("LLM_MODEL_CHANGED")
+
+
+def warm_up(settings) -> dict:
+    """Loads the local chat model before a timed run, so a cold load cannot use up its first answer's deadline.
+
+    This is Ollama's documented preload, an empty prompt, sent with the same num_ctx because a different window reloads
+    the model. An API provider has nothing to load. A failure is reported, not raised; the run then shows it per question.
+    """
+    model = settings.model
+    started = time.perf_counter()
+    if model.provider != "ollama":
+        return {"loaded": False, "ms": 0, "code": None}
+    import ollama
+    try:
+        check_installed(model)
+        ollama.Client(host=model.base_url, timeout=WARM_UP_TIMEOUT_SECONDS).generate(
+            model=model.chat_model, prompt="", options={"num_ctx": model.context_window})
+    except TechDocQAError as error:
+        return {"loaded": False, "ms": elapsed_ms(started), "code": error.response.error.code}
+    except Exception as error:
+        return {"loaded": False, "ms": elapsed_ms(started), "code": provider_failure(error).response.error.code}
+    return {"loaded": True, "ms": elapsed_ms(started), "code": None}
 
 
 def build_chat_model(settings):
@@ -228,6 +255,7 @@ def write_query_log(settings, response: QAResponse, question: str, prompt_sha256
         "citations": [{"label": citation.label, "chunk_id": citation.chunk_id} for citation in response.citations],
         "citation_verified": response.citation_verified,
         "warnings": [warning.model_dump() for warning in response.warnings],
+        "sufficiency": response.sufficiency.model_dump() if response.sufficiency else None, "llm_called": response.llm_called,
         "chunks_retrieved": response.chunks_retrieved, "chunks_used": response.chunks_used, "mode": response.mode,
         "retrieval_config_id": response.retrieval_config_id, "generation_config_id": response.generation_config_id,
         "provider": response.provider, "model_id": response.model_id, "usage": token_usage,
@@ -268,10 +296,13 @@ def answer_question(question: str, settings, registry, *, mode: str | None = Non
     if expected_config_id is not None and expected_config_id != config_id:
         raise TechDocQAError("RETRIEVAL_CONFIG_MISMATCH", "The requested retrieval configuration is not the active one.", stage="question")
 
-    warnings = [QAWarning(code="SUFFICIENCY_NOT_CALIBRATED")]
+    # Q-07: only this mode's thresholds, and only if calibrated on the active score scale.
+    thresholds, uncalibrated = sufficiency.active_thresholds(request.mode, settings, profile)
+    warnings = [QAWarning(code=uncalibrated)] if uncalibrated else []
+    gate = sufficiency.new_check(request.mode, thresholds)
     fields = {"mode": request.mode, "retrieval_config_id": config_id, "generation_config_id": generation_config_id(settings),
               "provider": settings.model.provider, "model_id": model_id(settings.model), "request_id": f"req_{uuid4().hex}",
-              "warnings": warnings}
+              "warnings": warnings, "sufficiency": gate}
     latency = QALatency()
     context, token_usage = None, None
 
@@ -302,10 +333,16 @@ def answer_question(question: str, settings, registry, *, mode: str | None = Non
     context = build_context(question, found.results, settings)
     if not context.results:
         return finish(status="generation_error", reason="CONTEXT_WINDOW_EXCEEDED", **counts)
+    # After trimming, so a chunk dropped to fit the window cannot count as support (FR-18.1).
+    sufficiency.record(gate, context.results, thresholds)
+    if gate.passed is False:
+        return finish(status="no_evidence", reason="LOW_RELEVANCE", answer=MESSAGES["LOW_RELEVANCE"], **counts)
     counts.update(evidence=[result.chunk_id for result in context.results], chunks_used=len(context.results))
     generation_started = time.perf_counter()
     try:
-        message = generate(PROMPT | build_chat_model(settings), context.inputs, settings.model.timeout_seconds)
+        chat = build_chat_model(settings)
+        fields["llm_called"] = True
+        message = generate(PROMPT | chat, context.inputs, settings.model.timeout_seconds)
         text = answer_text(message)
         if not text:
             raise failure("EMPTY_ANSWER")

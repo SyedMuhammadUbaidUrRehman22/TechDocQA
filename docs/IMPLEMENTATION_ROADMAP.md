@@ -1,5 +1,7 @@
 # TechDocQA implementation roadmap
 
+Phase 8 checkpoint 2026-11-04: [calibrated refusal and P0 reconciliation](PHASE_8_STATUS.md) records per-mode 0-1 relevance scales and thresholds calibrated on the reviewed smoke set (BM25 0.297285, vector 0.858223, run `eval_c4ab1f13...`). With the real model, each mode refused 10 of 10 out-of-domain questions without a model call (AC-18.1) and answered 19 of 20 answerable ones (AC-18.2). The real-model CLI script meets AC-22.3 and AC-21.1. **The P0 release gate is blocked** by AC-16.6, which has no recorded human rating, and AC-12.1 on the real corpus (124 of 152). Q-07, Q-12 and Q-13 are implemented as proposed and await approval.
+
 Phase 7 checkpoint 2026-11-03: [answering and citation evidence](PHASE_7_STATUS.md) records `ask` as a LangChain prompt and `ChatOllama` chain over the registry-gated search, with context fitted to an 8,192-token window, citations verified against stored metadata and provider failures returned as `generation_error`. On the real corpus, 10 of 10 smoke questions were answered with citations (AC-16.1), and `qwen3:1.7b` did not follow the injected instruction in 3 of 3 questions (AC-23.3) on the second attempt, after a cold-start timeout. **AC-16.6 human review is open.** No refusal threshold applies until Phase 8.
 
 Phase 6 checkpoint 2026-11-03: [smoke benchmark evidence](PHASE_6_STATUS.md) records the runner, metrics and `eval` command on the 20-document public reference, with DDIA excluded. BM25 Recall@5 is 0.925 with MRR 0.708; vector Recall@5 is 0.925 with MRR 0.783. A run takes 35 to 40 s, and two runs give identical results. AC-21.3 deletion flags pass in tests. The project owner reviewed and accepted all 30 questions on 2026-11-03. Q-12/Q-13 remain unapproved.
@@ -108,6 +110,8 @@ Phase 3B is the user's name for this remaining Phase 3 work; the original roadma
 
 ## Phase 8 — Calibrated refusal and P0 release gate
 
+Implementation checkpoint 2026-11-04: FR-18 is implemented and met with the real model in both P0 modes, and every P0 acceptance criterion is reconciled in the [Phase 8 report](PHASE_8_STATUS.md#p0-acceptance-reconciliation). The release gate is explicitly blocked by AC-16.6 and AC-12.1. The planned `answering/sufficiency.py` exists; context integration stayed inside `generation.py`.
+
 - Objective: complete trustworthy baseline QA and CLI.
 - FRs: FR-18, FR-19 calibration slice, FR-21 QA slice; complete P0 FR-16/17/22/23 and cumulative FR-01–06(minimal), FR-10–13/20.
 - Files: answering/sufficiency.py, generation/context integration, calibration/config records, CLI smoke workflow, evaluation reports; test_sufficiency.py, lifecycle/CLI tests.
@@ -158,4 +162,4 @@ Phase 3B is the user's name for this remaining Phase 3 work; the original roadma
 
 ## Recommended next action
 
-First, a person rates the 10 answers in the [Phase 7 answer report](../reports/evaluation/answers_d724f334f9f0409884db95613c61663e.md) for AC-16.6. Next is Phase 8, calibrated refusal, which must also settle cold-start timeouts for the local model. Q-12/Q-13 still need approval or amendment; Phase 8 refusal calibration uses the [reviewed](../datasets/review_log.md) smoke set. Do not treat DDIA as part of the public reference or silently count it toward the approximate 3,000-chunk target. Generation quality and performance gates remain unverified.
+The P0 release gate needs three things before Phase 9 starts. First, a person rates the 10 answers in the [Phase 7 answer report](../reports/evaluation/answers_d724f334f9f0409884db95613c61663e.md) for AC-16.6; at least 8 must be supported. Second, AC-12.1 is either met on the real corpus or amended with approval. Third, Q-07, Q-12 and Q-13 are approved or amended, which changes only their recorded policy IDs. Cold-start timeouts are settled in [Phase 8](PHASE_8_STATUS.md#cold-start). Do not treat DDIA as part of the public reference or silently count it toward the approximate 3,000-chunk target. Performance gates, including NFR-02, are measured in Phase 11.

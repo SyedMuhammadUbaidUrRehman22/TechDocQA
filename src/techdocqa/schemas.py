@@ -31,8 +31,11 @@ class SearchResult(StrictModel):
     section_path: str | None = None
     page: int | None = None
     text: str
+    # Raw scores in each retriever's own scale.
     scores: dict[str, float | None]
     ranks: dict[str, int]
+    # The mode's documented 0-1 relevance, which the FR-18 thresholds use (Q-07).
+    relevance: float | None = None
 
 
 class SearchResponse(StrictModel):
@@ -98,8 +101,22 @@ class QAUsage(StrictModel):
     prompt_token_bound: int
 
 
+class SufficiencyCheck(StrictModel):
+    """The FR-18 gate on the chunks kept for the prompt. Thresholds are null when the mode has no calibration that applies."""
+    calibrated: bool
+    # None when no check ran: no calibration, or nothing retrieved to check.
+    passed: bool | None = None
+    top_score: float | None = None
+    supporting_chunks: int | None = None
+    min_top_score: float | None = None
+    min_chunk_score: float | None = None
+    min_supporting_chunks: int | None = None
+    calibration_run_id: str | None = None
+    relevance_policy: str
+
+
 class QAResponse(StrictModel):
-    """Section 8.3 plus the Q-08 additions: sources, chunk counts, warnings and the generation configuration."""
+    """Section 8.3 plus the Q-08 additions: sources, chunk counts, warnings, the sufficiency gate and the generation configuration."""
     status: Literal["answered", "no_evidence", "generation_error"]
     reason: str | None = None
     answer: str | None = None
@@ -119,6 +136,9 @@ class QAResponse(StrictModel):
     model_id: str | None = None
     retryable: bool = False
     warnings: list[QAWarning] = Field(default_factory=list)
+    sufficiency: SufficiencyCheck | None = None
+    # True once a chat request was sent; a refusal by the sufficiency gate never sends one (AC-18.1).
+    llm_called: bool = False
     usage: QAUsage | None = None
     latency_ms: QALatency = Field(default_factory=QALatency)
     request_id: str
