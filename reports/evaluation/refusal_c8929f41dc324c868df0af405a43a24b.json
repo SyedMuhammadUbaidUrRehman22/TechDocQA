@@ -1,0 +1,2082 @@
+{
+  "run_id": "refusal_c8929f41dc324c868df0af405a43a24b",
+  "started_at": "2026-11-04T15:14:03.014566+00:00",
+  "finished_at": "2026-11-04T15:20:29.545830+00:00",
+  "duration_seconds": 386.531,
+  "dataset": {
+    "dataset_id": "benchmark_smoke",
+    "sha256": "11710120d0f8bd83f5988d78813cb979511bb7aba808b679c884db3ccfb92faa",
+    "questions": 30,
+    "reviewed": 30
+  },
+  "corpus": {
+    "manifest_dataset_id": "techdocqa-reference-2026-10-24-v2",
+    "manifest_status": "frozen",
+    "manifest_fingerprint": "40229e3caebc8816d6ad98d36bddc10eb133deb7d3b1c416f8a1331b9d75591a",
+    "scope_documents": 20,
+    "searchable_documents": 20,
+    "searchable_chunks": 816,
+    "excluded_eligible_documents": 1,
+    "unavailable": {},
+    "content_drift": [],
+    "corpus_fingerprint": "e8713f0c15eeb6db2c801a319c2324507302242c6265b8fff1ae67db63a2c4b5"
+  },
+  "environment": {
+    "code": {
+      "package": "0.1.0",
+      "commit": "e06e2753c93acb59f948309179a21a226a0bb534",
+      "dirty": true
+    },
+    "provider": "ollama",
+    "model_id": "ollama/qwen3:1.7b@8f68893c685c3ddff2aa3fffce2aa60a30bb2da65ca488b61fff134a4d1730e7",
+    "generation_config_id": "gc_a370881aa0eea90888767cd3908861e669277c3b909ec13cc0d10bc620141369",
+    "context_window": 8192,
+    "max_output_tokens": 512,
+    "temperature": 0.0,
+    "timeout_seconds": 60,
+    "strict_citations": true,
+    "warm_up": {
+      "loaded": true,
+      "ms": 11242,
+      "code": null
+    }
+  },
+  "retrieval": {
+    "mode": "vector",
+    "retrieval_config_id": "rc_240565250e0cb8369778d32f15c654abac47673f1e153b5e838afa8d721fb723",
+    "sufficiency": {
+      "calibrated": true,
+      "min_top_score": 0.858223,
+      "min_chunk_score": 0.858223,
+      "min_supporting_chunks": 1,
+      "calibration_run_id": "eval_c4ab1f1397fa469489137f611b74cdf7",
+      "relevance_policy": "cosine-distance-half-v1"
+    }
+  },
+  "summary": {
+    "questions": 30,
+    "statuses": {
+      "answered": 19,
+      "no_evidence": 11,
+      "generation_error": 0
+    },
+    "excluded": [],
+    "ac_18_1": {
+      "questions": 10,
+      "no_evidence": 10,
+      "rate": 1.0,
+      "target": 0.9,
+      "reasons": {
+        "LOW_RELEVANCE": 10
+      },
+      "met": true
+    },
+    "ac_18_2": {
+      "questions": 20,
+      "answered": 19,
+      "rate": 0.95,
+      "target": 0.85,
+      "reasons": {
+        "answered": 19,
+        "INSUFFICIENT_CONTEXT": 1
+      },
+      "met": true
+    },
+    "gate_refusals": 10,
+    "llm_calls_on_gate_refusals": 0,
+    "llm_calls": 20,
+    "latency_ms": {
+      "retrieval": {
+        "median": 2437.5,
+        "p95": 4651,
+        "max": 6671
+      },
+      "generation": {
+        "median": 10759.0,
+        "p95": 22212,
+        "max": 24998
+      },
+      "total": {
+        "median": 14040.0,
+        "p95": 27423,
+        "max": 27858
+      }
+    }
+  },
+  "questions": [
+    {
+      "id": "smoke-kafka-01",
+      "technology": "Apache Kafka",
+      "type": "identifier",
+      "unanswerable": false,
+      "flags": [],
+      "response": {
+        "status": "answered",
+        "reason": null,
+        "answer": "The `linger.ms` producer setting delays the sending of record batches to allow other records to be sent first, similar to Nagle's algorithm in TCP. It gives an upper bound on the delay for batching. The default value is 5 milliseconds [C3].",
+        "citation_verified": true,
+        "citations": [
+          {
+            "label": "C3",
+            "chunk_id": "chk_84b7ce1745cb179e3ed9068d0bc3497708506c387d65f43954c3e373659f5c44",
+            "document_id": "doc_e908b26340164fa6a08b78348adb739c",
+            "version_id": "ver_397f457bf5b640c19a8dcddb97aa487a",
+            "title": "Producer Configs | Apache Kafka",
+            "section_path": "Producer Configs > linger.ms",
+            "source": "https://kafka.apache.org/43/configuration/producer-configs/",
+            "source_url": "https://kafka.apache.org/43/configuration/producer-configs/",
+            "page": null
+          }
+        ],
+        "context_consulted": [],
+        "sources": [
+          {
+            "document_id": "doc_e908b26340164fa6a08b78348adb739c",
+            "version_id": "ver_397f457bf5b640c19a8dcddb97aa487a",
+            "title": "Producer Configs | Apache Kafka",
+            "source": "https://kafka.apache.org/43/configuration/producer-configs/",
+            "source_url": "https://kafka.apache.org/43/configuration/producer-configs/"
+          }
+        ],
+        "evidence": [
+          "chk_d56f5ce42b8871ef5fc526dd8361b077241f36b4c8f43e62dd4a5c1e73b9e18c",
+          "chk_79e53c4da8b5c76672139b19d9fd70c946754e43d2e89116b294acf6c634bfe4",
+          "chk_84b7ce1745cb179e3ed9068d0bc3497708506c387d65f43954c3e373659f5c44",
+          "chk_ab365b4ed11831a2f1792baa89d071a66c67c9703f645efe5b528f0cc5dc72a1",
+          "chk_88e35ebe90df7279dc779c4f65064642b65bb46b9db9ec022e289b606f990bf2"
+        ],
+        "chunks_retrieved": 5,
+        "chunks_used": 5,
+        "mode": "vector",
+        "retrieval_config_id": "rc_240565250e0cb8369778d32f15c654abac47673f1e153b5e838afa8d721fb723",
+        "generation_config_id": "gc_a370881aa0eea90888767cd3908861e669277c3b909ec13cc0d10bc620141369",
+        "provider": "ollama",
+        "model_id": "ollama/qwen3:1.7b@8f68893c685c3ddff2aa3fffce2aa60a30bb2da65ca488b61fff134a4d1730e7",
+        "retryable": false,
+        "warnings": [],
+        "sufficiency": {
+          "calibrated": true,
+          "passed": true,
+          "top_score": 0.879468,
+          "supporting_chunks": 2,
+          "min_top_score": 0.858223,
+          "min_chunk_score": 0.858223,
+          "min_supporting_chunks": 1,
+          "calibration_run_id": "eval_c4ab1f1397fa469489137f611b74cdf7",
+          "relevance_policy": "cosine-distance-half-v1"
+        },
+        "llm_called": true,
+        "usage": {
+          "prompt_tokens": 1319,
+          "output_tokens": 54,
+          "prompt_token_bound": 5448
+        },
+        "latency_ms": {
+          "retrieval": 6671,
+          "generation": 13973,
+          "total": 20875
+        },
+        "request_id": "req_c9a5544f0b0a4cabacf5daef6de55756"
+      }
+    },
+    {
+      "id": "smoke-kafka-02",
+      "technology": "Apache Kafka",
+      "type": "how_to",
+      "unanswerable": false,
+      "flags": [],
+      "response": {
+        "status": "answered",
+        "reason": null,
+        "answer": "To create a topic called `quickstart-events` from the command line, you can use the following command:\n\n$ bin/kafka-topics.sh --create --topic quickstart-events --bootstrap-server localhost:9092\n\nThis command creates a new topic named `quickstart-events` with default settings (e.g., one partition, replication factor of 1). The topic is created in the directory where Kafka is installed, and the broker listens on port 9092.\n\nThe source that supports this information is [C1].",
+        "citation_verified": true,
+        "citations": [
+          {
+            "label": "C1",
+            "chunk_id": "chk_d2d64b3ce4469b0c409eb839fd9dbd3bff10308bcf6c3396b5b0010b60ef097b",
+            "document_id": "doc_4dd377efb44f4bf7a72ec52df02dee86",
+            "version_id": "ver_81c0200118744f9fbdbbddc3090ccd13",
+            "title": "Quick Start | Apache Kafka",
+            "section_path": "Quick Start > Step 3: Create a topic to store your events",
+            "source": "https://kafka.apache.org/43/getting-started/quickstart/",
+            "source_url": "https://kafka.apache.org/43/getting-started/quickstart/",
+            "page": null
+          }
+        ],
+        "context_consulted": [],
+        "sources": [
+          {
+            "document_id": "doc_4dd377efb44f4bf7a72ec52df02dee86",
+            "version_id": "ver_81c0200118744f9fbdbbddc3090ccd13",
+            "title": "Quick Start | Apache Kafka",
+            "source": "https://kafka.apache.org/43/getting-started/quickstart/",
+            "source_url": "https://kafka.apache.org/43/getting-started/quickstart/"
+          }
+        ],
+        "evidence": [
+          "chk_d2d64b3ce4469b0c409eb839fd9dbd3bff10308bcf6c3396b5b0010b60ef097b",
+          "chk_fdfbb1a43e0fccf33517b2019c391583da2561cc94aa7b5a14870ef179af59a1",
+          "chk_3345bc5cc3918ae99c71b4dd01376dc7b51a5ae15a2a12c852a773028a3fd01d",
+          "chk_7e9f71377eaec24db8c5f390d678a1ed35c37c25bb540ae314b3646cb16d2322",
+          "chk_030b6a648e42c1012a3d7a827c3c7835384e28b24fdb80a756cd2eb7a803110a"
+        ],
+        "chunks_retrieved": 5,
+        "chunks_used": 5,
+        "mode": "vector",
+        "retrieval_config_id": "rc_240565250e0cb8369778d32f15c654abac47673f1e153b5e838afa8d721fb723",
+        "generation_config_id": "gc_a370881aa0eea90888767cd3908861e669277c3b909ec13cc0d10bc620141369",
+        "provider": "ollama",
+        "model_id": "ollama/qwen3:1.7b@8f68893c685c3ddff2aa3fffce2aa60a30bb2da65ca488b61fff134a4d1730e7",
+        "retryable": false,
+        "warnings": [],
+        "sufficiency": {
+          "calibrated": true,
+          "passed": true,
+          "top_score": 0.896836,
+          "supporting_chunks": 4,
+          "min_top_score": 0.858223,
+          "min_chunk_score": 0.858223,
+          "min_supporting_chunks": 1,
+          "calibration_run_id": "eval_c4ab1f1397fa469489137f611b74cdf7",
+          "relevance_policy": "cosine-distance-half-v1"
+        },
+        "llm_called": true,
+        "usage": {
+          "prompt_tokens": 1361,
+          "output_tokens": 110,
+          "prompt_token_bound": 5337
+        },
+        "latency_ms": {
+          "retrieval": 2252,
+          "generation": 24998,
+          "total": 27858
+        },
+        "request_id": "req_41446715efab4b638c761edb6671894f"
+      }
+    },
+    {
+      "id": "smoke-kafka-03",
+      "technology": "Apache Kafka",
+      "type": "factual",
+      "unanswerable": false,
+      "flags": [],
+      "response": {
+        "status": "answered",
+        "reason": null,
+        "answer": "A message written to Kafka becomes visible to consumers once it has been committed to the log [C4]. This means that once the message is acknowledged by the producer (via the `acks` setting), it is considered visible to consumers. If the `acks` setting is configured to `all`, the message is visible once it is acknowledged by all replicas [C1]. If configured to `auto`, the message is visible once it is acknowledged by the leader replica [C1].",
+        "citation_verified": true,
+        "citations": [
+          {
+            "label": "C4",
+            "chunk_id": "chk_b4fbf1ff0893bba2c1d06d449dc4a6e4e8949dbd595f0fbb9561d8f78e4d40e6",
+            "document_id": "doc_0b5b20f8046b43beacbc36997c619ef8",
+            "version_id": "ver_26b3f42f3f4f487895a4f42364dc3631",
+            "title": "Design | Apache Kafka",
+            "section_path": "Design > Message Delivery Semantics",
+            "source": "https://kafka.apache.org/43/design/design/",
+            "source_url": "https://kafka.apache.org/43/design/design/",
+            "page": null
+          },
+          {
+            "label": "C1",
+            "chunk_id": "chk_a91acaaf9e2aa6b2ab07ebaf210104dbedd74de4c66d02f936783be60b69a109",
+            "document_id": "doc_0b5b20f8046b43beacbc36997c619ef8",
+            "version_id": "ver_26b3f42f3f4f487895a4f42364dc3631",
+            "title": "Design | Apache Kafka",
+            "section_path": "Design > Replication",
+            "source": "https://kafka.apache.org/43/design/design/",
+            "source_url": "https://kafka.apache.org/43/design/design/",
+            "page": null
+          }
+        ],
+        "context_consulted": [],
+        "sources": [
+          {
+            "document_id": "doc_0b5b20f8046b43beacbc36997c619ef8",
+            "version_id": "ver_26b3f42f3f4f487895a4f42364dc3631",
+            "title": "Design | Apache Kafka",
+            "source": "https://kafka.apache.org/43/design/design/",
+            "source_url": "https://kafka.apache.org/43/design/design/"
+          }
+        ],
+        "evidence": [
+          "chk_a91acaaf9e2aa6b2ab07ebaf210104dbedd74de4c66d02f936783be60b69a109",
+          "chk_5e53e59d238cb99cbe01f3736042ebf9a542533a3df0d888ddd80d75d02987a9",
+          "chk_cbb109fce0bffeb308a5dd5e7dc6fa165636c7babe60903fbd247d98ca93f216",
+          "chk_b4fbf1ff0893bba2c1d06d449dc4a6e4e8949dbd595f0fbb9561d8f78e4d40e6",
+          "chk_ec9f591c93ed16b66bc31ed0e33cbd2a26c4c906de55007e85415d6029d37eff"
+        ],
+        "chunks_retrieved": 5,
+        "chunks_used": 5,
+        "mode": "vector",
+        "retrieval_config_id": "rc_240565250e0cb8369778d32f15c654abac47673f1e153b5e838afa8d721fb723",
+        "generation_config_id": "gc_a370881aa0eea90888767cd3908861e669277c3b909ec13cc0d10bc620141369",
+        "provider": "ollama",
+        "model_id": "ollama/qwen3:1.7b@8f68893c685c3ddff2aa3fffce2aa60a30bb2da65ca488b61fff134a4d1730e7",
+        "retryable": false,
+        "warnings": [],
+        "sufficiency": {
+          "calibrated": true,
+          "passed": true,
+          "top_score": 0.885643,
+          "supporting_chunks": 5,
+          "min_top_score": 0.858223,
+          "min_chunk_score": 0.858223,
+          "min_supporting_chunks": 1,
+          "calibration_run_id": "eval_c4ab1f1397fa469489137f611b74cdf7",
+          "relevance_policy": "cosine-distance-half-v1"
+        },
+        "llm_called": true,
+        "usage": {
+          "prompt_tokens": 1304,
+          "output_tokens": 97,
+          "prompt_token_bound": 5620
+        },
+        "latency_ms": {
+          "retrieval": 4651,
+          "generation": 22212,
+          "total": 27423
+        },
+        "request_id": "req_72d49f38562645be99119be3e89d08c9"
+      }
+    },
+    {
+      "id": "smoke-kafka-04",
+      "technology": "Apache Kafka",
+      "type": "factual",
+      "unanswerable": false,
+      "flags": [],
+      "response": {
+        "status": "answered",
+        "reason": null,
+        "answer": "Kafka log compaction guarantees that the last known value for each message key is retained [C4].",
+        "citation_verified": true,
+        "citations": [
+          {
+            "label": "C4",
+            "chunk_id": "chk_86d74635eafdabc0cfeb6d00140204bd37bd7ea8439db47e30e990ef10b40a6e",
+            "document_id": "doc_0b5b20f8046b43beacbc36997c619ef8",
+            "version_id": "ver_26b3f42f3f4f487895a4f42364dc3631",
+            "title": "Design | Apache Kafka",
+            "section_path": "Design > Log Compaction",
+            "source": "https://kafka.apache.org/43/design/design/",
+            "source_url": "https://kafka.apache.org/43/design/design/",
+            "page": null
+          }
+        ],
+        "context_consulted": [],
+        "sources": [
+          {
+            "document_id": "doc_0b5b20f8046b43beacbc36997c619ef8",
+            "version_id": "ver_26b3f42f3f4f487895a4f42364dc3631",
+            "title": "Design | Apache Kafka",
+            "source": "https://kafka.apache.org/43/design/design/",
+            "source_url": "https://kafka.apache.org/43/design/design/"
+          }
+        ],
+        "evidence": [
+          "chk_bfd86415222a744c9317db9358639ea82ed31a77157fd79deb90600e8c2cb093",
+          "chk_da6a60590691704ce08cd3d3c90924b5ad634134715bc9426878de705d32375e",
+          "chk_13d5649edf7a6c7bda15f91e06ed80fcd60fda0b93523bdc6445a0283933f691",
+          "chk_86d74635eafdabc0cfeb6d00140204bd37bd7ea8439db47e30e990ef10b40a6e",
+          "chk_a2c07c5615effe296342994f00ed2da9e8df6f0b67c8f9177774704a8509bef3"
+        ],
+        "chunks_retrieved": 5,
+        "chunks_used": 5,
+        "mode": "vector",
+        "retrieval_config_id": "rc_240565250e0cb8369778d32f15c654abac47673f1e153b5e838afa8d721fb723",
+        "generation_config_id": "gc_a370881aa0eea90888767cd3908861e669277c3b909ec13cc0d10bc620141369",
+        "provider": "ollama",
+        "model_id": "ollama/qwen3:1.7b@8f68893c685c3ddff2aa3fffce2aa60a30bb2da65ca488b61fff134a4d1730e7",
+        "retryable": false,
+        "warnings": [],
+        "sufficiency": {
+          "calibrated": true,
+          "passed": true,
+          "top_score": 0.938665,
+          "supporting_chunks": 5,
+          "min_top_score": 0.858223,
+          "min_chunk_score": 0.858223,
+          "min_supporting_chunks": 1,
+          "calibration_run_id": "eval_c4ab1f1397fa469489137f611b74cdf7",
+          "relevance_policy": "cosine-distance-half-v1"
+        },
+        "llm_called": true,
+        "usage": {
+          "prompt_tokens": 1160,
+          "output_tokens": 22,
+          "prompt_token_bound": 4696
+        },
+        "latency_ms": {
+          "retrieval": 3698,
+          "generation": 9509,
+          "total": 13668
+        },
+        "request_id": "req_e5a529ef67f74e159651eeea942b0eaa"
+      }
+    },
+    {
+      "id": "smoke-kafka-05",
+      "technology": "Apache Kafka",
+      "type": "factual",
+      "unanswerable": false,
+      "flags": [],
+      "response": {
+        "status": "answered",
+        "reason": null,
+        "answer": "Events that share the same key are written to the same partition [C2]. Kafka guarantees that any consumer of a given topic-partition will always read that partition\u2019s events in exactly the same order as they were written [C1].",
+        "citation_verified": true,
+        "citations": [
+          {
+            "label": "C2",
+            "chunk_id": "chk_362cb5f26b5c660131d785718eaaa61e51bf5c0b0a410652a83d56b0f09d441f",
+            "document_id": "doc_a4e2455340354b8bb42ba48463f5ed16",
+            "version_id": "ver_616ce86119094b27b32544dc37ca874f",
+            "title": "Introduction | Apache Kafka",
+            "section_path": "Introduction > Main Concepts and Terminology",
+            "source": "https://kafka.apache.org/43/getting-started/introduction/",
+            "source_url": "https://kafka.apache.org/43/getting-started/introduction/",
+            "page": null
+          },
+          {
+            "label": "C1",
+            "chunk_id": "chk_dc4b8d61a38b7264fd46c64446e50df614051920ec0bfa19e8a50d578ff95dfe",
+            "document_id": "doc_a4e2455340354b8bb42ba48463f5ed16",
+            "version_id": "ver_616ce86119094b27b32544dc37ca874f",
+            "title": "Introduction | Apache Kafka",
+            "section_path": "Introduction > Main Concepts and Terminology",
+            "source": "https://kafka.apache.org/43/getting-started/introduction/",
+            "source_url": "https://kafka.apache.org/43/getting-started/introduction/",
+            "page": null
+          }
+        ],
+        "context_consulted": [],
+        "sources": [
+          {
+            "document_id": "doc_a4e2455340354b8bb42ba48463f5ed16",
+            "version_id": "ver_616ce86119094b27b32544dc37ca874f",
+            "title": "Introduction | Apache Kafka",
+            "source": "https://kafka.apache.org/43/getting-started/introduction/",
+            "source_url": "https://kafka.apache.org/43/getting-started/introduction/"
+          }
+        ],
+        "evidence": [
+          "chk_dc4b8d61a38b7264fd46c64446e50df614051920ec0bfa19e8a50d578ff95dfe",
+          "chk_362cb5f26b5c660131d785718eaaa61e51bf5c0b0a410652a83d56b0f09d441f",
+          "chk_87f9cb8f7ef147d8f55f9dd8db4f0729a46c7b8d073d885ec7ebec503dd42345",
+          "chk_cb081aa97f157c72afcb5707ffcf9c76d88ffca074824c82ec88371f83cb1215",
+          "chk_7e9f71377eaec24db8c5f390d678a1ed35c37c25bb540ae314b3646cb16d2322"
+        ],
+        "chunks_retrieved": 5,
+        "chunks_used": 5,
+        "mode": "vector",
+        "retrieval_config_id": "rc_240565250e0cb8369778d32f15c654abac47673f1e153b5e838afa8d721fb723",
+        "generation_config_id": "gc_a370881aa0eea90888767cd3908861e669277c3b909ec13cc0d10bc620141369",
+        "provider": "ollama",
+        "model_id": "ollama/qwen3:1.7b@8f68893c685c3ddff2aa3fffce2aa60a30bb2da65ca488b61fff134a4d1730e7",
+        "retryable": false,
+        "warnings": [],
+        "sufficiency": {
+          "calibrated": true,
+          "passed": true,
+          "top_score": 0.880168,
+          "supporting_chunks": 2,
+          "min_top_score": 0.858223,
+          "min_chunk_score": 0.858223,
+          "min_supporting_chunks": 1,
+          "calibration_run_id": "eval_c4ab1f1397fa469489137f611b74cdf7",
+          "relevance_policy": "cosine-distance-half-v1"
+        },
+        "llm_called": true,
+        "usage": {
+          "prompt_tokens": 1353,
+          "output_tokens": 48,
+          "prompt_token_bound": 5777
+        },
+        "latency_ms": {
+          "retrieval": 2872,
+          "generation": 12115,
+          "total": 15240
+        },
+        "request_id": "req_ef7742a44e6a4991bf101dbb94d127f6"
+      }
+    },
+    {
+      "id": "smoke-airflow-01",
+      "technology": "Apache Airflow",
+      "type": "identifier",
+      "unanswerable": false,
+      "flags": [],
+      "response": {
+        "status": "answered",
+        "reason": null,
+        "answer": "Setting a maximum runtime for an Airflow task using the `execution_timeout` attribute involves specifying a `datetime.timedelta` value. This attribute controls the maximum time allowed for each execution of the task. If the task exceeds this time limit, Airflow raises `AirflowTaskTimeout`.\n\n[C1]",
+        "citation_verified": true,
+        "citations": [
+          {
+            "label": "C1",
+            "chunk_id": "chk_8bd8bc451a3b00115fe2c3f28696bba31028b56cedd0eb6070dd9a6c9c44287e",
+            "document_id": "doc_348e68dbf8dd49a1b7e11c8fb2980496",
+            "version_id": "ver_570b2b46ca86455ca087565c73465d48",
+            "title": "Tasks \u2014 Airflow 3.3.2 Documentation",
+            "section_path": "Tasks > Timeouts",
+            "source": "https://airflow.apache.org/docs/apache-airflow/stable/core-concepts/tasks.html",
+            "source_url": "https://airflow.apache.org/docs/apache-airflow/stable/core-concepts/tasks.html",
+            "page": null
+          }
+        ],
+        "context_consulted": [],
+        "sources": [
+          {
+            "document_id": "doc_348e68dbf8dd49a1b7e11c8fb2980496",
+            "version_id": "ver_570b2b46ca86455ca087565c73465d48",
+            "title": "Tasks \u2014 Airflow 3.3.2 Documentation",
+            "source": "https://airflow.apache.org/docs/apache-airflow/stable/core-concepts/tasks.html",
+            "source_url": "https://airflow.apache.org/docs/apache-airflow/stable/core-concepts/tasks.html"
+          }
+        ],
+        "evidence": [
+          "chk_8bd8bc451a3b00115fe2c3f28696bba31028b56cedd0eb6070dd9a6c9c44287e",
+          "chk_3f2ed6ae434433af198a1aefd12b761f6c67a8bb964f6e44d0cfc7213c4808a2",
+          "chk_b80aed55616faee93e5dde1b624ec55cff9bd4f2e9a257090327481dc8f157b7",
+          "chk_27716719c5095a18afa227d4230cd37e772b9b4e09ba9eb17953c28b5c91dddf",
+          "chk_71c85d879e710ec4cdeddd688d3f5f65d2c07e4be13b8ced69893160ca043495"
+        ],
+        "chunks_retrieved": 5,
+        "chunks_used": 5,
+        "mode": "vector",
+        "retrieval_config_id": "rc_240565250e0cb8369778d32f15c654abac47673f1e153b5e838afa8d721fb723",
+        "generation_config_id": "gc_a370881aa0eea90888767cd3908861e669277c3b909ec13cc0d10bc620141369",
+        "provider": "ollama",
+        "model_id": "ollama/qwen3:1.7b@8f68893c685c3ddff2aa3fffce2aa60a30bb2da65ca488b61fff134a4d1730e7",
+        "retryable": false,
+        "warnings": [],
+        "sufficiency": {
+          "calibrated": true,
+          "passed": true,
+          "top_score": 0.920111,
+          "supporting_chunks": 2,
+          "min_top_score": 0.858223,
+          "min_chunk_score": 0.858223,
+          "min_supporting_chunks": 1,
+          "calibration_run_id": "eval_c4ab1f1397fa469489137f611b74cdf7",
+          "relevance_policy": "cosine-distance-half-v1"
+        },
+        "llm_called": true,
+        "usage": {
+          "prompt_tokens": 1428,
+          "output_tokens": 60,
+          "prompt_token_bound": 5720
+        },
+        "latency_ms": {
+          "retrieval": 2254,
+          "generation": 16714,
+          "total": 19223
+        },
+        "request_id": "req_79d8a99c69714a41b324af6969dd8b8f"
+      }
+    },
+    {
+      "id": "smoke-airflow-02",
+      "technology": "Apache Airflow",
+      "type": "factual",
+      "unanswerable": false,
+      "flags": [],
+      "response": {
+        "status": "answered",
+        "reason": null,
+        "answer": "Airflow determines whether a Dag run succeeded or failed based on the states of its leaf nodes. A Dag run is marked as **success** if all leaf nodes are in a terminal state of **success** or **skipped**. If any leaf node is in a terminal state of **failed** or **upstream_failed**, the Dag run is marked as **failed** [C3].",
+        "citation_verified": true,
+        "citations": [
+          {
+            "label": "C3",
+            "chunk_id": "chk_a17aadcf406260ccfce562ea344ad57a41407901f926d63332391e69fbf7763c",
+            "document_id": "doc_c605cdca20214683af415003fa7676f9",
+            "version_id": "ver_fef9eb662b9343758c578d51c35223e9",
+            "title": "Dag Runs \u2014 Airflow 3.3.2 Documentation",
+            "section_path": "Dag Runs > Dag Run Status",
+            "source": "https://airflow.apache.org/docs/apache-airflow/stable/core-concepts/dag-run.html",
+            "source_url": "https://airflow.apache.org/docs/apache-airflow/stable/core-concepts/dag-run.html",
+            "page": null
+          }
+        ],
+        "context_consulted": [],
+        "sources": [
+          {
+            "document_id": "doc_c605cdca20214683af415003fa7676f9",
+            "version_id": "ver_fef9eb662b9343758c578d51c35223e9",
+            "title": "Dag Runs \u2014 Airflow 3.3.2 Documentation",
+            "source": "https://airflow.apache.org/docs/apache-airflow/stable/core-concepts/dag-run.html",
+            "source_url": "https://airflow.apache.org/docs/apache-airflow/stable/core-concepts/dag-run.html"
+          }
+        ],
+        "evidence": [
+          "chk_50b925dd7475847a1e313994a8a196b45a04e0896080348199d8105bae6de83c",
+          "chk_a619de7df6e0b525db5aceb35f171144881d403200d04b471eeadca9477486f3",
+          "chk_a17aadcf406260ccfce562ea344ad57a41407901f926d63332391e69fbf7763c",
+          "chk_f612c78c64cb14d0cf2f1b39f692021ae4136651e973094423e20eaa02ab9d06",
+          "chk_ff608f9cab28570440337c2ce8340890f7af4297c06c0581533fea7ae7a18cf5"
+        ],
+        "chunks_retrieved": 5,
+        "chunks_used": 5,
+        "mode": "vector",
+        "retrieval_config_id": "rc_240565250e0cb8369778d32f15c654abac47673f1e153b5e838afa8d721fb723",
+        "generation_config_id": "gc_a370881aa0eea90888767cd3908861e669277c3b909ec13cc0d10bc620141369",
+        "provider": "ollama",
+        "model_id": "ollama/qwen3:1.7b@8f68893c685c3ddff2aa3fffce2aa60a30bb2da65ca488b61fff134a4d1730e7",
+        "retryable": false,
+        "warnings": [],
+        "sufficiency": {
+          "calibrated": true,
+          "passed": true,
+          "top_score": 0.910489,
+          "supporting_chunks": 5,
+          "min_top_score": 0.858223,
+          "min_chunk_score": 0.858223,
+          "min_supporting_chunks": 1,
+          "calibration_run_id": "eval_c4ab1f1397fa469489137f611b74cdf7",
+          "relevance_policy": "cosine-distance-half-v1"
+        },
+        "llm_called": true,
+        "usage": {
+          "prompt_tokens": 1322,
+          "output_tokens": 80,
+          "prompt_token_bound": 5459
+        },
+        "latency_ms": {
+          "retrieval": 3069,
+          "generation": 16601,
+          "total": 19888
+        },
+        "request_id": "req_f7cb181db9e042c6958de6925cd1c57b"
+      }
+    },
+    {
+      "id": "smoke-airflow-03",
+      "technology": "Apache Airflow",
+      "type": "factual",
+      "unanswerable": false,
+      "flags": [],
+      "response": {
+        "status": "answered",
+        "reason": null,
+        "answer": "When catchup is enabled on a Dag, the scheduler creates a Dag Run for each data interval that has not been run since the last data interval. This allows the scheduler to execute all previously completed intervals sequentially [C3].",
+        "citation_verified": true,
+        "citations": [
+          {
+            "label": "C3",
+            "chunk_id": "chk_440a7c13ae5ddc358584fa45dca3dc0ea4aebe0cab75e4dc706dd5cb7f67ecbf",
+            "document_id": "doc_c605cdca20214683af415003fa7676f9",
+            "version_id": "ver_fef9eb662b9343758c578d51c35223e9",
+            "title": "Dag Runs \u2014 Airflow 3.3.2 Documentation",
+            "section_path": "Dag Runs > Re-run Dag > Catchup",
+            "source": "https://airflow.apache.org/docs/apache-airflow/stable/core-concepts/dag-run.html",
+            "source_url": "https://airflow.apache.org/docs/apache-airflow/stable/core-concepts/dag-run.html",
+            "page": null
+          }
+        ],
+        "context_consulted": [],
+        "sources": [
+          {
+            "document_id": "doc_c605cdca20214683af415003fa7676f9",
+            "version_id": "ver_fef9eb662b9343758c578d51c35223e9",
+            "title": "Dag Runs \u2014 Airflow 3.3.2 Documentation",
+            "source": "https://airflow.apache.org/docs/apache-airflow/stable/core-concepts/dag-run.html",
+            "source_url": "https://airflow.apache.org/docs/apache-airflow/stable/core-concepts/dag-run.html"
+          }
+        ],
+        "evidence": [
+          "chk_d1474f86bd6bfd0cce1eb7433769f1711437a11a40df110fb9126fe1fdfa8b8a",
+          "chk_ae45570c9b2482d4b65389a482b39a3f94be9f848e3ffb313b0bf45d97371c15",
+          "chk_440a7c13ae5ddc358584fa45dca3dc0ea4aebe0cab75e4dc706dd5cb7f67ecbf",
+          "chk_20b3e6b4569ef927e64b7dfa55401f58b132c98b9d80ecb0ce637bfdf0d11617",
+          "chk_035e5bbbf837297e54c75dbcf24a8d6570c773fbafc4221c13798f19dd1a0e1d"
+        ],
+        "chunks_retrieved": 5,
+        "chunks_used": 5,
+        "mode": "vector",
+        "retrieval_config_id": "rc_240565250e0cb8369778d32f15c654abac47673f1e153b5e838afa8d721fb723",
+        "generation_config_id": "gc_a370881aa0eea90888767cd3908861e669277c3b909ec13cc0d10bc620141369",
+        "provider": "ollama",
+        "model_id": "ollama/qwen3:1.7b@8f68893c685c3ddff2aa3fffce2aa60a30bb2da65ca488b61fff134a4d1730e7",
+        "retryable": false,
+        "warnings": [],
+        "sufficiency": {
+          "calibrated": true,
+          "passed": true,
+          "top_score": 0.903747,
+          "supporting_chunks": 4,
+          "min_top_score": 0.858223,
+          "min_chunk_score": 0.858223,
+          "min_supporting_chunks": 1,
+          "calibration_run_id": "eval_c4ab1f1397fa469489137f611b74cdf7",
+          "relevance_policy": "cosine-distance-half-v1"
+        },
+        "llm_called": true,
+        "usage": {
+          "prompt_tokens": 1544,
+          "output_tokens": 46,
+          "prompt_token_bound": 5843
+        },
+        "latency_ms": {
+          "retrieval": 2238,
+          "generation": 13016,
+          "total": 15508
+        },
+        "request_id": "req_4bfae0bb0084454aa3e5d930ccf33a13"
+      }
+    },
+    {
+      "id": "smoke-airflow-04",
+      "technology": "Apache Airflow",
+      "type": "how_to",
+      "unanswerable": false,
+      "flags": [],
+      "response": {
+        "status": "answered",
+        "reason": null,
+        "answer": "Applying the same retries setting to every operator in a Dag can be done by passing the `default_args` parameter to the `Dag` when creating it. This ensures that all operators tied to the Dag inherit the specified defaults [C1].",
+        "citation_verified": true,
+        "citations": [
+          {
+            "label": "C1",
+            "chunk_id": "chk_596bdb2996f0386b29aa9f241c0036ac248e49b2d9296b94d2caa7eb80e63c19",
+            "document_id": "doc_fb544139ee214920a1cc539cd060d0a8",
+            "version_id": "ver_0a56589d5e16448990307b2c34564c74",
+            "title": "Dags \u2014 Airflow 3.3.2 Documentation",
+            "section_path": "Dags > Default Arguments",
+            "source": "https://airflow.apache.org/docs/apache-airflow/stable/core-concepts/dags.html",
+            "source_url": "https://airflow.apache.org/docs/apache-airflow/stable/core-concepts/dags.html",
+            "page": null
+          }
+        ],
+        "context_consulted": [],
+        "sources": [
+          {
+            "document_id": "doc_fb544139ee214920a1cc539cd060d0a8",
+            "version_id": "ver_0a56589d5e16448990307b2c34564c74",
+            "title": "Dags \u2014 Airflow 3.3.2 Documentation",
+            "source": "https://airflow.apache.org/docs/apache-airflow/stable/core-concepts/dags.html",
+            "source_url": "https://airflow.apache.org/docs/apache-airflow/stable/core-concepts/dags.html"
+          }
+        ],
+        "evidence": [
+          "chk_596bdb2996f0386b29aa9f241c0036ac248e49b2d9296b94d2caa7eb80e63c19",
+          "chk_c26e7f4a1a5aa5b76fef71e941869e5161b61c10b90877cc6649b3911d64eebe",
+          "chk_7019cb27873f9907e416327ffec88d308fa772b5fc0c6340726521b7f533c16a",
+          "chk_c193a2d460c119fab8d1813e12c17162145c755ef0ce2ea55becfd89095ce1d9",
+          "chk_03f1f55c38fa131567b98a6c673de730ceaf8e8c4982fc32ff87cc00af8dbfe0"
+        ],
+        "chunks_retrieved": 5,
+        "chunks_used": 5,
+        "mode": "vector",
+        "retrieval_config_id": "rc_240565250e0cb8369778d32f15c654abac47673f1e153b5e838afa8d721fb723",
+        "generation_config_id": "gc_a370881aa0eea90888767cd3908861e669277c3b909ec13cc0d10bc620141369",
+        "provider": "ollama",
+        "model_id": "ollama/qwen3:1.7b@8f68893c685c3ddff2aa3fffce2aa60a30bb2da65ca488b61fff134a4d1730e7",
+        "retryable": false,
+        "warnings": [],
+        "sufficiency": {
+          "calibrated": true,
+          "passed": true,
+          "top_score": 0.895089,
+          "supporting_chunks": 1,
+          "min_top_score": 0.858223,
+          "min_chunk_score": 0.858223,
+          "min_supporting_chunks": 1,
+          "calibration_run_id": "eval_c4ab1f1397fa469489137f611b74cdf7",
+          "relevance_policy": "cosine-distance-half-v1"
+        },
+        "llm_called": true,
+        "usage": {
+          "prompt_tokens": 1311,
+          "output_tokens": 51,
+          "prompt_token_bound": 4915
+        },
+        "latency_ms": {
+          "retrieval": 2189,
+          "generation": 12435,
+          "total": 14920
+        },
+        "request_id": "req_d9b90b97bd644963a03af2e34e6e1c36"
+      }
+    },
+    {
+      "id": "smoke-airflow-05",
+      "technology": "Apache Airflow",
+      "type": "factual",
+      "unanswerable": false,
+      "flags": [],
+      "response": {
+        "status": "answered",
+        "reason": null,
+        "answer": "A minimal Airflow installation needs the scheduler, Dag processor, and Dag bundle [C1].",
+        "citation_verified": true,
+        "citations": [
+          {
+            "label": "C1",
+            "chunk_id": "chk_06fcd37601254b03a54c8be3647da44cc43cdec97fb758ed70990f33c5be9cdc",
+            "document_id": "doc_a61e9a15b1b440b083bfaf65ac785d35",
+            "version_id": "ver_d2d551d208104cc0a7b29dbfcf062a9e",
+            "title": "Architecture Overview \u2014 Airflow 3.3.2 Documentation",
+            "section_path": "Architecture Overview > Airflow components > Required components",
+            "source": "https://airflow.apache.org/docs/apache-airflow/stable/core-concepts/overview.html",
+            "source_url": "https://airflow.apache.org/docs/apache-airflow/stable/core-concepts/overview.html",
+            "page": null
+          }
+        ],
+        "context_consulted": [],
+        "sources": [
+          {
+            "document_id": "doc_a61e9a15b1b440b083bfaf65ac785d35",
+            "version_id": "ver_d2d551d208104cc0a7b29dbfcf062a9e",
+            "title": "Architecture Overview \u2014 Airflow 3.3.2 Documentation",
+            "source": "https://airflow.apache.org/docs/apache-airflow/stable/core-concepts/overview.html",
+            "source_url": "https://airflow.apache.org/docs/apache-airflow/stable/core-concepts/overview.html"
+          }
+        ],
+        "evidence": [
+          "chk_06fcd37601254b03a54c8be3647da44cc43cdec97fb758ed70990f33c5be9cdc",
+          "chk_d7737e8ec57ec02c5adab89300d8f21beb81f3fe9cd4e0c5ae35c04f39352de4",
+          "chk_e7904cffd73613091ff8ee84683ad7be6b2a06070b9d40dda232758f2b1687ba",
+          "chk_9addd06665a53ef0798ee87e4efb860d409bca83a581b86fa90c58cd4c4108ef",
+          "chk_60180190b74b27f9b5a6f73b59935745914ba83ca67dd46b5552067cccbf85d6"
+        ],
+        "chunks_retrieved": 5,
+        "chunks_used": 5,
+        "mode": "vector",
+        "retrieval_config_id": "rc_240565250e0cb8369778d32f15c654abac47673f1e153b5e838afa8d721fb723",
+        "generation_config_id": "gc_a370881aa0eea90888767cd3908861e669277c3b909ec13cc0d10bc620141369",
+        "provider": "ollama",
+        "model_id": "ollama/qwen3:1.7b@8f68893c685c3ddff2aa3fffce2aa60a30bb2da65ca488b61fff134a4d1730e7",
+        "retryable": false,
+        "warnings": [],
+        "sufficiency": {
+          "calibrated": true,
+          "passed": true,
+          "top_score": 0.915845,
+          "supporting_chunks": 3,
+          "min_top_score": 0.858223,
+          "min_chunk_score": 0.858223,
+          "min_supporting_chunks": 1,
+          "calibration_run_id": "eval_c4ab1f1397fa469489137f611b74cdf7",
+          "relevance_policy": "cosine-distance-half-v1"
+        },
+        "llm_called": true,
+        "usage": {
+          "prompt_tokens": 1300,
+          "output_tokens": 20,
+          "prompt_token_bound": 5594
+        },
+        "latency_ms": {
+          "retrieval": 2263,
+          "generation": 9052,
+          "total": 11572
+        },
+        "request_id": "req_a3b84c4c58b14ae0b7f73fe01b084674"
+      }
+    },
+    {
+      "id": "smoke-spark-01",
+      "technology": "Apache Spark",
+      "type": "identifier",
+      "unanswerable": false,
+      "flags": [],
+      "response": {
+        "status": "answered",
+        "reason": null,
+        "answer": "`spark.memory.fraction` controls the size of `M` as a fraction of the (JVM heap space - 300MiB), and its default value is 0.6 [C1].",
+        "citation_verified": true,
+        "citations": [
+          {
+            "label": "C1",
+            "chunk_id": "chk_d5962cf83b7216efdb79f1327fa864b8ea819f074e0020c5bbbc95a93123c264",
+            "document_id": "doc_8e9694340baf4db4885f6cdd32831dbd",
+            "version_id": "ver_87c045ad95bf4df69122e5d3df264951",
+            "title": "Tuning Spark",
+            "section_path": "Memory Tuning > Memory Management Overview",
+            "source": "[\"spark-4.0.1-tuning.md\",null]",
+            "source_url": "https://raw.githubusercontent.com/apache/spark/v4.0.1/docs/tuning.md",
+            "page": null
+          }
+        ],
+        "context_consulted": [],
+        "sources": [
+          {
+            "document_id": "doc_8e9694340baf4db4885f6cdd32831dbd",
+            "version_id": "ver_87c045ad95bf4df69122e5d3df264951",
+            "title": "Tuning Spark",
+            "source": "[\"spark-4.0.1-tuning.md\",null]",
+            "source_url": "https://raw.githubusercontent.com/apache/spark/v4.0.1/docs/tuning.md"
+          }
+        ],
+        "evidence": [
+          "chk_d5962cf83b7216efdb79f1327fa864b8ea819f074e0020c5bbbc95a93123c264",
+          "chk_2b10548b6b3f6b5a73ade2ae5681be169b3049b8ab3d454941daa4e1765076ea",
+          "chk_73b836fe7569e3bbf590fa663b17170efd47a64c614b2025d5204d217decc2a1",
+          "chk_614d4fb602f420ff38e280e3e58f3f9ab3d39c959735864f64bfc83e2cc1b078",
+          "chk_c56939d9924b374c3e8a57716c9df284ee099bf913c86ef04b4156b9da702ae2"
+        ],
+        "chunks_retrieved": 5,
+        "chunks_used": 5,
+        "mode": "vector",
+        "retrieval_config_id": "rc_240565250e0cb8369778d32f15c654abac47673f1e153b5e838afa8d721fb723",
+        "generation_config_id": "gc_a370881aa0eea90888767cd3908861e669277c3b909ec13cc0d10bc620141369",
+        "provider": "ollama",
+        "model_id": "ollama/qwen3:1.7b@8f68893c685c3ddff2aa3fffce2aa60a30bb2da65ca488b61fff134a4d1730e7",
+        "retryable": false,
+        "warnings": [],
+        "sufficiency": {
+          "calibrated": true,
+          "passed": true,
+          "top_score": 0.900297,
+          "supporting_chunks": 5,
+          "min_top_score": 0.858223,
+          "min_chunk_score": 0.858223,
+          "min_supporting_chunks": 1,
+          "calibration_run_id": "eval_c4ab1f1397fa469489137f611b74cdf7",
+          "relevance_policy": "cosine-distance-half-v1"
+        },
+        "llm_called": true,
+        "usage": {
+          "prompt_tokens": 1215,
+          "output_tokens": 45,
+          "prompt_token_bound": 4975
+        },
+        "latency_ms": {
+          "retrieval": 2194,
+          "generation": 12009,
+          "total": 14412
+        },
+        "request_id": "req_a1b71cc308e34525ae62343d3acb80c1"
+      }
+    },
+    {
+      "id": "smoke-spark-02",
+      "technology": "Apache Spark",
+      "type": "how_to",
+      "unanswerable": false,
+      "flags": [],
+      "response": {
+        "status": "answered",
+        "reason": null,
+        "answer": "To switch a Spark application to Kryo serialization, you can initialize your job with a `SparkConf` and call `conf.set(\"spark.serializer\", \"org.apache.spark.serializer.KryoSerializer\")` [C1]. Additionally, you can register your own custom classes using the `registerKryoClasses` method [C2].",
+        "citation_verified": true,
+        "citations": [
+          {
+            "label": "C1",
+            "chunk_id": "chk_d6b8ad1aa85d67b9cba9083643bb6a6903d28de2ddd89b62857e88c8ff948f2d",
+            "document_id": "doc_8e9694340baf4db4885f6cdd32831dbd",
+            "version_id": "ver_87c045ad95bf4df69122e5d3df264951",
+            "title": "Tuning Spark",
+            "section_path": "Data Serialization",
+            "source": "[\"spark-4.0.1-tuning.md\",null]",
+            "source_url": "https://raw.githubusercontent.com/apache/spark/v4.0.1/docs/tuning.md",
+            "page": null
+          },
+          {
+            "label": "C2",
+            "chunk_id": "chk_a2c3aea2b1fbbd52eeafb21b5b4d5dec4db0574df8095446a108343726015273",
+            "document_id": "doc_8e9694340baf4db4885f6cdd32831dbd",
+            "version_id": "ver_87c045ad95bf4df69122e5d3df264951",
+            "title": "Tuning Spark",
+            "section_path": "Data Serialization",
+            "source": "[\"spark-4.0.1-tuning.md\",null]",
+            "source_url": "https://raw.githubusercontent.com/apache/spark/v4.0.1/docs/tuning.md",
+            "page": null
+          }
+        ],
+        "context_consulted": [],
+        "sources": [
+          {
+            "document_id": "doc_8e9694340baf4db4885f6cdd32831dbd",
+            "version_id": "ver_87c045ad95bf4df69122e5d3df264951",
+            "title": "Tuning Spark",
+            "source": "[\"spark-4.0.1-tuning.md\",null]",
+            "source_url": "https://raw.githubusercontent.com/apache/spark/v4.0.1/docs/tuning.md"
+          }
+        ],
+        "evidence": [
+          "chk_d6b8ad1aa85d67b9cba9083643bb6a6903d28de2ddd89b62857e88c8ff948f2d",
+          "chk_a2c3aea2b1fbbd52eeafb21b5b4d5dec4db0574df8095446a108343726015273",
+          "chk_8a8111ed0ab6d3653ce371dfab35fded6107ef5054f608be30ff1f137456fe22",
+          "chk_c24530dca639686a0a549b843fe1b12ea6d546638e53774c211e65d9bf2424ea",
+          "chk_55d33297fe6af74297b329382e49b0f7880f747a74ab2b0d170a26d592be236a"
+        ],
+        "chunks_retrieved": 5,
+        "chunks_used": 5,
+        "mode": "vector",
+        "retrieval_config_id": "rc_240565250e0cb8369778d32f15c654abac47673f1e153b5e838afa8d721fb723",
+        "generation_config_id": "gc_a370881aa0eea90888767cd3908861e669277c3b909ec13cc0d10bc620141369",
+        "provider": "ollama",
+        "model_id": "ollama/qwen3:1.7b@8f68893c685c3ddff2aa3fffce2aa60a30bb2da65ca488b61fff134a4d1730e7",
+        "retryable": false,
+        "warnings": [],
+        "sufficiency": {
+          "calibrated": true,
+          "passed": true,
+          "top_score": 0.916743,
+          "supporting_chunks": 5,
+          "min_top_score": 0.858223,
+          "min_chunk_score": 0.858223,
+          "min_supporting_chunks": 1,
+          "calibration_run_id": "eval_c4ab1f1397fa469489137f611b74cdf7",
+          "relevance_policy": "cosine-distance-half-v1"
+        },
+        "llm_called": true,
+        "usage": {
+          "prompt_tokens": 1317,
+          "output_tokens": 67,
+          "prompt_token_bound": 5363
+        },
+        "latency_ms": {
+          "retrieval": 2449,
+          "generation": 14433,
+          "total": 17090
+        },
+        "request_id": "req_ae2471c8a5f34481b6e424d5e1694f61"
+      }
+    },
+    {
+      "id": "smoke-spark-03",
+      "technology": "Apache Spark",
+      "type": "factual",
+      "unanswerable": false,
+      "flags": [],
+      "response": {
+        "status": "answered",
+        "reason": null,
+        "answer": "Spark recommends 4-8 local disks per node, configured without RAID, as separate mount points [C1].",
+        "citation_verified": true,
+        "citations": [
+          {
+            "label": "C1",
+            "chunk_id": "chk_11033de1a806420f8c2f2e7a12ef6145d753b0ea20194b48146cc5929433862c",
+            "document_id": "doc_e38caba8b8d648d3abd3b085f03ec6ef",
+            "version_id": "ver_5a39aca625c94fc3bc7af33ffcfe65ae",
+            "title": "Hardware Provisioning",
+            "section_path": "Local Disks",
+            "source": "[\"spark-4.0.1-hardware-provisioning.md\",null]",
+            "source_url": "https://raw.githubusercontent.com/apache/spark/v4.0.1/docs/hardware-provisioning.md",
+            "page": null
+          }
+        ],
+        "context_consulted": [],
+        "sources": [
+          {
+            "document_id": "doc_e38caba8b8d648d3abd3b085f03ec6ef",
+            "version_id": "ver_5a39aca625c94fc3bc7af33ffcfe65ae",
+            "title": "Hardware Provisioning",
+            "source": "[\"spark-4.0.1-hardware-provisioning.md\",null]",
+            "source_url": "https://raw.githubusercontent.com/apache/spark/v4.0.1/docs/hardware-provisioning.md"
+          }
+        ],
+        "evidence": [
+          "chk_11033de1a806420f8c2f2e7a12ef6145d753b0ea20194b48146cc5929433862c",
+          "chk_614d4fb602f420ff38e280e3e58f3f9ab3d39c959735864f64bfc83e2cc1b078",
+          "chk_ecf3f0334e81ba825f877bef6f18624858f24210e9cf2cd5ec1a2eca03a14245",
+          "chk_b8132111ed619a18ceb246902c103d3ff96138f9cf55ec5150094ee9e5fc09f0",
+          "chk_9310c4d8c3e102898b9d60c994ee7e2224c85944268808fdfe608f18d7b2f21a"
+        ],
+        "chunks_retrieved": 5,
+        "chunks_used": 5,
+        "mode": "vector",
+        "retrieval_config_id": "rc_240565250e0cb8369778d32f15c654abac47673f1e153b5e838afa8d721fb723",
+        "generation_config_id": "gc_a370881aa0eea90888767cd3908861e669277c3b909ec13cc0d10bc620141369",
+        "provider": "ollama",
+        "model_id": "ollama/qwen3:1.7b@8f68893c685c3ddff2aa3fffce2aa60a30bb2da65ca488b61fff134a4d1730e7",
+        "retryable": false,
+        "warnings": [],
+        "sufficiency": {
+          "calibrated": true,
+          "passed": true,
+          "top_score": 0.934148,
+          "supporting_chunks": 5,
+          "min_top_score": 0.858223,
+          "min_chunk_score": 0.858223,
+          "min_supporting_chunks": 1,
+          "calibration_run_id": "eval_c4ab1f1397fa469489137f611b74cdf7",
+          "relevance_policy": "cosine-distance-half-v1"
+        },
+        "llm_called": true,
+        "usage": {
+          "prompt_tokens": 1267,
+          "output_tokens": 24,
+          "prompt_token_bound": 4942
+        },
+        "latency_ms": {
+          "retrieval": 2426,
+          "generation": 8149,
+          "total": 10887
+        },
+        "request_id": "req_4915232c88c64369ab64ab1de769a0e4"
+      }
+    },
+    {
+      "id": "smoke-spark-04",
+      "technology": "Apache Spark",
+      "type": "factual",
+      "unanswerable": false,
+      "flags": [],
+      "response": {
+        "status": "answered",
+        "reason": null,
+        "answer": "The default save mode when a Spark DataFrame is saved and data already exists is \"error\" [C4].",
+        "citation_verified": true,
+        "citations": [
+          {
+            "label": "C4",
+            "chunk_id": "chk_132e42986157c9486804630f86462bd02a40054d2d0f9eb7fc94a921ad175b88",
+            "document_id": "doc_0de01bd0cc5b468982efb5b568d1c0d8",
+            "version_id": "ver_4ec4fc6aced64c1188b5b87c54e079ec",
+            "title": "Generic Load/Save Functions - Spark 4.0.1 Documentation",
+            "section_path": "Generic Load/Save Functions > Save Modes",
+            "source": "https://spark.apache.org/docs/4.0.1/sql-data-sources-load-save-functions.html",
+            "source_url": "https://spark.apache.org/docs/4.0.1/sql-data-sources-load-save-functions.html",
+            "page": null
+          }
+        ],
+        "context_consulted": [],
+        "sources": [
+          {
+            "document_id": "doc_0de01bd0cc5b468982efb5b568d1c0d8",
+            "version_id": "ver_4ec4fc6aced64c1188b5b87c54e079ec",
+            "title": "Generic Load/Save Functions - Spark 4.0.1 Documentation",
+            "source": "https://spark.apache.org/docs/4.0.1/sql-data-sources-load-save-functions.html",
+            "source_url": "https://spark.apache.org/docs/4.0.1/sql-data-sources-load-save-functions.html"
+          }
+        ],
+        "evidence": [
+          "chk_402ad85354e45d1e7f29cf780834a8138650cfcb18b27dcec311846bed3cbc34",
+          "chk_3ec96c0b0776e1d05894b0bf98d47640ad56a740fce22a35ce859057905e41df",
+          "chk_c69664ea48108f78da3b6c69ffe3533cd1d35b8e732f28c1350fae53601a4b37",
+          "chk_132e42986157c9486804630f86462bd02a40054d2d0f9eb7fc94a921ad175b88",
+          "chk_2b10548b6b3f6b5a73ade2ae5681be169b3049b8ab3d454941daa4e1765076ea"
+        ],
+        "chunks_retrieved": 5,
+        "chunks_used": 5,
+        "mode": "vector",
+        "retrieval_config_id": "rc_240565250e0cb8369778d32f15c654abac47673f1e153b5e838afa8d721fb723",
+        "generation_config_id": "gc_a370881aa0eea90888767cd3908861e669277c3b909ec13cc0d10bc620141369",
+        "provider": "ollama",
+        "model_id": "ollama/qwen3:1.7b@8f68893c685c3ddff2aa3fffce2aa60a30bb2da65ca488b61fff134a4d1730e7",
+        "retryable": false,
+        "warnings": [],
+        "sufficiency": {
+          "calibrated": true,
+          "passed": true,
+          "top_score": 0.885044,
+          "supporting_chunks": 5,
+          "min_top_score": 0.858223,
+          "min_chunk_score": 0.858223,
+          "min_supporting_chunks": 1,
+          "calibration_run_id": "eval_c4ab1f1397fa469489137f611b74cdf7",
+          "relevance_policy": "cosine-distance-half-v1"
+        },
+        "llm_called": true,
+        "usage": {
+          "prompt_tokens": 1387,
+          "output_tokens": 23,
+          "prompt_token_bound": 5628
+        },
+        "latency_ms": {
+          "retrieval": 2155,
+          "generation": 8843,
+          "total": 11229
+        },
+        "request_id": "req_c147f99c3793401aa9fda65f5bd5b226"
+      }
+    },
+    {
+      "id": "smoke-spark-05",
+      "technology": "Apache Spark",
+      "type": "factual",
+      "unanswerable": false,
+      "flags": [],
+      "response": {
+        "status": "no_evidence",
+        "reason": "INSUFFICIENT_CONTEXT",
+        "answer": "The retrieved documents do not contain enough evidence to answer this question.",
+        "citation_verified": false,
+        "citations": [],
+        "context_consulted": [],
+        "sources": [],
+        "evidence": [
+          "chk_48d9911cd25269c86ef7e6d947736b25ca1cf19b1dee8e90dc1586fa56e3756d",
+          "chk_cacf3871e43273be443afbb551fdfaac63cef253351c095f1d3230ccfc92aff6",
+          "chk_5d0618297bdaee40e25e0127f495c90743eb03a18bbd81708b69f971a4a21fc7",
+          "chk_244241b4d249382c050359ea4bdc55af29296211b404e91c82b26843664db635",
+          "chk_793458abcd780d90f021d41d340a6f9d8039e2965780d46f90f38658927e9384"
+        ],
+        "chunks_retrieved": 5,
+        "chunks_used": 5,
+        "mode": "vector",
+        "retrieval_config_id": "rc_240565250e0cb8369778d32f15c654abac47673f1e153b5e838afa8d721fb723",
+        "generation_config_id": "gc_a370881aa0eea90888767cd3908861e669277c3b909ec13cc0d10bc620141369",
+        "provider": "ollama",
+        "model_id": "ollama/qwen3:1.7b@8f68893c685c3ddff2aa3fffce2aa60a30bb2da65ca488b61fff134a4d1730e7",
+        "retryable": false,
+        "warnings": [],
+        "sufficiency": {
+          "calibrated": true,
+          "passed": true,
+          "top_score": 0.89406,
+          "supporting_chunks": 5,
+          "min_top_score": 0.858223,
+          "min_chunk_score": 0.858223,
+          "min_supporting_chunks": 1,
+          "calibration_run_id": "eval_c4ab1f1397fa469489137f611b74cdf7",
+          "relevance_policy": "cosine-distance-half-v1"
+        },
+        "llm_called": true,
+        "usage": {
+          "prompt_tokens": 1494,
+          "output_tokens": 106,
+          "prompt_token_bound": 6026
+        },
+        "latency_ms": {
+          "retrieval": 2349,
+          "generation": 20649,
+          "total": 23000
+        },
+        "request_id": "req_e29ad01258634682977f99b334156a1a"
+      }
+    },
+    {
+      "id": "smoke-postgresql-01",
+      "technology": "PostgreSQL",
+      "type": "factual",
+      "unanswerable": false,
+      "flags": [],
+      "response": {
+        "status": "answered",
+        "reason": null,
+        "answer": "The default transaction isolation level in PostgreSQL is Read Committed [C4].",
+        "citation_verified": true,
+        "citations": [
+          {
+            "label": "C4",
+            "chunk_id": "chk_25179a9d3e3bfaf359f0ee59e9cee54b73c2111b9b5d25ef2522b0c131f5e213",
+            "document_id": "doc_65cd8ee6cb6b4b07aaed666fa4f66921",
+            "version_id": "ver_b8d5d693dafa4f5596345c058fa7a083",
+            "title": "PostgreSQL: Documentation: 18: 13.2.\u00a0Transaction Isolation",
+            "section_path": "13.2.\u00a0Transaction Isolation # > 13.2.1.\u00a0Read Committed Isolation Level #",
+            "source": "https://www.postgresql.org/docs/18/transaction-iso.html",
+            "source_url": "https://www.postgresql.org/docs/18/transaction-iso.html",
+            "page": null
+          }
+        ],
+        "context_consulted": [],
+        "sources": [
+          {
+            "document_id": "doc_65cd8ee6cb6b4b07aaed666fa4f66921",
+            "version_id": "ver_b8d5d693dafa4f5596345c058fa7a083",
+            "title": "PostgreSQL: Documentation: 18: 13.2.\u00a0Transaction Isolation",
+            "source": "https://www.postgresql.org/docs/18/transaction-iso.html",
+            "source_url": "https://www.postgresql.org/docs/18/transaction-iso.html"
+          }
+        ],
+        "evidence": [
+          "chk_8c9c4999c6aeba7a9f87c72148a94a08f15d83434c68a6a3c5ca6ee9b5e91ffd",
+          "chk_c061132714ba14c82e69188306b5814fe2e953994a34d346c7d82f2e23842f87",
+          "chk_9d6f765c3000647304eff384c7d1948f056a65dc5e081c44cf9d7e9d2f169e54",
+          "chk_25179a9d3e3bfaf359f0ee59e9cee54b73c2111b9b5d25ef2522b0c131f5e213",
+          "chk_3b03d4e8d941609e7494d64dd9f638e75cc73870f61846e4ed3e486b65cf2f32"
+        ],
+        "chunks_retrieved": 5,
+        "chunks_used": 5,
+        "mode": "vector",
+        "retrieval_config_id": "rc_240565250e0cb8369778d32f15c654abac47673f1e153b5e838afa8d721fb723",
+        "generation_config_id": "gc_a370881aa0eea90888767cd3908861e669277c3b909ec13cc0d10bc620141369",
+        "provider": "ollama",
+        "model_id": "ollama/qwen3:1.7b@8f68893c685c3ddff2aa3fffce2aa60a30bb2da65ca488b61fff134a4d1730e7",
+        "retryable": false,
+        "warnings": [],
+        "sufficiency": {
+          "calibrated": true,
+          "passed": true,
+          "top_score": 0.91713,
+          "supporting_chunks": 5,
+          "min_top_score": 0.858223,
+          "min_chunk_score": 0.858223,
+          "min_supporting_chunks": 1,
+          "calibration_run_id": "eval_c4ab1f1397fa469489137f611b74cdf7",
+          "relevance_policy": "cosine-distance-half-v1"
+        },
+        "llm_called": true,
+        "usage": {
+          "prompt_tokens": 1246,
+          "output_tokens": 16,
+          "prompt_token_bound": 5321
+        },
+        "latency_ms": {
+          "retrieval": 2426,
+          "generation": 7625,
+          "total": 10312
+        },
+        "request_id": "req_79cb7518cb464ccf834f718824a89b11"
+      }
+    },
+    {
+      "id": "smoke-postgresql-02",
+      "technology": "PostgreSQL",
+      "type": "factual",
+      "unanswerable": false,
+      "flags": [],
+      "response": {
+        "status": "answered",
+        "reason": null,
+        "answer": "GIN indexes are appropriate for data values that contain multiple component values, such as arrays [C1]. They can efficiently handle queries that test for the presence of specific component values [C1]. GIN indexes are particularly useful when dealing with data that requires efficient querying of individual component values, such as when using operators like <@   @>   =   && [C2].",
+        "citation_verified": true,
+        "citations": [
+          {
+            "label": "C1",
+            "chunk_id": "chk_7921f9b458a637d7ee369043f94b03f7c74c05ed256d2fa808e9d00535b9011e",
+            "document_id": "doc_40c71a7e9bf7444882f1a4a3e1b064b5",
+            "version_id": "ver_0a64f5661a494ee7ad51280927048f61",
+            "title": "PostgreSQL: Documentation: 18: 11.2.\u00a0Index Types",
+            "section_path": "11.2.\u00a0Index Types # > 11.2.5.\u00a0GIN #",
+            "source": "https://www.postgresql.org/docs/18/indexes-types.html",
+            "source_url": "https://www.postgresql.org/docs/18/indexes-types.html",
+            "page": null
+          },
+          {
+            "label": "C2",
+            "chunk_id": "chk_e566b75f259463c6d948fa853a9bc75fd14ab47fc71a3f3a79738fcee90e778c",
+            "document_id": "doc_40c71a7e9bf7444882f1a4a3e1b064b5",
+            "version_id": "ver_0a64f5661a494ee7ad51280927048f61",
+            "title": "PostgreSQL: Documentation: 18: 11.2.\u00a0Index Types",
+            "section_path": "11.2.\u00a0Index Types # > 11.2.5.\u00a0GIN #",
+            "source": "https://www.postgresql.org/docs/18/indexes-types.html",
+            "source_url": "https://www.postgresql.org/docs/18/indexes-types.html",
+            "page": null
+          }
+        ],
+        "context_consulted": [],
+        "sources": [
+          {
+            "document_id": "doc_40c71a7e9bf7444882f1a4a3e1b064b5",
+            "version_id": "ver_0a64f5661a494ee7ad51280927048f61",
+            "title": "PostgreSQL: Documentation: 18: 11.2.\u00a0Index Types",
+            "source": "https://www.postgresql.org/docs/18/indexes-types.html",
+            "source_url": "https://www.postgresql.org/docs/18/indexes-types.html"
+          }
+        ],
+        "evidence": [
+          "chk_7921f9b458a637d7ee369043f94b03f7c74c05ed256d2fa808e9d00535b9011e",
+          "chk_e566b75f259463c6d948fa853a9bc75fd14ab47fc71a3f3a79738fcee90e778c",
+          "chk_6b2ff993117c5ee3bbd2621ab24ce9cc05edd309875e50f62f0c23a6a72afceb",
+          "chk_d4018438eae9e69881a83daeeafabf0bff531f934470325a31fb6e5c440c5a09",
+          "chk_da4b1f6cb52491996a726858c879e8b222147baa56835c73fe846312578a3af3"
+        ],
+        "chunks_retrieved": 5,
+        "chunks_used": 5,
+        "mode": "vector",
+        "retrieval_config_id": "rc_240565250e0cb8369778d32f15c654abac47673f1e153b5e838afa8d721fb723",
+        "generation_config_id": "gc_a370881aa0eea90888767cd3908861e669277c3b909ec13cc0d10bc620141369",
+        "provider": "ollama",
+        "model_id": "ollama/qwen3:1.7b@8f68893c685c3ddff2aa3fffce2aa60a30bb2da65ca488b61fff134a4d1730e7",
+        "retryable": false,
+        "warnings": [],
+        "sufficiency": {
+          "calibrated": true,
+          "passed": true,
+          "top_score": 0.919492,
+          "supporting_chunks": 4,
+          "min_top_score": 0.858223,
+          "min_chunk_score": 0.858223,
+          "min_supporting_chunks": 1,
+          "calibration_run_id": "eval_c4ab1f1397fa469489137f611b74cdf7",
+          "relevance_policy": "cosine-distance-half-v1"
+        },
+        "llm_called": true,
+        "usage": {
+          "prompt_tokens": 1332,
+          "output_tokens": 77,
+          "prompt_token_bound": 4862
+        },
+        "latency_ms": {
+          "retrieval": 3152,
+          "generation": 15701,
+          "total": 19104
+        },
+        "request_id": "req_bc84f54efa0b4d1bb982e1aa171c4e82"
+      }
+    },
+    {
+      "id": "smoke-postgresql-03",
+      "technology": "PostgreSQL",
+      "type": "how_to",
+      "unanswerable": false,
+      "flags": [],
+      "response": {
+        "status": "answered",
+        "reason": null,
+        "answer": "To create a new PostgreSQL database named `mydb` from the command line, you can use the following command:\n\n```\n$ createdb mydb\n```\n\nIf you do not specify the database name, it will default to your user account name. If the command produces no response, it indicates that the database was successfully created [C1].",
+        "citation_verified": true,
+        "citations": [
+          {
+            "label": "C1",
+            "chunk_id": "chk_f47edda471501e127f43811d9e106b30ee581e3154ca70ffa5888c9f5ec5f980",
+            "document_id": "doc_0f1ed75741774d67ab9cefe50564997a",
+            "version_id": "ver_be51957aff7947f291080bdec86fa5a7",
+            "title": "PostgreSQL 18 Tutorial: 1. Getting Started",
+            "section_path": null,
+            "source": "[\"postgresql-18-tutorial-getting-started.pdf\",null]",
+            "source_url": "https://www.postgresql.org/files/documentation/pdf/18/postgresql-18-A4.pdf",
+            "page": 3
+          }
+        ],
+        "context_consulted": [],
+        "sources": [
+          {
+            "document_id": "doc_0f1ed75741774d67ab9cefe50564997a",
+            "version_id": "ver_be51957aff7947f291080bdec86fa5a7",
+            "title": "PostgreSQL 18 Tutorial: 1. Getting Started",
+            "source": "[\"postgresql-18-tutorial-getting-started.pdf\",null]",
+            "source_url": "https://www.postgresql.org/files/documentation/pdf/18/postgresql-18-A4.pdf"
+          }
+        ],
+        "evidence": [
+          "chk_f47edda471501e127f43811d9e106b30ee581e3154ca70ffa5888c9f5ec5f980",
+          "chk_c1229b6253995820d13201e7a981bb26a97f25cac1f826ccc609facbb88c4719",
+          "chk_3f47ae1fa1e9c7a966be9cff60e1ca742f289e3dad3b3f4da04fb951bf23c930",
+          "chk_2ceb4f289076109f21dd0fcd250828fb0dd0f022b62ac0b8e601cc26fc73bf9f",
+          "chk_2d83efbcf7959515ba81900e3619664a5d4e6646bb837c4a35e82570e41cd027"
+        ],
+        "chunks_retrieved": 5,
+        "chunks_used": 5,
+        "mode": "vector",
+        "retrieval_config_id": "rc_240565250e0cb8369778d32f15c654abac47673f1e153b5e838afa8d721fb723",
+        "generation_config_id": "gc_a370881aa0eea90888767cd3908861e669277c3b909ec13cc0d10bc620141369",
+        "provider": "ollama",
+        "model_id": "ollama/qwen3:1.7b@8f68893c685c3ddff2aa3fffce2aa60a30bb2da65ca488b61fff134a4d1730e7",
+        "retryable": false,
+        "warnings": [],
+        "sufficiency": {
+          "calibrated": true,
+          "passed": true,
+          "top_score": 0.910863,
+          "supporting_chunks": 5,
+          "min_top_score": 0.858223,
+          "min_chunk_score": 0.858223,
+          "min_supporting_chunks": 1,
+          "calibration_run_id": "eval_c4ab1f1397fa469489137f611b74cdf7",
+          "relevance_policy": "cosine-distance-half-v1"
+        },
+        "llm_called": true,
+        "usage": {
+          "prompt_tokens": 1439,
+          "output_tokens": 71,
+          "prompt_token_bound": 5768
+        },
+        "latency_ms": {
+          "retrieval": 2545,
+          "generation": 15361,
+          "total": 18133
+        },
+        "request_id": "req_2e9cf0cc31364fb0b85ff3d19ecf20f7"
+      }
+    },
+    {
+      "id": "smoke-postgresql-04",
+      "technology": "PostgreSQL",
+      "type": "identifier",
+      "unanswerable": false,
+      "flags": [],
+      "response": {
+        "status": "answered",
+        "reason": null,
+        "answer": "EXPLAIN ANALYZE executes the query and displays the true row counts and true run time accumulated within each plan node, including the time spent executing after triggers [C2]. Plain EXPLAIN does not execute the query and only shows the planner's estimates [C2].",
+        "citation_verified": true,
+        "citations": [
+          {
+            "label": "C2",
+            "chunk_id": "chk_70361c1a7dd14e4cadc0ed0fc3dcfdbe4bc8a0a4f9d3b17359ea206f4e8df6f6",
+            "document_id": "doc_b225b7d399084605b12cdd8b56333e04",
+            "version_id": "ver_79e7a43c97b1493590e1a33a2571da96",
+            "title": "PostgreSQL: Documentation: 18: 14.1.\u00a0Using EXPLAIN",
+            "section_path": "14.1.\u00a0Using EXPLAIN # > 14.1.2.\u00a0EXPLAIN ANALYZE #",
+            "source": "https://www.postgresql.org/docs/18/using-explain.html",
+            "source_url": "https://www.postgresql.org/docs/18/using-explain.html",
+            "page": null
+          }
+        ],
+        "context_consulted": [],
+        "sources": [
+          {
+            "document_id": "doc_b225b7d399084605b12cdd8b56333e04",
+            "version_id": "ver_79e7a43c97b1493590e1a33a2571da96",
+            "title": "PostgreSQL: Documentation: 18: 14.1.\u00a0Using EXPLAIN",
+            "source": "https://www.postgresql.org/docs/18/using-explain.html",
+            "source_url": "https://www.postgresql.org/docs/18/using-explain.html"
+          }
+        ],
+        "evidence": [
+          "chk_0cf7a51c8e66bf620208a76f0b0362c15ce64c8c72f78d0a6423bf8a41d5da00",
+          "chk_70361c1a7dd14e4cadc0ed0fc3dcfdbe4bc8a0a4f9d3b17359ea206f4e8df6f6",
+          "chk_045dd5fabe82c5653c8d04ab939eacb1be213ad7647fe2ecb5555e7c8a44d939",
+          "chk_a7d31e4566dae15c8254eba5325b29f37429eabb7c9941a2cf0966c7ccc68eec",
+          "chk_67e3d46f029a36eb15e743ee8ee73d9bd60f088a7c0fce03feea07232b4f9c98"
+        ],
+        "chunks_retrieved": 5,
+        "chunks_used": 5,
+        "mode": "vector",
+        "retrieval_config_id": "rc_240565250e0cb8369778d32f15c654abac47673f1e153b5e838afa8d721fb723",
+        "generation_config_id": "gc_a370881aa0eea90888767cd3908861e669277c3b909ec13cc0d10bc620141369",
+        "provider": "ollama",
+        "model_id": "ollama/qwen3:1.7b@8f68893c685c3ddff2aa3fffce2aa60a30bb2da65ca488b61fff134a4d1730e7",
+        "retryable": false,
+        "warnings": [],
+        "sufficiency": {
+          "calibrated": true,
+          "passed": true,
+          "top_score": 0.882585,
+          "supporting_chunks": 5,
+          "min_top_score": 0.858223,
+          "min_chunk_score": 0.858223,
+          "min_supporting_chunks": 1,
+          "calibration_run_id": "eval_c4ab1f1397fa469489137f611b74cdf7",
+          "relevance_policy": "cosine-distance-half-v1"
+        },
+        "llm_called": true,
+        "usage": {
+          "prompt_tokens": 1352,
+          "output_tokens": 55,
+          "prompt_token_bound": 5101
+        },
+        "latency_ms": {
+          "retrieval": 2277,
+          "generation": 14469,
+          "total": 16955
+        },
+        "request_id": "req_15d3004e79b74696a7d4d72dc6392e75"
+      }
+    },
+    {
+      "id": "smoke-postgresql-05",
+      "technology": "PostgreSQL",
+      "type": "how_to",
+      "unanswerable": false,
+      "flags": [],
+      "response": {
+        "status": "answered",
+        "reason": null,
+        "answer": "Rolling back part of a transaction without discarding the whole transaction can be achieved using **savepoints**. Savepoints allow you to define a point in a transaction, and then roll back to that point without affecting the parts of the transaction that came before the savepoint [C2].",
+        "citation_verified": true,
+        "citations": [
+          {
+            "label": "C2",
+            "chunk_id": "chk_a3756e9492a324dc8ec253b04fe8ce25ed84287a3c1f108e760a0bbce89050dd",
+            "document_id": "doc_4fa20d81edfe467ea8c3dea403f83506",
+            "version_id": "ver_6e137a9928b4429dbbf7b6dcc0302a36",
+            "title": "PostgreSQL 18 Tutorial: 3. Advanced Features",
+            "section_path": null,
+            "source": "[\"postgresql-18-tutorial-advanced-features.pdf\",null]",
+            "source_url": "https://www.postgresql.org/files/documentation/pdf/18/postgresql-18-A4.pdf",
+            "page": 4
+          }
+        ],
+        "context_consulted": [],
+        "sources": [
+          {
+            "document_id": "doc_4fa20d81edfe467ea8c3dea403f83506",
+            "version_id": "ver_6e137a9928b4429dbbf7b6dcc0302a36",
+            "title": "PostgreSQL 18 Tutorial: 3. Advanced Features",
+            "source": "[\"postgresql-18-tutorial-advanced-features.pdf\",null]",
+            "source_url": "https://www.postgresql.org/files/documentation/pdf/18/postgresql-18-A4.pdf"
+          }
+        ],
+        "evidence": [
+          "chk_59db8db17f60a331e9072e0510e641d17fd99c1fed2335c6261b08ab3a49cdc5",
+          "chk_a3756e9492a324dc8ec253b04fe8ce25ed84287a3c1f108e760a0bbce89050dd",
+          "chk_b3e122c79142dd55902196983f3d182f495aa55084eeee386075d44d7387e473",
+          "chk_af4e63fc7990b038102e2a47243c7f01d8f49f2546f1c49af145f8669e6e1a4b",
+          "chk_f17f7b41ef7830bbe008085c82c34227bcc5fd127f0a3fa6ea6d74a1e138afc1"
+        ],
+        "chunks_retrieved": 5,
+        "chunks_used": 5,
+        "mode": "vector",
+        "retrieval_config_id": "rc_240565250e0cb8369778d32f15c654abac47673f1e153b5e838afa8d721fb723",
+        "generation_config_id": "gc_a370881aa0eea90888767cd3908861e669277c3b909ec13cc0d10bc620141369",
+        "provider": "ollama",
+        "model_id": "ollama/qwen3:1.7b@8f68893c685c3ddff2aa3fffce2aa60a30bb2da65ca488b61fff134a4d1730e7",
+        "retryable": false,
+        "warnings": [],
+        "sufficiency": {
+          "calibrated": true,
+          "passed": true,
+          "top_score": 0.895139,
+          "supporting_chunks": 4,
+          "min_top_score": 0.858223,
+          "min_chunk_score": 0.858223,
+          "min_supporting_chunks": 1,
+          "calibration_run_id": "eval_c4ab1f1397fa469489137f611b74cdf7",
+          "relevance_policy": "cosine-distance-half-v1"
+        },
+        "llm_called": true,
+        "usage": {
+          "prompt_tokens": 1435,
+          "output_tokens": 59,
+          "prompt_token_bound": 5940
+        },
+        "latency_ms": {
+          "retrieval": 3349,
+          "generation": 14937,
+          "total": 18560
+        },
+        "request_id": "req_72a1db3133b342ad85e659fdef11af2c"
+      }
+    },
+    {
+      "id": "smoke-ood-01",
+      "technology": "Redis",
+      "type": "identifier",
+      "unanswerable": true,
+      "flags": [],
+      "response": {
+        "status": "no_evidence",
+        "reason": "LOW_RELEVANCE",
+        "answer": "No retrieved passage is relevant enough to answer this question, so no answer was generated.",
+        "citation_verified": false,
+        "citations": [],
+        "context_consulted": [],
+        "sources": [],
+        "evidence": [],
+        "chunks_retrieved": 5,
+        "chunks_used": 0,
+        "mode": "vector",
+        "retrieval_config_id": "rc_240565250e0cb8369778d32f15c654abac47673f1e153b5e838afa8d721fb723",
+        "generation_config_id": "gc_a370881aa0eea90888767cd3908861e669277c3b909ec13cc0d10bc620141369",
+        "provider": "ollama",
+        "model_id": "ollama/qwen3:1.7b@8f68893c685c3ddff2aa3fffce2aa60a30bb2da65ca488b61fff134a4d1730e7",
+        "retryable": false,
+        "warnings": [],
+        "sufficiency": {
+          "calibrated": true,
+          "passed": false,
+          "top_score": 0.819429,
+          "supporting_chunks": 0,
+          "min_top_score": 0.858223,
+          "min_chunk_score": 0.858223,
+          "min_supporting_chunks": 1,
+          "calibration_run_id": "eval_c4ab1f1397fa469489137f611b74cdf7",
+          "relevance_policy": "cosine-distance-half-v1"
+        },
+        "llm_called": false,
+        "usage": null,
+        "latency_ms": {
+          "retrieval": 2289,
+          "generation": 0,
+          "total": 2290
+        },
+        "request_id": "req_b0969914bb4d4c57bbce86bcf06296eb"
+      }
+    },
+    {
+      "id": "smoke-ood-02",
+      "technology": "Docker",
+      "type": "how_to",
+      "unanswerable": true,
+      "flags": [],
+      "response": {
+        "status": "no_evidence",
+        "reason": "LOW_RELEVANCE",
+        "answer": "No retrieved passage is relevant enough to answer this question, so no answer was generated.",
+        "citation_verified": false,
+        "citations": [],
+        "context_consulted": [],
+        "sources": [],
+        "evidence": [],
+        "chunks_retrieved": 5,
+        "chunks_used": 0,
+        "mode": "vector",
+        "retrieval_config_id": "rc_240565250e0cb8369778d32f15c654abac47673f1e153b5e838afa8d721fb723",
+        "generation_config_id": "gc_a370881aa0eea90888767cd3908861e669277c3b909ec13cc0d10bc620141369",
+        "provider": "ollama",
+        "model_id": "ollama/qwen3:1.7b@8f68893c685c3ddff2aa3fffce2aa60a30bb2da65ca488b61fff134a4d1730e7",
+        "retryable": false,
+        "warnings": [],
+        "sufficiency": {
+          "calibrated": true,
+          "passed": false,
+          "top_score": 0.808026,
+          "supporting_chunks": 0,
+          "min_top_score": 0.858223,
+          "min_chunk_score": 0.858223,
+          "min_supporting_chunks": 1,
+          "calibration_run_id": "eval_c4ab1f1397fa469489137f611b74cdf7",
+          "relevance_policy": "cosine-distance-half-v1"
+        },
+        "llm_called": false,
+        "usage": null,
+        "latency_ms": {
+          "retrieval": 2375,
+          "generation": 0,
+          "total": 2375
+        },
+        "request_id": "req_20a018106d2d4bab923c5e2800f1fce3"
+      }
+    },
+    {
+      "id": "smoke-ood-03",
+      "technology": "Kubernetes",
+      "type": "how_to",
+      "unanswerable": true,
+      "flags": [],
+      "response": {
+        "status": "no_evidence",
+        "reason": "LOW_RELEVANCE",
+        "answer": "No retrieved passage is relevant enough to answer this question, so no answer was generated.",
+        "citation_verified": false,
+        "citations": [],
+        "context_consulted": [],
+        "sources": [],
+        "evidence": [],
+        "chunks_retrieved": 5,
+        "chunks_used": 0,
+        "mode": "vector",
+        "retrieval_config_id": "rc_240565250e0cb8369778d32f15c654abac47673f1e153b5e838afa8d721fb723",
+        "generation_config_id": "gc_a370881aa0eea90888767cd3908861e669277c3b909ec13cc0d10bc620141369",
+        "provider": "ollama",
+        "model_id": "ollama/qwen3:1.7b@8f68893c685c3ddff2aa3fffce2aa60a30bb2da65ca488b61fff134a4d1730e7",
+        "retryable": false,
+        "warnings": [],
+        "sufficiency": {
+          "calibrated": true,
+          "passed": false,
+          "top_score": 0.822866,
+          "supporting_chunks": 0,
+          "min_top_score": 0.858223,
+          "min_chunk_score": 0.858223,
+          "min_supporting_chunks": 1,
+          "calibration_run_id": "eval_c4ab1f1397fa469489137f611b74cdf7",
+          "relevance_policy": "cosine-distance-half-v1"
+        },
+        "llm_called": false,
+        "usage": null,
+        "latency_ms": {
+          "retrieval": 2041,
+          "generation": 0,
+          "total": 2041
+        },
+        "request_id": "req_7ce4da9731fc4b8ab6b278743521eb3d"
+      }
+    },
+    {
+      "id": "smoke-ood-04",
+      "technology": "React",
+      "type": "factual",
+      "unanswerable": true,
+      "flags": [],
+      "response": {
+        "status": "no_evidence",
+        "reason": "LOW_RELEVANCE",
+        "answer": "No retrieved passage is relevant enough to answer this question, so no answer was generated.",
+        "citation_verified": false,
+        "citations": [],
+        "context_consulted": [],
+        "sources": [],
+        "evidence": [],
+        "chunks_retrieved": 5,
+        "chunks_used": 0,
+        "mode": "vector",
+        "retrieval_config_id": "rc_240565250e0cb8369778d32f15c654abac47673f1e153b5e838afa8d721fb723",
+        "generation_config_id": "gc_a370881aa0eea90888767cd3908861e669277c3b909ec13cc0d10bc620141369",
+        "provider": "ollama",
+        "model_id": "ollama/qwen3:1.7b@8f68893c685c3ddff2aa3fffce2aa60a30bb2da65ca488b61fff134a4d1730e7",
+        "retryable": false,
+        "warnings": [],
+        "sufficiency": {
+          "calibrated": true,
+          "passed": false,
+          "top_score": 0.832452,
+          "supporting_chunks": 0,
+          "min_top_score": 0.858223,
+          "min_chunk_score": 0.858223,
+          "min_supporting_chunks": 1,
+          "calibration_run_id": "eval_c4ab1f1397fa469489137f611b74cdf7",
+          "relevance_policy": "cosine-distance-half-v1"
+        },
+        "llm_called": false,
+        "usage": null,
+        "latency_ms": {
+          "retrieval": 2293,
+          "generation": 0,
+          "total": 2293
+        },
+        "request_id": "req_54f4b9b9776d42148e89d334cea559d5"
+      }
+    },
+    {
+      "id": "smoke-ood-05",
+      "technology": "Terraform",
+      "type": "how_to",
+      "unanswerable": true,
+      "flags": [],
+      "response": {
+        "status": "no_evidence",
+        "reason": "LOW_RELEVANCE",
+        "answer": "No retrieved passage is relevant enough to answer this question, so no answer was generated.",
+        "citation_verified": false,
+        "citations": [],
+        "context_consulted": [],
+        "sources": [],
+        "evidence": [],
+        "chunks_retrieved": 5,
+        "chunks_used": 0,
+        "mode": "vector",
+        "retrieval_config_id": "rc_240565250e0cb8369778d32f15c654abac47673f1e153b5e838afa8d721fb723",
+        "generation_config_id": "gc_a370881aa0eea90888767cd3908861e669277c3b909ec13cc0d10bc620141369",
+        "provider": "ollama",
+        "model_id": "ollama/qwen3:1.7b@8f68893c685c3ddff2aa3fffce2aa60a30bb2da65ca488b61fff134a4d1730e7",
+        "retryable": false,
+        "warnings": [],
+        "sufficiency": {
+          "calibrated": true,
+          "passed": false,
+          "top_score": 0.798434,
+          "supporting_chunks": 0,
+          "min_top_score": 0.858223,
+          "min_chunk_score": 0.858223,
+          "min_supporting_chunks": 1,
+          "calibration_run_id": "eval_c4ab1f1397fa469489137f611b74cdf7",
+          "relevance_policy": "cosine-distance-half-v1"
+        },
+        "llm_called": false,
+        "usage": null,
+        "latency_ms": {
+          "retrieval": 3327,
+          "generation": 0,
+          "total": 3328
+        },
+        "request_id": "req_28ed3a0e874c48829d2e793f2238de27"
+      }
+    },
+    {
+      "id": "smoke-ood-06",
+      "technology": "MongoDB",
+      "type": "factual",
+      "unanswerable": true,
+      "flags": [],
+      "response": {
+        "status": "no_evidence",
+        "reason": "LOW_RELEVANCE",
+        "answer": "No retrieved passage is relevant enough to answer this question, so no answer was generated.",
+        "citation_verified": false,
+        "citations": [],
+        "context_consulted": [],
+        "sources": [],
+        "evidence": [],
+        "chunks_retrieved": 5,
+        "chunks_used": 0,
+        "mode": "vector",
+        "retrieval_config_id": "rc_240565250e0cb8369778d32f15c654abac47673f1e153b5e838afa8d721fb723",
+        "generation_config_id": "gc_a370881aa0eea90888767cd3908861e669277c3b909ec13cc0d10bc620141369",
+        "provider": "ollama",
+        "model_id": "ollama/qwen3:1.7b@8f68893c685c3ddff2aa3fffce2aa60a30bb2da65ca488b61fff134a4d1730e7",
+        "retryable": false,
+        "warnings": [],
+        "sufficiency": {
+          "calibrated": true,
+          "passed": false,
+          "top_score": 0.813689,
+          "supporting_chunks": 0,
+          "min_top_score": 0.858223,
+          "min_chunk_score": 0.858223,
+          "min_supporting_chunks": 1,
+          "calibration_run_id": "eval_c4ab1f1397fa469489137f611b74cdf7",
+          "relevance_policy": "cosine-distance-half-v1"
+        },
+        "llm_called": false,
+        "usage": null,
+        "latency_ms": {
+          "retrieval": 3175,
+          "generation": 0,
+          "total": 3176
+        },
+        "request_id": "req_a811670f961c4decaef5a19f6580a28d"
+      }
+    },
+    {
+      "id": "smoke-ood-07",
+      "technology": "Elasticsearch",
+      "type": "how_to",
+      "unanswerable": true,
+      "flags": [],
+      "response": {
+        "status": "no_evidence",
+        "reason": "LOW_RELEVANCE",
+        "answer": "No retrieved passage is relevant enough to answer this question, so no answer was generated.",
+        "citation_verified": false,
+        "citations": [],
+        "context_consulted": [],
+        "sources": [],
+        "evidence": [],
+        "chunks_retrieved": 5,
+        "chunks_used": 0,
+        "mode": "vector",
+        "retrieval_config_id": "rc_240565250e0cb8369778d32f15c654abac47673f1e153b5e838afa8d721fb723",
+        "generation_config_id": "gc_a370881aa0eea90888767cd3908861e669277c3b909ec13cc0d10bc620141369",
+        "provider": "ollama",
+        "model_id": "ollama/qwen3:1.7b@8f68893c685c3ddff2aa3fffce2aa60a30bb2da65ca488b61fff134a4d1730e7",
+        "retryable": false,
+        "warnings": [],
+        "sufficiency": {
+          "calibrated": true,
+          "passed": false,
+          "top_score": 0.828378,
+          "supporting_chunks": 0,
+          "min_top_score": 0.858223,
+          "min_chunk_score": 0.858223,
+          "min_supporting_chunks": 1,
+          "calibration_run_id": "eval_c4ab1f1397fa469489137f611b74cdf7",
+          "relevance_policy": "cosine-distance-half-v1"
+        },
+        "llm_called": false,
+        "usage": null,
+        "latency_ms": {
+          "retrieval": 2685,
+          "generation": 0,
+          "total": 2685
+        },
+        "request_id": "req_d4e9bad25d534423aa5494b2c381e768"
+      }
+    },
+    {
+      "id": "smoke-ood-08",
+      "technology": "Git",
+      "type": "how_to",
+      "unanswerable": true,
+      "flags": [],
+      "response": {
+        "status": "no_evidence",
+        "reason": "LOW_RELEVANCE",
+        "answer": "No retrieved passage is relevant enough to answer this question, so no answer was generated.",
+        "citation_verified": false,
+        "citations": [],
+        "context_consulted": [],
+        "sources": [],
+        "evidence": [],
+        "chunks_retrieved": 5,
+        "chunks_used": 0,
+        "mode": "vector",
+        "retrieval_config_id": "rc_240565250e0cb8369778d32f15c654abac47673f1e153b5e838afa8d721fb723",
+        "generation_config_id": "gc_a370881aa0eea90888767cd3908861e669277c3b909ec13cc0d10bc620141369",
+        "provider": "ollama",
+        "model_id": "ollama/qwen3:1.7b@8f68893c685c3ddff2aa3fffce2aa60a30bb2da65ca488b61fff134a4d1730e7",
+        "retryable": false,
+        "warnings": [],
+        "sufficiency": {
+          "calibrated": true,
+          "passed": false,
+          "top_score": 0.821591,
+          "supporting_chunks": 0,
+          "min_top_score": 0.858223,
+          "min_chunk_score": 0.858223,
+          "min_supporting_chunks": 1,
+          "calibration_run_id": "eval_c4ab1f1397fa469489137f611b74cdf7",
+          "relevance_policy": "cosine-distance-half-v1"
+        },
+        "llm_called": false,
+        "usage": null,
+        "latency_ms": {
+          "retrieval": 3614,
+          "generation": 0,
+          "total": 3615
+        },
+        "request_id": "req_e97a1838ef5141ed833f2d16097013e8"
+      }
+    },
+    {
+      "id": "smoke-ood-09",
+      "technology": "Rust",
+      "type": "factual",
+      "unanswerable": true,
+      "flags": [],
+      "response": {
+        "status": "no_evidence",
+        "reason": "LOW_RELEVANCE",
+        "answer": "No retrieved passage is relevant enough to answer this question, so no answer was generated.",
+        "citation_verified": false,
+        "citations": [],
+        "context_consulted": [],
+        "sources": [],
+        "evidence": [],
+        "chunks_retrieved": 5,
+        "chunks_used": 0,
+        "mode": "vector",
+        "retrieval_config_id": "rc_240565250e0cb8369778d32f15c654abac47673f1e153b5e838afa8d721fb723",
+        "generation_config_id": "gc_a370881aa0eea90888767cd3908861e669277c3b909ec13cc0d10bc620141369",
+        "provider": "ollama",
+        "model_id": "ollama/qwen3:1.7b@8f68893c685c3ddff2aa3fffce2aa60a30bb2da65ca488b61fff134a4d1730e7",
+        "retryable": false,
+        "warnings": [],
+        "sufficiency": {
+          "calibrated": true,
+          "passed": false,
+          "top_score": 0.836978,
+          "supporting_chunks": 0,
+          "min_top_score": 0.858223,
+          "min_chunk_score": 0.858223,
+          "min_supporting_chunks": 1,
+          "calibration_run_id": "eval_c4ab1f1397fa469489137f611b74cdf7",
+          "relevance_policy": "cosine-distance-half-v1"
+        },
+        "llm_called": false,
+        "usage": null,
+        "latency_ms": {
+          "retrieval": 3332,
+          "generation": 0,
+          "total": 3333
+        },
+        "request_id": "req_c03b5ca1e09147aa8438b21f0937378b"
+      }
+    },
+    {
+      "id": "smoke-ood-10",
+      "technology": "nginx",
+      "type": "identifier",
+      "unanswerable": true,
+      "flags": [],
+      "response": {
+        "status": "no_evidence",
+        "reason": "LOW_RELEVANCE",
+        "answer": "No retrieved passage is relevant enough to answer this question, so no answer was generated.",
+        "citation_verified": false,
+        "citations": [],
+        "context_consulted": [],
+        "sources": [],
+        "evidence": [],
+        "chunks_retrieved": 5,
+        "chunks_used": 0,
+        "mode": "vector",
+        "retrieval_config_id": "rc_240565250e0cb8369778d32f15c654abac47673f1e153b5e838afa8d721fb723",
+        "generation_config_id": "gc_a370881aa0eea90888767cd3908861e669277c3b909ec13cc0d10bc620141369",
+        "provider": "ollama",
+        "model_id": "ollama/qwen3:1.7b@8f68893c685c3ddff2aa3fffce2aa60a30bb2da65ca488b61fff134a4d1730e7",
+        "retryable": false,
+        "warnings": [],
+        "sufficiency": {
+          "calibrated": true,
+          "passed": false,
+          "top_score": 0.80176,
+          "supporting_chunks": 0,
+          "min_top_score": 0.858223,
+          "min_chunk_score": 0.858223,
+          "min_supporting_chunks": 1,
+          "calibration_run_id": "eval_c4ab1f1397fa469489137f611b74cdf7",
+          "relevance_policy": "cosine-distance-half-v1"
+        },
+        "llm_called": false,
+        "usage": null,
+        "latency_ms": {
+          "retrieval": 3135,
+          "generation": 0,
+          "total": 3136
+        },
+        "request_id": "req_4ed778c2e4f74c3bb720122e0615d2d5"
+      }
+    }
+  ]
+}

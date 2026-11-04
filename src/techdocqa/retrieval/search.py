@@ -10,16 +10,33 @@ from techdocqa.schemas import SearchRequest, SearchResponse, SearchResult
 _lexical = None
 
 
-def retrieval_config_id(request: SearchRequest, settings, profile: dict | None) -> str:
+def digest(values: dict) -> str:
+    return hashlib.sha256(json.dumps(values, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
+
+
+def scoring_values(mode: str, settings, profile: dict | None) -> dict:
+    """What fixes a (query, chunk) relevance in this mode; thresholds are only valid on the scale these define."""
     from techdocqa.indexing.embeddings import SCORE_POLICY
-    from techdocqa.retrieval.lexical import TOKENIZER_POLICY
+    from techdocqa.retrieval.lexical import RELEVANCE_POLICY, TOKENIZER_POLICY
     retrieval = settings.retrieval
-    values = {"mode": request.mode, "top_k": request.top_k, "candidate_depth": retrieval.candidate_depth}
     if profile:
-        values.update(profile_id=profile["profile_id"], score_policy=SCORE_POLICY)
-    else:
-        values.update(k1=retrieval.bm25_k1, b=retrieval.bm25_b, tokenizer=TOKENIZER_POLICY)
-    return "rc_" + hashlib.sha256(json.dumps(values, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
+        return {"mode": mode, "profile_id": profile["profile_id"], "score_policy": SCORE_POLICY}
+    return {"mode": mode, "k1": retrieval.bm25_k1, "b": retrieval.bm25_b, "tokenizer": TOKENIZER_POLICY,
+            "relevance_policy": RELEVANCE_POLICY}
+
+
+def scoring_config_id(mode: str, settings, profile: dict | None) -> str:
+    return "sc_" + digest(scoring_values(mode, settings, profile))
+
+
+def retrieval_config_id(request: SearchRequest, settings, profile: dict | None) -> str:
+    """Mode, depth, top-k, the score scale and the sufficiency thresholds that apply to it, with their calibration run."""
+    from techdocqa.answering.sufficiency import active_thresholds
+    values = {"top_k": request.top_k, "candidate_depth": settings.retrieval.candidate_depth,
+              **scoring_values(request.mode, settings, profile)}
+    thresholds, _ = active_thresholds(request.mode, settings, profile)
+    values["sufficiency"] = thresholds.model_dump() if thresholds else None
+    return "rc_" + digest(values)
 
 
 def filtered_records(request: SearchRequest, eligible: list) -> list:
@@ -31,9 +48,11 @@ def filtered_records(request: SearchRequest, eligible: list) -> list:
             and matches(record.technology, filters.technology) and matches(record.category, filters.category)]
 
 
-def result(rank: int, mode: str, score: float, *, chunk_id, document_id, version_id, title, section_path, page, text) -> SearchResult:
+def result(rank: int, mode: str, score: float, relevance: float, *, chunk_id, document_id, version_id, title, section_path,
+           page, text) -> SearchResult:
     return SearchResult(rank=rank, chunk_id=chunk_id, document_id=document_id, version_id=version_id, title=title,
-        section_path=section_path, page=page, text=text, scores={"bm25": None, "vector": None, mode: score}, ranks={mode: rank})
+        section_path=section_path, page=page, text=text, scores={"bm25": None, "vector": None, mode: score}, ranks={mode: rank},
+        relevance=relevance)
 
 
 def lexical_index(settings, eligible: list):
@@ -53,10 +72,10 @@ def bm25_results(request, settings, eligible, records, entity_chunks) -> list[Se
     def allowed(chunk):
         return chunk["version_id"] in titles and (entity_chunks is None or chunk["chunk_id"] in entity_chunks)
     found = lexical_index(settings, eligible).search(request.query, request.top_k, allowed)
-    return [result(rank, "bm25", score, chunk_id=chunk["chunk_id"], document_id=chunk["document_id"], version_id=chunk["version_id"],
-                   title=titles[chunk["version_id"]], section_path=" > ".join(chunk["section_path"]) or None,
-                   page=chunk["page"], text=chunk["text"])
-            for rank, (chunk, score) in enumerate(found, 1)]
+    return [result(rank, "bm25", score, relevance, chunk_id=chunk["chunk_id"], document_id=chunk["document_id"],
+                   version_id=chunk["version_id"], title=titles[chunk["version_id"]],
+                   section_path=" > ".join(chunk["section_path"]) or None, page=chunk["page"], text=chunk["text"])
+            for rank, (chunk, score, relevance) in enumerate(found, 1)]
 
 
 def vector_results(request, settings, records, entity_chunks, profile) -> list[SearchResult]:
@@ -79,7 +98,8 @@ def vector_results(request, settings, records, entity_chunks, profile) -> list[S
             and document.metadata["chunking_config_id"] == record.chunking.chunking_config_id]
     # Exact chunk_id tie-break keeps equal-distance repeated text reproducible.
     live.sort(key=lambda item: (-item[1], item[0].metadata["chunk_id"]))
-    return [result(rank, "vector", score, chunk_id=document.metadata["chunk_id"], document_id=document.metadata["document_id"],
+    # The FR-12 score is already the documented 0-1 relevance.
+    return [result(rank, "vector", score, score, chunk_id=document.metadata["chunk_id"], document_id=document.metadata["document_id"],
                    version_id=document.metadata["version_id"], title=current[document.metadata["version_id"]].title,
                    section_path=document.metadata.get("section_path"), page=document.metadata.get("page"), text=document.page_content)
             for rank, (document, score) in enumerate(live[:request.top_k], 1)]

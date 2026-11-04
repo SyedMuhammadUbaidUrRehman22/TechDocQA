@@ -139,7 +139,7 @@ def test_tokenizer_adds_a_plain_word_view():
 def test_bm25_score_matches_hand_computation_with_configured_parameters():
     chunks = [{'chunk_id': f'c{i}', 'text': text} for i, text in enumerate(['alpha beta', 'beta gamma delta', 'gamma', 'delta'])]
     k1, b = 1.5, 0.5
-    (top, score), = LexicalIndex(chunks, k1, b).search('alpha', 1)
+    (top, score, _), = LexicalIndex(chunks, k1, b).search('alpha', 1)
     idf = math.log(4 - 1 + 0.5) - math.log(1 + 0.5)
     average = (2 + 3 + 1 + 1) / 4
     assert top['chunk_id'] == 'c0'
@@ -149,9 +149,9 @@ def test_bm25_score_matches_hand_computation_with_configured_parameters():
 def test_bm25_returns_only_chunks_sharing_a_token_and_breaks_ties_by_id():
     chunks = [{'chunk_id': cid, 'text': text} for cid, text in [('b', 'same words'), ('a', 'same words'), ('c', 'other text'), ('d', 'more here')]]
     index = LexicalIndex(chunks, 1.2, 0.75)
-    assert [chunk['chunk_id'] for chunk, _ in index.search('same', 5)] == ['a', 'b']
+    assert [chunk['chunk_id'] for chunk, _, _ in index.search('same', 5)] == ['a', 'b']
     assert index.search('absent', 5) == []
-    assert [chunk['chunk_id'] for chunk, _ in index.search('same', 5, lambda chunk: chunk['chunk_id'] == 'b')] == ['b']
+    assert [chunk['chunk_id'] for chunk, _, _ in index.search('same', 5, lambda chunk: chunk['chunk_id'] == 'b')] == ['b']
 
 
 def test_filter_does_not_change_a_lexical_score(indexed, model_settings, registry):
@@ -520,6 +520,23 @@ def test_reprocessing_does_not_reactivate_withdrawn_content(indexed, model_setti
     withdraw_document(version.document_id, 'Stay out', registry)
     process_versions([version.version_id], model_settings, registry)
     assert registry.get_version(version.version_id).status == 'withdrawn'
+
+
+def test_repeat_and_renamed_duplicate_add_no_chunks_or_index_entries(indexed, corpus, model_settings, registry, embedder):
+    """AC-05.1 and AC-05.4 count portions: an exact re-ingestion and a renamed copy leave chunk and entry counts unchanged."""
+    def totals():
+        chunks = sum(len(active_chunks(record.version_id, model_settings, registry)) for record in registry.eligible_versions())
+        return chunks, len(collection(model_settings).ids())
+    before = totals()
+    original = indexed['kafka.md']
+    assert ingest(corpus / 'kafka.md', model_settings, registry, technology='Kafka').version_id == original.version_id
+    assert 'DUPLICATE_SKIPPED' in history_decisions(registry, original.document_id)
+    (corpus / 'renamed.md').write_bytes((corpus / 'kafka.md').read_bytes())
+    copy = ingest(corpus / 'renamed.md', model_settings, registry)
+    assert registry.get_version(copy.version_id).duplicate_of == original.document_id
+    embedder.requests = 0
+    assert index_versions([], model_settings, registry).run.failed == 0
+    assert totals() == before and embedder.requests == 0
 
 
 def test_withdrawing_an_original_promotes_its_duplicate(indexed, corpus, model_settings, registry):

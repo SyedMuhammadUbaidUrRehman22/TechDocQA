@@ -136,6 +136,7 @@ def run_mode(mode: str, labeled: list[dict], scope: frozenset, settings, registr
             matches = [entry["chunk_items"].get(result.chunk_id, set()) for result in response.results]
             row = {"ranked": [result.chunk_id for result in response.results],
                    "scores": [round(result.scores[mode], SCORE_DIGITS) for result in response.results],
+                   "relevance": [round(result.relevance, SCORE_DIGITS) for result in response.results],
                    "matched_items": [sorted(items) for items in matches],
                    "latency_seconds": round(latency, 3)}
             if not question.unanswerable and not entry["flags"]:
@@ -160,12 +161,40 @@ def run_mode(mode: str, labeled: list[dict], scope: frozenset, settings, registr
         "metrics": rounded(macro_average([row["metrics"] for _, row in answered])),
         "by_technology": {technology: {"questions": len(rows), **rounded(macro_average(rows))}
                           for technology, rows in sorted(by_technology.items())},
-        # Score scales differ by mode; these spreads feed FR-18 calibration, they are not a refusal result.
+        # Raw score scales differ by mode; relevance is each mode's 0-1 scale, which FR-18 thresholds use.
         "answerable_top_score": spread([row["scores"][0] for _, row in answered if row["scores"]]),
+        "answerable_top_relevance": spread([row["relevance"][0] for _, row in answered if row["relevance"]]),
         "unanswerable": {"questions": len(unanswerable), "with_results": sum(1 for row in unanswerable if row["ranked"]),
-                         "top_score": spread([row["scores"][0] for row in unanswerable if row["scores"]])},
+                         "top_score": spread([row["scores"][0] for row in unanswerable if row["scores"]]),
+                         "top_relevance": spread([row["relevance"][0] for row in unanswerable if row["relevance"]])},
+        "refusal_calibration": refusal_calibration(mode, [row for _, row in answered], unanswerable, settings),
     }
     return summary, per_question
+
+
+def refusal_calibration(mode: str, answered: list[dict], unanswerable: list[dict], settings) -> dict:
+    """FR-18 on this run's scores: thresholds proposed from them, and how the active thresholds judge them.
+
+    Both judge the top results as retrieved, before any context trimming. A proposal changes nothing until a person
+    copies its section into the configuration; the run that proposed it becomes the calibration run.
+    """
+    from techdocqa.answering import sufficiency
+    from techdocqa.retrieval.search import scoring_config_id
+    profile = None
+    if mode == "vector":
+        from techdocqa.indexing.embeddings import embedding_profile
+        profile = embedding_profile(settings.model)
+    top_k = settings.retrieval.top_k
+    def top(rows):
+        return [row["relevance"][0] if row["relevance"] else None for row in rows]
+    thresholds, warning = sufficiency.active_thresholds(mode, settings, profile)
+    active = {"status": "calibrated" if thresholds else ("stale" if warning == sufficiency.STALE else "not_calibrated")}
+    if thresholds:
+        verdicts = [[sufficiency.judge(row["relevance"][:top_k], thresholds)[1] for row in rows] for rows in (answered, unanswerable)]
+        active.update(thresholds.model_dump(exclude={"scoring_config_id"}), answerable=len(answered), answerable_passed=sum(verdicts[0]),
+                      unanswerable=len(unanswerable), unanswerable_refused=len(unanswerable) - sum(verdicts[1]))
+    return {"relevance_policy": sufficiency.relevance_policy(mode), "scoring_config_id": scoring_config_id(mode, settings, profile),
+            "active": active, "proposed": sufficiency.propose(top(answered), top(unanswerable))}
 
 
 def code_version() -> dict:
@@ -243,7 +272,8 @@ def run_evaluation(dataset_path: Path, manifest_path: Path, settings, registry, 
     repeatable = {"dataset": dataset.sha256, "corpus": state["summary"]["corpus_fingerprint"], "policy": METRIC_POLICY,
                   "configurations": [{key: value for key, value in summary.items() if key != "duration_seconds"} for summary in configurations],
                   "questions": [{"id": question["id"], "flags": question["flags"],
-                                 "results": {mode: {"ranked": row["ranked"], "scores": row["scores"]} for mode, row in question["results"].items()}}
+                                 "results": {mode: {"ranked": row["ranked"], "scores": row["scores"], "relevance": row["relevance"]}
+                                             for mode, row in question["results"].items()}}
                                 for question in questions]}
     duration = time.perf_counter() - started
     return {
@@ -271,6 +301,34 @@ def metric(value) -> str:
 
 def triple(values: dict | None) -> str:
     return "n/a" if values is None else f"{values['min']} / {values['median']} / {values['max']}"
+
+
+def refusal_lines(run_id: str, completed: list[dict]) -> list[str]:
+    from techdocqa.answering.sufficiency import toml_block
+    lines = ["", "## Refusal calibration (FR-18)", "",
+             "Top-1 relevance on each mode's 0-1 scale, judged before context trimming. A proposal takes effect only when its "
+             "section below is copied into the configuration, which makes this run the calibration run.", "",
+             "| Configuration | Answerable min / median / max | Unanswerable min / median / max | Proposed threshold | Margin | "
+             "Answerable passed | Unanswerable refused | Leave-one-out errors | Active thresholds |",
+             "|---|---|---|---|---|---|---|---|---|"]
+    blocks = []
+    for row in completed:
+        calibration = row["refusal_calibration"]
+        proposed, active = calibration["proposed"], calibration["active"]
+        if active["status"] == "calibrated":
+            current = (f"{active['min_top_score']} from `{active['calibration_run_id']}`: {active['answerable_passed']} of "
+                       f"{active['answerable']} passed, {active['unanswerable_refused']} of {active['unanswerable']} refused")
+        else:
+            current = active["status"].replace("_", " ")
+        if proposed is None:
+            lines.append(f"| {row['mode']} | {triple(row['answerable_top_relevance'])} | {triple(row['unanswerable']['top_relevance'])} | "
+                         f"none | | | | | {current} |")
+            continue
+        lines.append(f"| {row['mode']} | {triple(row['answerable_top_relevance'])} | {triple(row['unanswerable']['top_relevance'])} | "
+                     f"{proposed['min_top_score']} | {proposed['margin']} | {proposed['answerable_passed']} of {proposed['answerable']} | "
+                     f"{proposed['unanswerable_refused']} of {proposed['unanswerable']} | {proposed['leave_one_out_errors']} | {current} |")
+        blocks += ["", "```toml", toml_block(row["mode"], proposed, run_id, calibration["scoring_config_id"]), "```"]
+    return lines + blocks
 
 
 def render_markdown(report: dict) -> str:
@@ -301,12 +359,13 @@ def render_markdown(report: dict) -> str:
         for row in completed:
             for technology, values in row["by_technology"].items():
                 lines.append(f"| {row['mode']} | {technology} | {values['questions']} | " + " | ".join(metric(values[name]) for name in names) + " |")
-        lines += ["", "## Top-1 scores", "", "Raw scores in each mode's own scale, for FR-18 calibration. Not a refusal result.", "",
+        lines += ["", "## Top-1 scores", "", "Raw scores in each mode's own scale. FR-18 calibration uses the 0-1 relevance below.", "",
                   "| Configuration | Answerable min / median / max | Unanswerable min / median / max | Unanswerable with results |",
                   "|---|---|---|---|"]
         for row in completed:
             lines.append(f"| {row['mode']} | {triple(row['answerable_top_score'])} | {triple(row['unanswerable']['top_score'])} | "
                          f"{row['unanswerable']['with_results']} of {row['unanswerable']['questions']} |")
+        lines += refusal_lines(report["run_id"], completed)
     lines += ["", "## Flags", ""]
     lines += [f"- {flag['question']}: {flag['reason']} ({flag['source_key']})" for flag in report["flags"]] or ["None."]
     lines += ["", "## Notes", ""] + [f"- {note}" for note in report["notes"]]

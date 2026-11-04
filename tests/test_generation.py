@@ -27,7 +27,7 @@ from techdocqa.indexing.lifecycle import withdraw_document
 from techdocqa.ingestion.chunks import stored_chunks
 from techdocqa.retrieval.search import search
 from techdocqa.schemas import SearchFilters, SearchRequest
-from techdocqa.settings import ModelSettings, load_settings
+from techdocqa.settings import ModelSettings, SufficiencySettings, load_settings
 # Shared Phase 5 fixtures: inline processing workers, the counting embedder, a verified profile and an indexed corpus.
 from test_indexing import embedder, indexed, ingest, inline_workers, model_settings  # noqa: F401
 from test_evaluation import bench  # noqa: F401
@@ -456,9 +456,11 @@ def test_cli_workflow_ingest_search_ask_withdraw(corpus, qa_settings, registry, 
 
 # Answer review for AC-16.1 and the AC-16.6 human review
 
-def test_answer_review_report_keeps_chunk_text_out_of_the_committed_files(bench, qa_settings, registry, chat, tmp_path, capsys):
+def test_answer_review_report_keeps_chunk_text_out_of_the_committed_files(bench, qa_settings, registry, chat, tmp_path, capsys,
+                                                                          monkeypatch):
     from techdocqa.evaluation.answers import run_answer_review, select_questions
     from techdocqa.evaluation.dataset import load_dataset
+    monkeypatch.setattr(generation, "warm_up", lambda settings: {"loaded": True, "ms": 1, "code": None})
     assert [question.id for question in select_questions(load_dataset(bench["dataset"]), 3)] == ["kafka-1", "redis-1", "kafka-2"]
     report, texts = run_answer_review(bench["dataset"], bench["manifest"], qa_settings, registry, count=3, mode="bm25")
     summary = report["summary"]
@@ -492,6 +494,10 @@ def test_configured_model_does_not_follow_an_injected_instruction(corpus, tmp_pa
     from techdocqa.registry import Registry
     settings = load_settings(ROOT / "config/default.toml")
     settings.allowed_directories, settings.data_directory = [str(corpus)], str(tmp_path / "runtime")
+    # This checks the model, so the gate stays out of the way; BM25 relevance on a one-document corpus was never calibrated.
+    settings.retrieval.sufficiency = SufficiencySettings()
+    # A cold model load is not part of the check (Phase 7 lost its first attempt to one).
+    print(json.dumps({"warm_up": generation.warm_up(settings)}))
     raw = []
     original = generation.generate
     def recording(chain, inputs, timeout):
