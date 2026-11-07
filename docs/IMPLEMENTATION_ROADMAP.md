@@ -1,6 +1,6 @@
 # TechDocQA implementation roadmap
 
-Phase 8 checkpoint 2026-11-04: [calibrated refusal and P0 reconciliation](PHASE_8_STATUS.md) records per-mode 0-1 relevance scales and thresholds calibrated on the reviewed smoke set (BM25 0.297285, vector 0.858223, run `eval_c4ab1f13...`). With the real model, each mode refused 10 of 10 out-of-domain questions without a model call (AC-18.1) and answered 19 of 20 answerable ones (AC-18.2). The real-model CLI script meets AC-22.3 and AC-21.1. **The P0 release gate is blocked.** Q-07, Q-12 and Q-13 are implemented as proposed and await approval. Gate update 2026-11-07: AC-16.6 is rated 8 of 10 by the AI reviewer the owner designated, and AC-12.1 is met as amended (index recall@3 against exact search 1.0); both changes await the owner's confirmation ([gate update](PHASE_8_STATUS.md#gate-update-2026-11-07)).
+Phase 8 checkpoint 2026-11-04: [calibrated refusal and P0 reconciliation](PHASE_8_STATUS.md) records per-mode 0-1 relevance scales and thresholds calibrated on the reviewed smoke set (BM25 0.297285, vector 0.858223, run `eval_c4ab1f13...`). With the real model, each mode refused 10 of 10 out-of-domain questions without a model call (AC-18.1) and answered 19 of 20 answerable ones (AC-18.2). The real-model CLI script meets AC-22.3 and AC-21.1. **The P0 release gate passed on 2026-11-07** ([gate update](PHASE_8_STATUS.md#gate-update-2026-11-07)). AC-16.6 is rated 8 of 10 by the AI reviewer the owner designated, AC-12.1 is met as amended (index recall@3 against exact search 1.0), and the owner approved both changes and Q-07, Q-12 and Q-13.
 
 Phase 7 checkpoint 2026-11-03: [answering and citation evidence](PHASE_7_STATUS.md) records `ask` as a LangChain prompt and `ChatOllama` chain over the registry-gated search, with context fitted to an 8,192-token window, citations verified against stored metadata and provider failures returned as `generation_error`. On the real corpus, 10 of 10 smoke questions were answered with citations (AC-16.1), and `qwen3:1.7b` did not follow the injected instruction in 3 of 3 questions (AC-23.3) on the second attempt, after a cold-start timeout. **AC-16.6 human review is open.** No refusal threshold applies until Phase 8.
 
@@ -110,7 +110,7 @@ Phase 3B is the user's name for this remaining Phase 3 work; the original roadma
 
 ## Phase 8 — Calibrated refusal and P0 release gate
 
-Implementation checkpoint 2026-11-04: FR-18 is implemented and met with the real model in both P0 modes, and every P0 acceptance criterion is reconciled in the [Phase 8 report](PHASE_8_STATUS.md#p0-acceptance-reconciliation). The release gate is explicitly blocked by AC-16.6 and AC-12.1. The planned `answering/sufficiency.py` exists; context integration stayed inside `generation.py`.
+Implementation checkpoint 2026-11-04: FR-18 is implemented and met with the real model in both P0 modes, and every P0 acceptance criterion is reconciled in the [Phase 8 report](PHASE_8_STATUS.md#p0-acceptance-reconciliation). The release gate was blocked by AC-16.6 and AC-12.1 until it passed on 2026-11-07. The planned `answering/sufficiency.py` exists; context integration stayed inside `generation.py`.
 
 - Objective: complete trustworthy baseline QA and CLI.
 - FRs: FR-18, FR-19 calibration slice, FR-21 QA slice; complete P0 FR-16/17/22/23 and cumulative FR-01–06(minimal), FR-10–13/20.
@@ -122,7 +122,7 @@ Implementation checkpoint 2026-11-04: FR-18 is implemented and met with the real
 
 ## Phase 9 — P1 NLP enrichment
 
-Detailed plan proposed 2026-11-04, not yet approved: [Phase 9 plan](PHASE_9_PLAN.md). It adds an entry gate for the blocked P0 release and ten decisions to approve before coding.
+Detailed plan proposed 2026-11-04, not yet approved: [Phase 9 plan](PHASE_9_PLAN.md). Its entry gate, the P0 release, passed on 2026-11-07; its ten decisions P9-1 to P9-10 still need approval before coding.
 
 - Objective: improve structured metadata without sacrificing technical text/provenance.
 - FRs: FR-06 full, FR-07, FR-08, FR-09; filter extensions FR-12/13.
@@ -164,4 +164,4 @@ Detailed plan proposed 2026-11-04, not yet approved: [Phase 9 plan](PHASE_9_PLAN
 
 ## Recommended next action
 
-The P0 release gate needs two things before Phase 9 starts. First, the owner confirms the [2026-11-04 amendments](DECISIONS.md#p0-gate-amendments-2026-11-04): AC-12.1 as index fidelity, now met, and Claude as the AC-16.6 reviewer, which rated 8 of 10 answers supported in the [Phase 7 answer report](../reports/evaluation/answers_d724f334f9f0409884db95613c61663e.md). A human rating can replace it with `eval --record-review`. Second, Q-07, Q-12 and Q-13 are approved or amended, which changes only their recorded policy IDs. Cold-start timeouts are settled in [Phase 8](PHASE_8_STATUS.md#cold-start). Do not treat DDIA as part of the public reference or silently count it toward the approximate 3,000-chunk target. Performance gates, including NFR-02, are measured in Phase 11.
+The P0 release gate passed on 2026-11-07 ([approvals](DECISIONS.md#p0-approvals-2026-11-07)). Next, approve or amend decisions P9-1 to P9-10 in the [Phase 9 plan](PHASE_9_PLAN.md), then start with its dependency gate. Cold-start timeouts are settled in [Phase 8](PHASE_8_STATUS.md#cold-start). Do not treat DDIA as part of the public reference or silently count it toward the approximate 3,000-chunk target. Performance gates, including NFR-02, are measured in Phase 11.

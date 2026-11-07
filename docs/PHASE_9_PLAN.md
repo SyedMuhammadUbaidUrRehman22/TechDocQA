@@ -4,15 +4,9 @@ Status: **proposed 2026-11-04, not approved.** Nothing in this plan is implement
 
 ## Entry gate
 
-The roadmap puts Phase 9 after the P0 release gate, and that gate is blocked:
+The roadmap puts Phase 9 after the P0 release gate. That gate passed on 2026-11-07: AC-16.6 was rated 8 of 10 by the designated reviewer, AC-12.1 is met as amended, and Q-07, Q-12 and Q-13 are approved ([approvals](DECISIONS.md#p0-approvals-2026-11-07)).
 
-| Blocker | What clears it |
-|---|---|
-| AC-16.6 | Rated 8 of 10 supported on 2026-11-04 by Claude as the designated reviewer. Confirm that designation, or rate the sheet yourself and record it with `eval --record-review`. |
-| AC-12.1 | Amended on 2026-11-04 to index recall@3 against exact search, at least 0.99; measured 1.0 on 143 queries on 2026-11-07. Confirm the amendment. |
-| Q-07, Q-12, Q-13 | Approve or amend; this changes recorded policy IDs, not code. |
-
-**Recommendation:** confirm the two amendments and Q-07, Q-12 and Q-13, then start Phase 9. Until then, P0 stays marked unreleased. Phase 9 must not change retrieval or answers. Each run proves that: `eval` gives the same `results_fingerprint` before and after enrichment, so the Phase 8 calibration stays valid.
+Phase 9 must not change retrieval or answers. Each run proves that: `eval` gives the same `results_fingerprint` before and after enrichment, so the Phase 8 calibration stays valid. The baseline is run `eval_50d06f55b10541ccbccc0ef6d77abb9d` under metric policy `q13-v1`.
 
 ## What already exists
 
@@ -120,4 +114,4 @@ These are rough estimates for the human work that cannot be delegated:
 
 ## Out of scope
 
-Hybrid fusion, reranking, entity or keyphrase boosting, LLM-based extraction and the full benchmark belong to Phase 10. AC-12.1 and the P0 release decision stay with the entry gate.
+Hybrid fusion, reranking, entity or keyphrase boosting, LLM-based extraction and the full benchmark belong to Phase 10. The P0 release decision belonged to the entry gate, which has passed.

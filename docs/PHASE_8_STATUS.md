@@ -2,7 +2,7 @@
 
 Implementation and evidence checkpoint 2026-11-04 on Windows, Python 3.13.3, local Ollama 0.40.13 with `qwen3:1.7b` and `nomic-embed-text:latest`. Phase 8 adds the FR-18 sufficiency gate: each retrieval mode has its own 0-1 relevance scale and its own thresholds, calibrated on the reviewed smoke benchmark. When the chunks kept for the prompt are not relevant enough, `ask` refuses without calling the model. Phase 8 also adds a real-model refusal check, a real-model CLI smoke script, and a reconciliation of every P0 acceptance criterion.
 
-**Result:** FR-18 is met. On all 30 smoke questions with the real model, each mode refused 10 of 10 out-of-domain questions and answered 19 of 20 answerable ones, against targets of 90% and 85%. No gate refusal made a model call. AC-18.3 to AC-18.5 and AC-21.1 are met in tests, and AC-21.1 and AC-22.3 are also met through the CLI script with the real models. **P0 is not released.** Q-07, Q-12 and Q-13 are implemented as proposed but not formally approved. AC-16.6 and AC-12.1, open at this checkpoint, were settled by the [gate update of 2026-11-07](#gate-update-2026-11-07) under the owner's amendments of 2026-11-04, which still await confirmation. See [P0 reconciliation](#p0-acceptance-reconciliation).
+**Result:** FR-18 is met. On all 30 smoke questions with the real model, each mode refused 10 of 10 out-of-domain questions and answered 19 of 20 answerable ones, against targets of 90% and 85%. No gate refusal made a model call. AC-18.3 to AC-18.5 and AC-21.1 are met in tests, and AC-21.1 and AC-22.3 are also met through the CLI script with the real models. **The P0 release gate passed on 2026-11-07.** At this checkpoint, AC-16.6 and AC-12.1 were open and Q-07, Q-12 and Q-13 were unapproved. All were settled in the [gate update of 2026-11-07](#gate-update-2026-11-07). See [P0 reconciliation](#p0-acceptance-reconciliation).
 
 ## What was added
 
@@ -126,7 +126,7 @@ Every P0 acceptance criterion, with where its evidence is. "Tests" means the off
 | FR-23 | AC-23.1, AC-23.2, AC-23.4 | Met | Tests ([Phase 2](PHASE_2_STATUS.md), [Phase 7](PHASE_7_STATUS.md)). |
 | FR-23 | AC-23.3 | Met | Real model, as a mitigation check; see the rerun above. AC-23.5 is P2. |
 
-**P0 release decision: blocked.** AC-16.6 and AC-12.1 are settled only under the 2026-11-04 amendments, which the owner has yet to confirm. Release also needs approval or amendment of Q-07, Q-12 and Q-13, which change policy IDs rather than code. The NFRs, including NFR-02's vector-search latency (p95 1.377 s against 1 s in Phase 5), are measured formally in Phase 11.
+**P0 release decision: passed on 2026-11-07.** The owner confirmed the 2026-11-04 amendments to AC-12.1 and AC-16.6 and approved Q-07, Q-12 and Q-13 ([approvals](DECISIONS.md#p0-approvals-2026-11-07)). Two limits remain on record: AC-16.6 was rated by an AI reviewer, not the human reviewer its text names, and the criteria marked "in tests only" were not run on the real registry. The NFRs, including NFR-02's vector-search latency (p95 1.377 s against 1 s in Phase 5), are measured formally in Phase 11.
 
 ## Gate update (2026-11-07)
 
@@ -148,10 +148,11 @@ Both changes are recorded in [decisions](DECISIONS.md#p0-gate-amendments-2026-11
 
 The sample is 143 rather than Phase 5's 152 because the corrected sampler no longer ends a sentence at a dotted name. As written, AC-12.1 would be 112 of 143 (78.3%). BM25 found every sentence's chunk, which supports the P1 hybrid plan. Warm vector search in this run had p95 3.564 s and max 21.762 s, against 1.377 s in Phase 5, with BM25 at 0.157 s. The run followed a long stall in which Ollama stopped answering, so this timing is not a clean measurement; NFR-02 is measured in Phase 11.
 
+**Approvals.** On 2026-11-07 the owner confirmed both amendments and approved Q-07, Q-12 and Q-13. The metric policy ID became `q13-v1`; the Q-07 IDs and thresholds are unchanged. The first evaluation under the approved policy, [`eval_50d06f55b10541ccbccc0ef6d77abb9d`](../reports/evaluation/eval_50d06f55b10541ccbccc0ef6d77abb9d.md) (40.8 s), repeated the calibration run's metrics in both modes: BM25 Recall@5 0.925 and MRR 0.708, vector Recall@5 0.925 and MRR 0.783. Its active thresholds answered 20 of 20 and refused 10 of 10 in each mode, and no label was flagged. Its results fingerprint `48ce89dc...a3af410` differs from the calibration run's only through the policy ID.
+
 ## Open items
 
-- **Confirm the 2026-11-04 amendments.** AC-12.1 as index fidelity, and Claude as the AC-16.6 reviewer. For a human rating instead, a person fills in `data/evaluation/answers_d724f334f9f0409884db95613c61663e_review.md` and runs `eval --record-review`, which replaces the recorded ratings.
-- **Q-07, Q-12, Q-13 approval.** Each is implemented as proposed; an approval or amendment changes its policy ID.
+- **Optional human rating for AC-16.6.** A person can fill in `data/evaluation/answers_d724f334f9f0409884db95613c61663e_review.md` and run `eval --record-review`, which replaces the recorded ratings.
 - **Recalibration.** The thresholds belong to this corpus, models and BM25 settings. A new embedding model or BM25 setting makes them stale, which `ask` and `config-check` report. Corpus changes do not, so rerun `eval` after material corpus changes.
 
 ## Limits

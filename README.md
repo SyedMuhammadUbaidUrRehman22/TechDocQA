@@ -5,7 +5,7 @@ TechDocQA is a domain-specific RAG project for answering software and data engin
 
 Phases 1-8 are implemented. You can ingest local files and approved web pages, normalize and chunk them, build a local index, search it by BM25 or vector similarity, ask questions with `ask`, withdraw or delete documents, and measure retrieval and refusal with `eval`.
 
-`ask` now refuses a question when no retrieved chunk meets a relevance threshold calibrated on the smoke benchmark, and it makes no model call when it does. On all 30 smoke questions in vector mode, it refused 10 of 10 out-of-domain questions and answered 19 of 20 answerable ones, against targets of 90% and 85%. **P0 is not released yet.** 8 of 10 answers were rated supported by their citations (AC-16.6), by Claude as the reviewer the project owner designated, where the requirement asks for a person. AC-12.1 is met as amended on 2026-11-04. Both changes, and Q-07, Q-12 and Q-13, await the owner's confirmation. See the [Phase 8 report](docs/PHASE_8_STATUS.md#gate-update-2026-11-07).
+`ask` now refuses a question when no retrieved chunk meets a relevance threshold calibrated on the smoke benchmark, and it makes no model call when it does. On all 30 smoke questions in vector mode, it refused 10 of 10 out-of-domain questions and answered 19 of 20 answerable ones, against targets of 90% and 85%. **The P0 release gate passed on 2026-11-07.** 8 of 10 answers were rated supported by their citations (AC-16.6), by Claude as the reviewer the project owner designated, where the requirement asks for a person. AC-12.1 is met as amended. The owner approved both changes and Q-07, Q-12 and Q-13. See the [Phase 8 report](docs/PHASE_8_STATUS.md#gate-update-2026-11-07).
 
 On the 30-question smoke benchmark, BM25 reaches Recall@5 0.925 and MRR 0.708, and vector search reaches Recall@5 0.925 and MRR 0.783. A run takes 35 to 63 s and repeats exactly. The questions were reviewed and accepted by the project owner on 2026-11-03. See the [Phase 6 report](docs/PHASE_6_STATUS.md).
 
@@ -68,7 +68,7 @@ stateDiagram-v2
 | 5 | [Search and document lifecycle](docs/PHASE_5_STATUS.md) | ✅ Built, 2 targets open |
 | 6 | [Smoke benchmark and retrieval metrics](docs/PHASE_6_STATUS.md) | ✅ Done, benchmark reviewed |
 | 7 | [Answers and citations](docs/PHASE_7_STATUS.md) | ✅ Built, human answer review open |
-| 8 | [Calibrated refusal and P0 release gate](docs/PHASE_8_STATUS.md) | ✅ Built, P0 release blocked by 2 open criteria |
+| 8 | [Calibrated refusal and P0 release gate](docs/PHASE_8_STATUS.md) | ✅ Built, P0 release gate passed 2026-11-07 |
 | 9-10 | NLP enrichment, hybrid search, reranking | ⬜ Planned |
 | 11-12 | Operational verification, optional extras | ⬜ Planned |
 
@@ -327,4 +327,4 @@ The source filename says v2, but its contents identify **Revision 3**; those con
 - [Local development setup](deployment/local_setup.md)
 - [Corpus preparation](datasets/README.md)
 
-The reference corpus is frozen as `techdocqa-reference-2026-10-24-v2` and the local models are selected. The smoke benchmark is reviewed, and Phases 7 and 8 answering and calibrated refusal are built. P0 release waits for the owner to confirm the 2026-11-04 changes to AC-16.6 and AC-12.1, and to approve Q-07, Q-12 and Q-13. Hardware and budget remain open.
+The reference corpus is frozen as `techdocqa-reference-2026-10-24-v2` and the local models are selected. The smoke benchmark is reviewed, and Phases 7 and 8 answering and calibrated refusal are built. The P0 release gate passed on 2026-11-07, and Phase 9 (P1 NLP enrichment) is next once its plan is approved. Hardware and budget remain open.

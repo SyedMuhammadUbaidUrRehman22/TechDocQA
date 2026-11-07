@@ -1,15 +1,23 @@
 # TechDocQA architectural decisions
 
+## P0 approvals (2026-11-07)
+
+The project owner approved the following on 2026-11-07. With these, every P0 release condition in the [Phase 8 reconciliation](PHASE_8_STATUS.md#p0-acceptance-reconciliation) is settled.
+
+- **Both 2026-11-04 amendments confirmed:** AC-12.1 as index fidelity and Claude as the AC-16.6 reviewer, as described below.
+- **Q-07 approved as implemented.** The policy IDs `cosine-distance-half-v1`, `bm25-query-max-v1` and `balanced-accuracy-midpoint-v1` name the policies themselves and carry no "proposed" marker, so they are kept. Changing them would change every `scoring_config_id` and make the adopted thresholds stale with no change in behavior. The thresholds of calibration run `eval_c4ab1f1397fa469489137f611b74cdf7` stay in force.
+- **Q-12 and Q-13 approved as implemented.** The metric policy ID changes from `q13-proposed-v1` to `q13-v1`. It enters `results_fingerprint` but no scoring or configuration ID. The first run under it, `eval_50d06f55b10541ccbccc0ef6d77abb9d`, gave metrics identical to the calibration run, with 20 of 20 answerable passed and 10 of 10 unanswerable refused by the active thresholds in each mode. Its fingerprint, `48ce89dc...a3af410`, is the new baseline for comparisons, including Phase 9's before-and-after check.
+
 ## P0 gate amendments (2026-11-04)
 
-The project owner made two changes to the P0 release gate after the Phase 8 report. The source requirement text is unchanged; these entries record how the two criteria are judged.
+The project owner made two changes to the P0 release gate after the Phase 8 report, and confirmed them on 2026-11-07. The source requirement text is unchanged; these entries record how the two criteria are judged.
 
 - **AC-12.1 amended.** As written, AC-12.1 asks that a query built from one sentence of a chunk returns that chunk in the top 3. On the real corpus that is 124 of 152 for the Chroma index and also 124 for exact cosine search over the same vectors. So the figure measures how well one sentence resembles a much longer chunk under the embedding model, not the index. As amended, AC-12.1 is index fidelity: **recall@3 of the vector index against exact search over the stored vectors, at least 0.99**, averaged over the same sentence sample. This is the usual measure for an approximate index. `datasets/verify_index.py --live` checks it. It still reports the sentence-to-chunk hits for the index, exact search, exact search on public documents only and BM25, as diagnostics. Retrieval quality stays gated by the reviewed benchmark (FR-19). The sampler was also corrected: a sampled sentence must end at whitespace or the end of the text, so a dotted name such as `enable.idempotence` no longer ends a sentence at its first dot.
 - **AC-16.6 reviewer.** The owner designated Claude Opus 5.5 (AI assistant) as the reviewer for the 10 answers. **AC-16.6 as written asks for a human reviewer, so this is a deviation from the source text**, and the reviewer's name, including "AI assistant", is recorded in the report. `eval --record-review SHEET --reviewer NAME` reads the Supported and notes cells of a filled review sheet and writes them into its JSON and Markdown report. It touches no registry, index or model. A cell must be `yes`, `partly`, `no` or empty. AC-16.6 is judged only when every answer is rated, and needs at least 80% `yes`. A person can rate again and record over it; the last record wins.
 
 ## Phase 8 contracts (2026-11-04)
 
-These rules implement FR-18 and the FR-21 QA slice, and resolve Q-07 for the two P0 modes **as proposed**. Q-07 has not been formally approved, so its policy IDs below are recorded in every score, threshold and report, and an approval or amendment changes them. Evidence is in [Phase 8](PHASE_8_STATUS.md).
+These rules implement FR-18 and the FR-21 QA slice, and resolve Q-07 for the two P0 modes. Q-07 was approved as implemented on 2026-11-07, with its policy IDs unchanged ([approvals](#p0-approvals-2026-11-07)); they are recorded in every score, threshold and report, and a later amendment changes them. Evidence is in [Phase 8](PHASE_8_STATUS.md).
 
 - **Q-07 score scales.** Each mode has its own 0-1 relevance, returned as `relevance` on every search result; raw scores stay in `scores`. Vector relevance is the FR-12 score, `(cosine + 1) / 2` (`cosine-distance-half-v1`). BM25 relevance is the raw score divided by the most that query could score, `(k1 + 1)` times the sum of its tokens' IDF, with a token the corpus lacks counted at the IDF of an unseen term, `log((N + 0.5) / 0.5)` (`bm25-query-max-v1`). The divisor is fixed per query, so the BM25 ranking is unchanged. Counting absent words is what keeps a question about Terraform from looking relevant on its few common words. A tiny corpus can give negative IDFs, so the value is clamped to 0-1. Hybrid and reranker scales are not defined; they are P1 and need their own calibration.
 - **Thresholds per mode.** `[retrieval.sufficiency.bm25]` and `[retrieval.sufficiency.vector]` each hold `min_top_score`, `min_chunk_score`, `min_supporting_chunks`, `calibration_run_id` and `scoring_config_id`. The scoring ID hashes what fixes a relevance value: the mode plus the embedding profile and score policy, or `k1`, `b`, the tokenizer and the BM25 relevance policy. Thresholds apply only while it matches the active configuration. A mismatch gives the warning `SUFFICIENCY_CALIBRATION_STALE`, and a missing section gives `SUFFICIENCY_NOT_CALIBRATED`. Either way the mode answers ungated and says so, and no mode ever uses another mode's thresholds. Top-k and candidate depth are not part of the scale.
@@ -39,7 +47,7 @@ These rules implement FR-16, FR-17 and the FR-23 prompt slice, and resolve the Q
 
 ## Phase 6 contracts (2026-11-03)
 
-These rules implement the Q-12 and Q-13 proposals as written. **Neither has been formally approved**, so each run records the policy ID `q13-proposed-v1`, and a later approval or amendment changes that ID. Evidence is in [Phase 6](PHASE_6_STATUS.md).
+These rules implement the Q-12 and Q-13 proposals as written. Both were approved on 2026-11-07, and each run since then records the policy ID `q13-v1`; earlier runs recorded `q13-proposed-v1` ([approvals](#p0-approvals-2026-11-07)). A later amendment changes the ID. Evidence is in [Phase 6](PHASE_6_STATUS.md).
 
 - **Q-12.** The smoke set is exactly 20 answerable and 10 unanswerable questions. Every report checks this, along with DS-06's 30 to 50 questions and FR-19's minimum of 10 unanswerable.
 - **Q-13 labels.** A relevant item is a manifest `source_key` plus a verbatim `anchor` or a `section` heading path, graded 0, 1 or 2. Anchors match case-insensitively with whitespace collapsed, against the current chunks of the active version, on every run. Grades 1 and 2 count as relevant in P0. Grade 0 never counts.

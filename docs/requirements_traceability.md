@@ -2,7 +2,7 @@
 
 ## P0 gate update
 
-2026-11-07: `tests/test_generation.py` covers `eval --record-review`: copying ratings and notes into the report, partial and complete reviews, AC-16.6's 8-of-10 boundary, and invalid sheets, ratings and reviewer names. AC-16.6 is recorded at 8 of 10 by an AI reviewer the owner designated, a deviation from "a human reviewer". `datasets/verify_index.py --live` meets AC-12.1 as amended on 2026-11-04, with index recall@3 against exact search at 1.0 on 143 queries. Both amendments are in [decisions](DECISIONS.md#p0-gate-amendments-2026-11-04). Original source AC text below is unchanged.
+2026-11-07: `tests/test_generation.py` covers `eval --record-review`: copying ratings and notes into the report, partial and complete reviews, AC-16.6's 8-of-10 boundary, and invalid sheets, ratings and reviewer names. AC-16.6 is recorded at 8 of 10 by an AI reviewer the owner designated, a deviation from "a human reviewer". `datasets/verify_index.py --live` meets AC-12.1 as amended on 2026-11-04, with index recall@3 against exact search at 1.0 on 143 queries. Both amendments are in [decisions](DECISIONS.md#p0-gate-amendments-2026-11-04). The owner confirmed them and approved Q-07, Q-12 and Q-13, so the P0 release gate passed ([approvals](DECISIONS.md#p0-approvals-2026-11-07)). Original source AC text below is unchanged.
 
 ## Implemented acceptance slices - Phase 8
 

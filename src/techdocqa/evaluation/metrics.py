@@ -1,11 +1,11 @@
-"""P0 retrieval metrics over labeled items, not chunks (SDD section 13, proposed Q-13 policy).
+"""P0 retrieval metrics over labeled items, not chunks (SDD section 13, Q-13 policy approved 2026-11-07).
 
 Each retrieved chunk maps to the set of labeled items it matches. An item found twice counts once, so a
 long passage split over two chunks is not rewarded twice. Precision@K and nDCG@K are P1.
 """
 
 K_VALUES = (1, 3, 5)
-METRIC_POLICY = "q13-proposed-v1"
+METRIC_POLICY = "q13-v1"
 
 
 def recall_at_k(matches: list[set[str]], relevant: set[str], k: int) -> float:
