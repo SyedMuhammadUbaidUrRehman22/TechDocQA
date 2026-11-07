@@ -300,7 +300,7 @@ def test_repeat_snapshot_and_changed_bytes_preserve_history(online_settings, reg
     assert [event["decision"] for event in history["events"]] == ["REGISTERED", "DUPLICATE_SKIPPED", "CHANGED_BYTES_REGISTERED"]
     with Registry(registry.path) as reopened:
         assert reopened.get_run(repeat.run.run_id).outcomes[0].online.retrieval_id == two.online.retrieval_id
-        assert reopened.execute("PRAGMA user_version").fetchone()[0] == 2
+        assert reopened.execute("PRAGMA user_version").fetchone()[0] == 3
     manifest = json.loads((Path(online_settings.data_directory) / changed.manifest_path).read_text())
     assert len(manifest["documents"]) == 2 and len(manifest["retrievals"]) == 3
 

@@ -17,7 +17,7 @@ from techdocqa.schemas import (
 )
 
 APPLICATION_ID = 0x54445141
-SCHEMA_VERSION = 2
+SCHEMA_VERSION = 3
 SCHEMA = """
 CREATE TABLE documents (
     document_id TEXT PRIMARY KEY,
@@ -129,7 +129,73 @@ CREATE TABLE verified_entities (
 );
 CREATE INDEX verified_entities_entity ON verified_entities(entity);
 """
-RUN_STARTED = {"normalization": "PROCESSING_RUN_STARTED", "chunking": "CHUNKING_RUN_STARTED", "indexing": "INDEXING_RUN_STARTED"}
+# Additive (Phase 9, P9-8): enrichment rows carry the chunk identity they were derived from, so a re-chunk or a
+# configuration change makes them stale instead of silently reused.
+SCHEMA_V3 = """
+CREATE TABLE enrichments (
+    version_id TEXT PRIMARY KEY REFERENCES registrations(version_id),
+    chunking_config_id TEXT NOT NULL,
+    snapshot_hash TEXT NOT NULL,
+    enrichment_config_id TEXT NOT NULL,
+    entity_config_id TEXT NOT NULL,
+    keyphrase_config_id TEXT NOT NULL,
+    classifier_config_id TEXT NOT NULL,
+    entity_count INTEGER NOT NULL CHECK(entity_count >= 0),
+    verified_count INTEGER NOT NULL CHECK(verified_count >= 0),
+    keyphrase_status TEXT NOT NULL CHECK(keyphrase_status IN ('extracted','unavailable')),
+    classification_status TEXT NOT NULL CHECK(classification_status IN (
+        'classified','unclassified','not_calibrated','not_embedded','not_configured')),
+    run_id TEXT REFERENCES runs(run_id),
+    updated_at TEXT NOT NULL
+);
+CREATE TABLE entities (
+    entity_id INTEGER PRIMARY KEY,
+    version_id TEXT NOT NULL REFERENCES registrations(version_id),
+    document_id TEXT NOT NULL REFERENCES documents(document_id),
+    chunk_id TEXT NOT NULL,
+    text TEXT NOT NULL,
+    canonical TEXT NOT NULL,
+    entity_key TEXT NOT NULL,
+    type TEXT NOT NULL CHECK(type IN ('TECHNOLOGY','COMPONENT','CONCEPT','PROTOCOL','IDENTIFIER')),
+    source TEXT NOT NULL CHECK(source IN ('rule','model')),
+    rule_id TEXT NOT NULL,
+    confidence REAL NOT NULL CHECK(confidence >= 0 AND confidence <= 1),
+    verified INTEGER NOT NULL CHECK(verified IN (0,1)),
+    chunk_start INTEGER NOT NULL CHECK(chunk_start >= 0),
+    chunk_end INTEGER NOT NULL CHECK(chunk_end > chunk_start),
+    document_index INTEGER NOT NULL CHECK(document_index >= 0),
+    document_start INTEGER NOT NULL CHECK(document_start >= 0),
+    document_end INTEGER NOT NULL CHECK(document_end > document_start)
+);
+CREATE INDEX entities_version ON entities(version_id);
+CREATE INDEX entities_chunk ON entities(chunk_id);
+CREATE TABLE keyphrases (
+    version_id TEXT NOT NULL REFERENCES registrations(version_id),
+    scope TEXT NOT NULL,
+    rank INTEGER NOT NULL CHECK(rank > 0),
+    phrase TEXT NOT NULL,
+    score REAL NOT NULL,
+    PRIMARY KEY(version_id, scope, rank)
+);
+CREATE TABLE document_categories (
+    version_id TEXT NOT NULL REFERENCES registrations(version_id),
+    rank INTEGER NOT NULL CHECK(rank BETWEEN 1 AND 3),
+    category TEXT NOT NULL,
+    confidence REAL NOT NULL CHECK(confidence >= -1 AND confidence <= 1),
+    assigned INTEGER NOT NULL CHECK(assigned IN (0,1)),
+    source TEXT NOT NULL CHECK(source IN ('embedding')),
+    PRIMARY KEY(version_id, rank)
+);
+CREATE TABLE category_embeddings (
+    key TEXT PRIMARY KEY,
+    profile_id TEXT NOT NULL REFERENCES embedding_profiles(profile_id),
+    vector BLOB NOT NULL,
+    created_at TEXT NOT NULL
+);
+"""
+ENRICHMENT_TABLES = ("entities", "keyphrases", "document_categories", "verified_entities", "enrichments")
+RUN_STARTED = {"normalization": "PROCESSING_RUN_STARTED", "chunking": "CHUNKING_RUN_STARTED", "indexing": "INDEXING_RUN_STARTED",
+               "enrichment": "ENRICHMENT_RUN_STARTED"}
 # A version eligible for retrieval; indexing state is checked separately per retriever.
 ELIGIBLE = "r.finalized=1 AND r.is_active=1 AND r.duplicate_of IS NULL"
 SQL_BATCH = 400
@@ -163,22 +229,26 @@ class Registry:
     def __init__(self, path: Path, *, timeout: float = 5):
         self.path = Path(path)
         self.connection = None
+        self.backup_path = None
         try:
             self.path.parent.mkdir(parents=True, exist_ok=True)
             self.connection = sqlite3.connect(self.path, timeout=timeout, isolation_level=None)
             self.connection.row_factory = sqlite3.Row
             self.connection.execute("PRAGMA foreign_keys=ON")
+            upgrades = {1: SCHEMA_V2 + SCHEMA_V3, 2: SCHEMA_V3}
             with self.transaction():
-                version = self.execute("PRAGMA user_version").fetchone()[0]
-                app_id = self.execute("PRAGMA application_id").fetchone()[0]
+                version, app_id = self.version_state()
                 if version == 0 and app_id == 0:
                     if self.execute("SELECT name FROM sqlite_master WHERE name NOT LIKE 'sqlite_%'").fetchone():
                         raise TechDocQAError("REGISTRY_SCHEMA_MISMATCH", "Registry schema is not recognized.", stage="registry")
-                    self.apply_schema(SCHEMA + SCHEMA_V2)
+                    self.apply_schema(SCHEMA + SCHEMA_V2 + SCHEMA_V3)
                     self.execute(f"PRAGMA application_id={APPLICATION_ID}")
                     self.execute(f"PRAGMA user_version={SCHEMA_VERSION}")
-                elif version == 1 and app_id == APPLICATION_ID:
-                    self.apply_schema(SCHEMA_V2)
+                elif version in upgrades and app_id == APPLICATION_ID:
+                    # The write lock is held from before the copy until the migration commits, so the backup is exactly
+                    # what is migrated, and a concurrent opener waits, then finds the registry already upgraded.
+                    self.backup_before_upgrade(version)
+                    self.apply_schema(upgrades[version])
                     self.execute(f"PRAGMA user_version={SCHEMA_VERSION}")
                 elif version != SCHEMA_VERSION or app_id != APPLICATION_ID:
                     raise TechDocQAError("REGISTRY_SCHEMA_MISMATCH", "Registry schema version is unsupported.", stage="registry")
@@ -190,6 +260,49 @@ class Registry:
         except Exception:
             self.close()
             raise
+
+    def version_state(self) -> tuple[int, int]:
+        return (self.execute("PRAGMA user_version").fetchone()[0], self.execute("PRAGMA application_id").fetchone()[0])
+
+    def backup_before_upgrade(self, version: int):
+        """Copy through SQLite's backup API, then reopen the copy: integrity and every table's row count must match.
+
+        Runs inside the migration's BEGIN IMMEDIATE transaction, so nothing can commit between the copy and the upgrade.
+        The file is created exclusively, so this process only ever writes, or removes, a backup it made itself.
+        """
+        tables = [row[0] for row in self.execute("SELECT name FROM sqlite_master WHERE type='table' ORDER BY name").fetchall()]
+        copy = target = None
+        try:
+            for number in range(1000):
+                suffix = f".pre-v{SCHEMA_VERSION}.bak" if number == 0 else f".pre-v{SCHEMA_VERSION}.{number}.bak"
+                candidate = self.path.with_name(self.path.name + suffix)
+                try:
+                    candidate.open("xb").close()
+                except FileExistsError:
+                    continue
+                target = candidate
+                break
+            if target is None:
+                raise ValueError
+            copy = sqlite3.connect(target)
+            self.connection.backup(copy)
+            live = {name: self.execute(f'SELECT COUNT(*) FROM "{name}"').fetchone()[0] for name in tables}
+            copied = {name: copy.execute(f'SELECT COUNT(*) FROM "{name}"').fetchone()[0] for name in tables}
+            if (copy.execute("PRAGMA integrity_check").fetchone()[0] != "ok" or copied != live
+                    or copy.execute("PRAGMA user_version").fetchone()[0] != version):
+                raise ValueError
+        except (sqlite3.Error, OSError, ValueError):
+            if copy is not None:
+                copy.close()
+                copy = None
+            if target is not None:
+                target.unlink(missing_ok=True)
+            raise TechDocQAError("REGISTRY_BACKUP_FAILED", "The registry could not be backed up before its upgrade; nothing was changed.",
+                                 stage="registry") from None
+        finally:
+            if copy is not None:
+                copy.close()
+        self.backup_path = target
 
     def apply_schema(self, schema: str):
         for statement in schema.split(";"):
@@ -538,9 +651,139 @@ class Registry:
         row = self.execute("SELECT version_id FROM registrations WHERE document_id=? AND is_active=1", (document_id,)).fetchone()
         return row[0] if row else None
 
-    def entity_chunks(self, entity: str) -> set[str]:
-        rows = self.execute("SELECT chunk_id FROM verified_entities WHERE entity=?", (entity.casefold(),)).fetchall()
+    def entity_chunks(self, entity: str, entity_config_id: str) -> set[str]:
+        """Verified memberships only where the rows match both the version's current chunk artifact and the active
+        entity configuration, so stale rows never filter results (P9-8)."""
+        rows = self.execute("""SELECT v.chunk_id FROM verified_entities v JOIN enrichments e USING(version_id)
+                               JOIN registrations r USING(version_id)
+                               WHERE v.entity=? AND e.entity_config_id=?
+                               AND json_extract(r.metadata_json,'$.chunking.snapshot_hash')=e.snapshot_hash
+                               AND json_extract(r.metadata_json,'$.chunking.chunking_config_id')=e.chunking_config_id""",
+                            (entity.casefold(), entity_config_id)).fetchall()
         return {row[0] for row in rows}
+
+    # Enrichment (Phase 9)
+
+    def enrichment_state(self, version_id: str):
+        row = self.execute("SELECT * FROM enrichments WHERE version_id=?", (version_id,)).fetchone()
+        return dict(row) if row else None
+
+    def begin_enrichment(self, version_id: str, attempt_id: str) -> DocumentRecord:
+        with self.transaction():
+            self.pending_attempt(attempt_id)
+            record = self.get_version(version_id)
+            if not record.finalized or not record.is_active or record.duplicate_of or not record.chunking:
+                raise TechDocQAError("INVALID_STATE", "Enrichment requires an active chunked nonduplicate version.",
+                                     stage="enrichment", document_id=record.document_id)
+            self.execute("UPDATE attempts SET document_id=?,version_id=? WHERE attempt_id=?", (record.document_id, version_id, attempt_id))
+        return record
+
+    def save_enrichment(self, version_id: str, attempt_id: str, state: dict, *, entities=(), verified=(), keyphrases=(),
+                        categories=(), skipped: bool = False):
+        """One transaction per document: old rows go and new rows arrive together, or nothing changes (P9-8)."""
+        with self.transaction():
+            attempt = self.pending_attempt(attempt_id)
+            record = self.get_version(version_id)
+            if (attempt["version_id"] != version_id or not record.finalized or not record.is_active or record.duplicate_of
+                    or not record.chunking or record.chunking.snapshot_hash != state["snapshot_hash"]
+                    or record.chunking.chunking_config_id != state["chunking_config_id"]):
+                raise TechDocQAError("INVALID_STATE", "The version changed during enrichment; rerun enrich.", stage="enrichment",
+                                     document_id=record.document_id, retryable=True)
+            if not skipped:
+                for table in ENRICHMENT_TABLES:
+                    self.execute(f"DELETE FROM {table} WHERE version_id=?", (version_id,))
+                for row in entities:
+                    self.execute("""INSERT INTO entities(version_id,document_id,chunk_id,text,canonical,entity_key,type,source,rule_id,
+                                    confidence,verified,chunk_start,chunk_end,document_index,document_start,document_end)
+                                    VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+                                 (version_id, record.document_id, row["chunk_id"], row["text"], row["canonical"], row["entity_key"],
+                                  row["type"], row["source"], row["rule_id"], row["confidence"], int(row["verified"]),
+                                  row["chunk_start"], row["chunk_end"], row["document_index"], row["document_start"], row["document_end"]))
+                for chunk_id, key in sorted(set(verified)):
+                    self.execute("INSERT INTO verified_entities(chunk_id,version_id,entity) VALUES (?,?,?)", (chunk_id, version_id, key))
+                for scope, rank, phrase, score in keyphrases:
+                    self.execute("INSERT INTO keyphrases(version_id,scope,rank,phrase,score) VALUES (?,?,?,?,?)",
+                                 (version_id, scope, rank, phrase, score))
+                for row in categories:
+                    self.execute("INSERT INTO document_categories(version_id,rank,category,confidence,assigned,source) VALUES (?,?,?,?,?,?)",
+                                 (version_id, row["rank"], row["category"], row["confidence"], int(row["assigned"]), "embedding"))
+                self.execute("""INSERT INTO enrichments(version_id,chunking_config_id,snapshot_hash,enrichment_config_id,entity_config_id,
+                                keyphrase_config_id,classifier_config_id,entity_count,verified_count,keyphrase_status,classification_status,
+                                run_id,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+                             (version_id, state["chunking_config_id"], state["snapshot_hash"], state["enrichment_config_id"],
+                              state["entity_config_id"], state["keyphrase_config_id"], state["classifier_config_id"], len(entities),
+                              sum(1 for row in entities if row["verified"]), state["keyphrase_status"], state["classification_status"],
+                              attempt["run_id"], utc_now()))
+            result = RegistrationResult(document_id=record.document_id, version_id=version_id, status=record.status,
+                                        deduplicated=skipped, run_id=attempt["run_id"], finalized=True, is_active=True)
+            self.execute("UPDATE attempts SET status=?,result_json=? WHERE attempt_id=?",
+                         ("skipped" if skipped else "processed", result.model_dump_json(), attempt_id))
+            current = self.enrichment_state(version_id)
+            self.event(run_id=attempt["run_id"], attempt_id=attempt_id, document_id=record.document_id, version_id=version_id,
+                       decision="ENRICHMENT_SKIPPED" if skipped else "ENRICHMENT_SAVED", stage="enrichment",
+                       reason=(f"Enrichment {current['enrichment_config_id']} already current." if skipped else
+                               f"{current['entity_count']} entities ({current['verified_count']} verified), keyphrases "
+                               f"{current['keyphrase_status']}, classification {current['classification_status']}."))
+
+    def category_vector(self, key: str) -> bytes | None:
+        row = self.execute("SELECT vector FROM category_embeddings WHERE key=?", (key,)).fetchone()
+        return row[0] if row else None
+
+    def save_category_vector(self, key: str, profile_id: str, vector: bytes):
+        with self.transaction():
+            self.execute("INSERT OR IGNORE INTO category_embeddings(key,profile_id,vector,created_at) VALUES (?,?,?,?)",
+                         (key, profile_id, vector, utc_now()))
+
+    def chunk_vectors(self, version_id: str, profile_id: str, chunking_config_id: str) -> list[bytes] | None:
+        """One stored vector per current chunk occurrence, or None while any chunk lacks one.
+
+        A chunk with no row at all (an index run interrupted between batches) counts as missing: the row count must equal
+        the chunk artifact's chunk_count.
+        """
+        record = self.get_version(version_id)
+        if not record.chunking or record.chunking.chunking_config_id != chunking_config_id:
+            return None
+        rows = self.execute("""SELECT c.status,e.vector FROM chunk_embeddings c LEFT JOIN embeddings e USING(chunk_key)
+                               WHERE c.version_id=? AND c.profile_id=? AND c.chunking_config_id=? ORDER BY c.chunk_id""",
+                            (version_id, profile_id, chunking_config_id)).fetchall()
+        if len(rows) != record.chunking.chunk_count or any(row[0] != "embedded" or row[1] is None for row in rows):
+            return None
+        return [row[1] for row in rows]
+
+    def version_entities(self, version_id: str, chunk_id: str | None = None) -> list[dict]:
+        rows = self.execute("""SELECT chunk_id,text,canonical,type,source,rule_id,confidence,verified,chunk_start,chunk_end,
+                               document_index,document_start,document_end FROM entities
+                               WHERE version_id=? AND (? IS NULL OR chunk_id=?) ORDER BY entity_id""",
+                            (version_id, chunk_id, chunk_id)).fetchall()
+        return [{**dict(row), "verified": bool(row["verified"])} for row in rows]
+
+    def version_keyphrases(self, version_id: str) -> dict[str, list[dict]]:
+        found = {}
+        for row in self.execute("SELECT scope,rank,phrase,score FROM keyphrases WHERE version_id=? ORDER BY scope,rank", (version_id,)).fetchall():
+            found.setdefault(row["scope"], []).append({"rank": row["rank"], "phrase": row["phrase"], "score": row["score"]})
+        return found
+
+    def version_categories(self, version_id: str) -> list[dict]:
+        rows = self.execute("SELECT rank,category,confidence,assigned,source FROM document_categories WHERE version_id=? ORDER BY rank",
+                            (version_id,)).fetchall()
+        return [{**dict(row), "assigned": bool(row["assigned"])} for row in rows]
+
+    def inferred_categories(self, classifier_config_id: str) -> dict[str, set[str]]:
+        """Assigned inferred categories per version, only where the rows match both the version's current chunk
+        artifact and the active classifier; 'unclassified' is a value of its own (P9-7)."""
+        rows = self.execute("""SELECT e.version_id,e.classification_status,c.category,c.assigned FROM enrichments e
+                               JOIN registrations r USING(version_id) LEFT JOIN document_categories c USING(version_id)
+                               WHERE e.classifier_config_id=?
+                               AND json_extract(r.metadata_json,'$.chunking.snapshot_hash')=e.snapshot_hash""",
+                            (classifier_config_id,)).fetchall()
+        found = {}
+        for row in rows:
+            values = found.setdefault(row["version_id"], set())
+            if row["classification_status"] == "unclassified":
+                values.add("unclassified")
+            elif row["assigned"]:
+                values.add(row["category"].casefold())
+        return found
 
     def deleted_document_ids(self) -> set[str]:
         """The anonymous audit event is all that names a deleted document; its reason starts with the ID."""
@@ -683,7 +926,8 @@ class Registry:
             self.get_document(document_id)
             versions = "SELECT version_id FROM registrations WHERE document_id=?"
             keys = [row[0] for row in self.execute(f"SELECT DISTINCT chunk_key FROM chunk_embeddings WHERE version_id IN ({versions})", (document_id,)).fetchall()]
-            self.execute(f"DELETE FROM verified_entities WHERE version_id IN ({versions})", (document_id,))
+            for table in ENRICHMENT_TABLES:
+                self.execute(f"DELETE FROM {table} WHERE version_id IN ({versions})", (document_id,))
             self.execute(f"DELETE FROM chunk_embeddings WHERE version_id IN ({versions})", (document_id,))
             for start in range(0, len(keys), SQL_BATCH):
                 batch = keys[start:start + SQL_BATCH]
@@ -752,7 +996,7 @@ class Registry:
                 error=ErrorDetail.model_validate_json(attempt["error_json"]) if attempt["error_json"] else None,
                 online=OnlineProvenance.model_validate(online_values) if online_values is not None else None,
             ))
-        processing = self.execute("SELECT stage FROM events WHERE run_id=? AND decision IN ('PROCESSING_RUN_STARTED','CHUNKING_RUN_STARTED','INDEXING_RUN_STARTED') LIMIT 1", (run_id,)).fetchone()
+        processing = self.execute("SELECT stage FROM events WHERE run_id=? AND decision IN ('PROCESSING_RUN_STARTED','CHUNKING_RUN_STARTED','INDEXING_RUN_STARTED','ENRICHMENT_RUN_STARTED') LIMIT 1", (run_id,)).fetchone()
         return BatchResult(run=RunSummary(**dict(row), stage=processing[0] if processing else "registration"), outcomes=outcomes)
 
     def document_record(self, row) -> DocumentRecord:

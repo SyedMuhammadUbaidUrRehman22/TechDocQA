@@ -112,6 +112,41 @@ class AnsweringSettings(StrictModel):
     query_log: bool = True
 
 
+class CategorySpec(StrictModel):
+    """One FR-09 category; its description is embedded once and frozen before any measurement (P9-6)."""
+    name: str = Field(min_length=1, max_length=100, pattern=r"^[A-Za-z][A-Za-z0-9 &/-]*$")
+    description: str = Field(min_length=10, max_length=1000)
+
+
+class EnrichmentSettings(StrictModel):
+    """FR-07 to FR-09 (Phase 9). Paths resolve against the configuration file's directory."""
+    gazetteer: str = Field(default="gazetteer.toml", min_length=1)
+    # Appendix A: below this, an entity is stored with verified=false and never filters (FR-07.3).
+    entity_verification_threshold: float = Field(default=0.5, gt=0, le=1)
+    keyphrases_per_document: int = Field(default=10, ge=1, le=50)
+    keyphrases_per_chunk: bool = False
+    # Fewer word tokens than this is "very short" text, which yields an empty list (FR-08.3).
+    keyphrase_min_words: int = Field(default=5, ge=1)
+    keyphrase_max_words: int = Field(default=4, ge=1, le=10)
+    # Whether code blocks feed keyphrase extraction; decided by measurement on the key-term gold set (P9-5).
+    keyphrases_include_code: bool = True
+    classification_method: Literal["embedding"] = "embedding"
+    max_categories: int = Field(default=3, ge=1, le=3)
+    # Cosine similarity, not a probability; set from an evaluation run, as the Phase 8 thresholds are.
+    unclassified_threshold: float | None = Field(default=None, ge=-1, le=1)
+    calibration_run_id: str | None = Field(default=None, pattern=r"^[A-Za-z0-9_-]{1,100}$")
+    categories: list[CategorySpec] = Field(default_factory=list, max_length=7)
+
+    @model_validator(mode="after")
+    def check_categories(self) -> "EnrichmentSettings":
+        names = [category.name.casefold() for category in self.categories]
+        if len(set(names)) != len(names) or "unclassified" in names:
+            raise ValueError("category names must be unique and cannot be 'unclassified'")
+        if (self.unclassified_threshold is None) != (self.calibration_run_id is None):
+            raise ValueError("unclassified_threshold and calibration_run_id are set together")
+        return self
+
+
 class OnlineSource(StrictModel):
     source_id: str = Field(pattern=r"^[a-z][a-z0-9_]{1,49}$")
     technology: str = Field(min_length=1, max_length=200)
@@ -166,6 +201,7 @@ class Settings(StrictModel):
     retrieval: RetrievalSettings = Field(default_factory=RetrievalSettings)
     answering: AnsweringSettings = Field(default_factory=AnsweringSettings)
     online: OnlineSettings = Field(default_factory=OnlineSettings)
+    enrichment: EnrichmentSettings = Field(default_factory=EnrichmentSettings)
 
     @field_validator("allowed_directories")
     @classmethod
@@ -221,6 +257,7 @@ def load_settings(path: Path, profile: Path | None = None) -> Settings:
     base = path.resolve().parent
     settings.allowed_directories = [str((base / item).resolve()) for item in settings.allowed_directories]
     settings.data_directory = str((base / settings.data_directory).resolve())
+    settings.enrichment.gazetteer = str((base / settings.enrichment.gazetteer).resolve())
     for directory in [*settings.allowed_directories, settings.data_directory]:
         try:
             # Missing roots are allowed for setup; ingestion never creates an input root.

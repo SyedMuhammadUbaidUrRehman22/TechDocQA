@@ -75,6 +75,38 @@ max_question_characters = 1000
 strict_citations = true
 query_log = true
 
+# FR-07 to FR-09 (Phase 9). The gazetteer path resolves against this file's directory.
+[enrichment]
+gazetteer = "gazetteer.toml"
+entity_verification_threshold = 0.5
+keyphrases_per_document = 10
+keyphrases_per_chunk = false
+keyphrase_min_words = 5
+keyphrase_max_words = 4
+# Decided by measurement on the key-term gold set (P9-5).
+keyphrases_include_code = true
+classification_method = "embedding"
+max_categories = 3
+# unclassified_threshold and calibration_run_id are copied in from an evaluation run's proposal, as in Phase 8.
+
+# The four FR-09 categories the corpus represents. Descriptions were written on 2026-11-07, before any measurement,
+# and name no product, so classification cannot succeed merely by matching a technology's name (P9-6).
+[[enrichment.categories]]
+name = "Distributed streaming"
+description = "Event streaming platforms that store and move continuous streams of records: topics and partitions, producers and consumers, brokers, replication, offsets and delivery guarantees."
+
+[[enrichment.categories]]
+name = "Workflow orchestration"
+description = "Workflow orchestration and scheduling: pipelines defined as directed acyclic graphs of tasks, with dependencies, schedules, retries, operators, sensors and recorded task runs."
+
+[[enrichment.categories]]
+name = "Distributed computing"
+description = "Distributed data processing engines that run parallel computations across a cluster: a driver and executors, jobs and stages, partitioned datasets, memory tuning, shuffles and cluster managers."
+
+[[enrichment.categories]]
+name = "Databases"
+description = "Relational database systems: SQL queries, tables and indexes, transactions and isolation levels, concurrency control, query plans, write-ahead logging and storage."
+
 [online]
 max_pages_per_run = 10
 connect_timeout_seconds = 5

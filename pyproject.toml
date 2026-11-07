@@ -26,6 +26,8 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = ["pytest>=8,<10"]
+# Keyphrases (FR-08) and the spaCy segmentation policy (FR-06 P1). Entities and classification need neither.
+nlp = ["spacy>=3.8.18,<3.9", "rake-nltk>=1.0.6,<1.1"]
 
 [project.scripts]
 techdocqa = "techdocqa.cli:main"

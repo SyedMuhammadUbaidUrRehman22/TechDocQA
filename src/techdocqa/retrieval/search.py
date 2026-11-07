@@ -39,13 +39,39 @@ def retrieval_config_id(request: SearchRequest, settings, profile: dict | None) 
     return "rc_" + digest(values)
 
 
-def filtered_records(request: SearchRequest, eligible: list) -> list:
+def filtered_records(request: SearchRequest, eligible: list, inferred: dict[str, set[str]] | None = None) -> list:
+    """A user category decides on its own; a document without one matches its current inferred categories, which
+    include 'unclassified' (FR-09.4, P9-7). inferred is None when no category filter is requested."""
     def matches(value, wanted):
         return wanted is None or (value is not None and value.casefold() == wanted.casefold())
+    def category_matches(record):
+        wanted = request.filters.category
+        if wanted is None or record.category is not None:
+            return matches(record.category, wanted)
+        return wanted.casefold() in (inferred or {}).get(record.version_id, set())
     filters = request.filters
     return [record for record in eligible
             if (filters.document_id is None or record.document_id == filters.document_id)
-            and matches(record.technology, filters.technology) and matches(record.category, filters.category)]
+            and matches(record.technology, filters.technology) and category_matches(record)]
+
+
+def inferred_categories(settings, registry) -> dict[str, set[str]]:
+    """Read only for a category filter, so unfiltered search never touches enrichment rows."""
+    from techdocqa.enrichment.classification import config_id
+    from techdocqa.enrichment.pipeline import embedding_profile_or_none
+    return registry.inferred_categories(config_id(settings.enrichment, embedding_profile_or_none(settings)))
+
+
+def entity_filter_chunks(settings, registry, entity: str) -> set[str]:
+    """A gazetteer alias resolves to its canonical name (Kafka to Apache Kafka), and only rows written under the active
+    entity configuration count. Without a readable gazetteer there is no active configuration, so nothing matches."""
+    from techdocqa.enrichment.entities import Gazetteer, config_id
+    try:
+        gazetteer = Gazetteer(settings.enrichment.gazetteer)
+    except TechDocQAError:
+        return set()
+    return registry.entity_chunks(gazetteer.filter_key(entity),
+                                  config_id(gazetteer, settings.enrichment.entity_verification_threshold))
 
 
 def result(rank: int, mode: str, score: float, relevance: float, *, chunk_id, document_id, version_id, title, section_path,
@@ -116,9 +142,11 @@ def search(request: SearchRequest, settings, registry, *, source_keys: frozenset
     eligible = registry.eligible_versions()
     if source_keys is not None:
         eligible = [record for record in eligible if record.source_key in source_keys]
-    records = filtered_records(request, eligible)
-    # P0 has no entity extractor: a filter matches only verified associations, so none means no results.
-    entity_chunks = registry.entity_chunks(request.filters.entity) if request.filters.entity is not None else None
+    inferred = inferred_categories(settings, registry) if request.filters.category is not None else None
+    records = filtered_records(request, eligible, inferred)
+    # A filter matches only verified entities (FR-07.3), so none means no results.
+    entity_chunks = (entity_filter_chunks(settings, registry, request.filters.entity)
+                     if request.filters.entity is not None else None)
     if not records or entity_chunks == set():
         results = []
     elif request.mode == "bm25":

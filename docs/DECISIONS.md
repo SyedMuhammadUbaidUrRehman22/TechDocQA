@@ -1,5 +1,18 @@
 # TechDocQA architectural decisions
 
+## Phase 9 contracts (2026-11-07)
+
+The project owner approved decisions P9-1 to P9-12 of the [Phase 9 plan](PHASE_9_PLAN.md#decisions-to-approve-before-coding) on 2026-11-07, as revised after the [risk assessment](PHASE_9_PLAN.md#risk-assessment-2026-11-07). The plan's rows are the contracts; this section records what implementation changed.
+
+- **Dependency gate (step 1), passed with a substitution.** spaCy 3.8.18 passed. **YAKE 0.7.3 failed:** its package metadata says `LGPLv3`, but the license file it ships is the **GNU Affero GPL v3** with a commercial alternative. The plan accepted LGPLv3 only, so by its gate rule FR-08 uses the named alternative, **RAKE through `rake-nltk` 1.0.6** (MIT, with NLTK 3.10.4 under Apache-2.0). RAKE is given its own stop-word list, sentence spans and the technical tokenizer, so NLTK needs no data download. RAKE scores are higher-is-better, so the descending `score` is the RAKE score itself. Ties are broken by phrase text, because RAKE does not order them.
+- **Gate evidence.** The current lock plus the two packages resolve with every existing pin unchanged, and `pip check` is clean. The 24 new wheels, 27 MB as downloaded, are pinned in `requirements.lock.txt`, and their SHA-256 hashes are in `requirements.nlp.hashes.txt`. Every new wheel's license file reads MIT, BSD, Apache-2.0 or PSF. All 141 wheels were reinstalled offline with `--no-index --require-hashes` into a fresh environment. Three runs with different hash seeds, with network calls blocked by an audit hook and an empty `NLTK_DATA`, gave identical sentence spans and phrases. The spaCy model wheel is not needed yet: the rule-based `sentencizer` runs without it, and P9-2 measures first.
+- **Packaging.** Both packages are the optional extra `nlp`, because only FR-08 and the spaCy segmentation policy use them. Entities and classification need neither. Without the extra, `enrich` reports keyphrases as unavailable rather than failing.
+- **Pre-existing vulnerabilities (VULN-08 disposition).** `pip-audit` 2.10.1 over all 142 packages found **none in the new packages** and 20 records in four existing ones. These are left for a separate security chore, since an upgrade can change extraction and invalidate the frozen corpus:
+  - **chromadb 1.5.9** (4 advisories, no fix released): all concern Chroma's HTTP server, its RBAC provider and `trust_remote_code` model loading. TechDocQA uses only the embedded `PersistentClient`, so they do not apply.
+  - **pypdf 6.21.1** (10 advisories, fixed by 6.21.4): crafted PDFs cause long runtimes, high memory use or infinite loops. They apply to untrusted PDFs; the frozen corpus PDFs are trusted. Upgrading needs `verify_corpus.py` to confirm unchanged normalized text.
+  - **certifi 2026.7.22** (fixed by 2026.10.18): a CA root with revoked, compromised intermediates. It applies to online ingestion over HTTPS.
+  - **setuptools 82.0.1** (build-time only; fixed by 84.1.0): MANIFEST.in filtering, and a Windows legacy wheel-install path. The build pin `setuptools<83` needs raising with it.
+
 ## P0 approvals (2026-11-07)
 
 The project owner approved the following on 2026-11-07. With these, every P0 release condition in the [Phase 8 reconciliation](PHASE_8_STATUS.md#p0-acceptance-reconciliation) is settled.

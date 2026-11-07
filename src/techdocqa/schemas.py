@@ -289,7 +289,7 @@ class AttemptOutcome(StrictModel):
 class RunSummary(StrictModel):
     run_id: str
     status: Literal["running", "completed", "completed_with_errors", "failed"]
-    stage: Literal["registration", "normalization", "chunking", "indexing"] = "registration"
+    stage: Literal["registration", "normalization", "chunking", "indexing", "enrichment"] = "registration"
     started_at: str
     finished_at: str | None = None
     processed: int = 0
