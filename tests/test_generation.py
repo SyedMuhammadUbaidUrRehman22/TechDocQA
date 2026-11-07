@@ -487,6 +487,69 @@ def test_answer_review_report_keeps_chunk_text_out_of_the_committed_files(bench,
                  "--report-dir", str(report_dir), "--config", config]) == 1
 
 
+def rate_sheet(path, ratings):
+    """Fill the Supported and notes cells of the named rows, as a reviewer editing the sheet would."""
+    lines = path.read_text(encoding="utf-8").splitlines()
+    for question, (rating, notes) in ratings.items():
+        index = next(number for number, line in enumerate(lines) if line.startswith(f"| {question} | "))
+        assert lines[index].endswith("| | |")
+        lines[index] = lines[index].removesuffix("| | |") + f"| {rating} | {notes} |"
+    path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+
+def test_recorded_review_copies_ratings_into_the_report_and_judges_ac_16_6(bench, qa_settings, registry, chat, tmp_path, capsys,
+                                                                           monkeypatch):
+    monkeypatch.setattr(generation, "warm_up", lambda settings: {"loaded": True, "ms": 1, "code": None})
+    config = write_config(tmp_path, qa_settings)
+    report_dir = tmp_path / "reports"
+    assert main(["eval", "--answers", "3", "--mode", "bm25", "--dataset", str(bench["dataset"]), "--manifest", str(bench["manifest"]),
+                 "--report-dir", str(report_dir), "--config", config]) == 0
+    files = json.loads(capsys.readouterr().out)["report_files"]
+    sheet = Path(files["review_sheet"])
+    record = ["eval", "--record-review", str(sheet), "--report-dir", str(report_dir), "--config", config]
+    # A pipe inside a Markdown table cell is written escaped.
+    rate_sheet(sheet, {"kafka-1": ("yes", "Default and purpose are in C1 \\| both"), "redis-1": ("Partly", "")})
+    before = sheet.read_text(encoding="utf-8")
+    assert main(record + ["--reviewer", "A. Reviewer"]) == 0
+    partial = json.loads(capsys.readouterr().out)["ac_16_6"]
+    assert partial["rated"] == 2 and partial["met"] is None and sheet.read_text(encoding="utf-8") == before
+    report = json.loads(Path(files["json"]).read_text(encoding="utf-8"))
+    rows = {row["id"]: row["review"] for row in report["questions"]}
+    assert rows["kafka-1"] == {"supported": "yes", "reviewer": "A. Reviewer", "notes": "Default and purpose are in C1 | both"}
+    assert rows["redis-1"]["supported"] == "partly" and rows["kafka-2"] == {"supported": None, "reviewer": None, "notes": None}
+    assert report["summary"]["human_review"] == "pending: 2 of 3 answers rated"
+    rate_sheet(sheet, {"kafka-2": ("no", "Unsupported claim")})
+    assert main(record + ["--reviewer", "A. Reviewer"]) == 0
+    judged = json.loads(capsys.readouterr().out)["ac_16_6"]
+    assert {key: judged[key] for key in ("rated", "yes", "partly", "no", "yes_rate", "met")} == {
+        "rated": 3, "yes": 1, "partly": 1, "no": 1, "yes_rate": 0.333, "met": False}
+    markdown = Path(files["markdown"]).read_text(encoding="utf-8")
+    assert "| yes | Default and purpose are in C1 \\| both |" in markdown and "by A. Reviewer (NOT met)" in markdown
+    # Chunk text still stays out of the committed files after the ratings are written.
+    assert "| Supported |" in markdown and "```text" not in markdown
+    for bad in ([], ["--reviewer", " "]):
+        assert main(record + bad) == 2
+        assert json.loads(capsys.readouterr().err)["error"]["code"] == "INVALID_ARGUMENT"
+    sheet.write_text(before.replace("| Partly |", "| maybe |"), encoding="utf-8")
+    assert main(record + ["--reviewer", "A. Reviewer"]) == 2
+    assert main(["eval", "--record-review", str(tmp_path / "missing.md"), "--reviewer", "A", "--config", config]) == 2
+    assert main(["eval", "--record-review", str(sheet), "--answers", "2", "--config", config]) == 2
+    capsys.readouterr()
+
+
+def test_ac_16_6_needs_eight_of_ten_rated_yes():
+    from techdocqa.evaluation.answers import apply_review
+    def judged(yes):
+        report = {"questions": [{"id": f"q{index}", "review": {}} for index in range(10)], "summary": {}}
+        ratings = {f"q{index}": {"supported": "yes" if index < yes else ("partly" if index % 2 else "no"), "notes": None}
+                   for index in range(10)}
+        return apply_review(report, ratings, "R")["summary"]["ac_16_6"]
+    assert judged(8)["met"] is True and judged(8)["yes_rate"] == 0.8
+    assert judged(7)["met"] is False
+    with pytest.raises(TechDocQAError):
+        apply_review({"questions": [{"id": "q0", "review": {}}], "summary": {}}, {"other": {"supported": "yes", "notes": None}}, "R")
+
+
 # AC-23.3 on the configured real model (opt-in)
 
 @pytest.mark.live_model

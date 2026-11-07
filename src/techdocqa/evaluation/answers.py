@@ -1,7 +1,8 @@
 """Answer runs through the same answer_question() the CLI uses, scoped to the evaluation manifest.
 
-The answer review covers a technology-balanced sample of answerable smoke questions, for AC-16.1 and the AC-16.6 human
-review. Whether a cited chunk holds a labeled passage is an automated hint only; support is judged by a person.
+The answer review covers a technology-balanced sample of answerable smoke questions, for AC-16.1 and the AC-16.6
+review. Whether a cited chunk holds a labeled passage is an automated hint only; support is judged by the reviewer, whose
+ratings are read back from the filled review sheet and recorded, with the reviewer's name, in the report.
 The refusal check asks every smoke question, for AC-18.1 and AC-18.2.
 Committed reports name chunk IDs, not chunk text. The review sheet with cited text stays in the ignored data directory.
 """
@@ -11,13 +12,19 @@ from datetime import datetime, timezone
 import json
 import math
 from pathlib import Path
+import re
 import statistics
 import time
 import uuid
 
 from techdocqa.answering.generation import generation_config_id, model_id
+from techdocqa.errors import TechDocQAError
 from techdocqa.evaluation.dataset import load_dataset
 from techdocqa.evaluation.runner import code_version, corpus_state, label_questions, load_manifest
+
+RATINGS = ("yes", "partly", "no")
+AC_16_6_TARGET = 0.80
+TABLE_HEADER = "| Question | Status | Citations | Labeled passage cited | Supported | Reviewer notes |"
 
 
 def select_questions(dataset, count: int) -> list:
@@ -111,7 +118,7 @@ def run_answer_review(dataset_path: Path, manifest_path: Path, settings, registr
             "prompt_tokens": {"max": max((u["prompt_tokens"] for u in usages), default=None),
                               "max_bound": max((u["prompt_token_bound"] for u in usages), default=None),
                               "bound_held": all(u["prompt_tokens"] <= u["prompt_token_bound"] for u in usages)},
-            "human_review": "pending: AC-16.6 needs a person to rate support against the cited chunks",
+            "human_review": "pending: AC-16.6 needs a reviewer to rate support against the cited chunks",
         },
         "questions": rows,
     }, {chunk_id: texts[chunk_id] for chunk_id in shown if chunk_id in texts}
@@ -156,15 +163,17 @@ def render_markdown(report: dict, chunk_text: dict | None = None) -> str:
              f"(bound held: {summary['prompt_tokens']['bound_held']}) |"]
     for stage, values in summary["latency_ms"].items():
         lines.append(f"| {stage.capitalize()} ms, median / p95 / max | {values['median']} / {values['p95']} / {values['max']} |")
-    lines += [f"| AC-16.6 human review | {summary['human_review']} |", "",
+    lines += [f"| AC-16.6 review | {summary['human_review']} |", "",
               "## Review table", "",
               "A reviewer rates each answer against its cited chunks: **yes** (every claim supported), **partly** or **no**. "
-              "AC-16.6 needs at least 8 of 10 rated yes.", "",
-              "| Question | Status | Citations | Labeled passage cited | Supported | Reviewer notes |", "|---|---|---|---|---|---|"]
+              "AC-16.6 needs at least 8 of 10 rated yes. Record the ratings with `eval --record-review <sheet> --reviewer <name>`.", "",
+              TABLE_HEADER, "|---|---|---|---|---|---|"]
     for row in report["questions"]:
-        response = row["response"]
-        lines.append(f"| {row['id']} | {response['status']}{' ' + response['reason'] if response['reason'] else ''} | "
-                     f"{len(response['citations'])} | {'yes' if row['cites_labeled_passage'] else 'no'} | | |")
+        response, review = row["response"], row["review"]
+        values = [row["id"], response["status"] + (" " + response["reason"] if response["reason"] else ""),
+                  str(len(response["citations"])), "yes" if row["cites_labeled_passage"] else "no",
+                  review["supported"] or "", cell(review["notes"])]
+        lines.append("|" + "|".join(f" {value} " if value else " " for value in values) + "|")
     for row in report["questions"]:
         response = row["response"]
         lines += ["", f"## {row['id']}", "", f"**Question:** {row['question']}", "",
@@ -191,6 +200,68 @@ def write_answer_report(report: dict, directory: Path, review_directory: Path, c
     paths["markdown"].write_text(render_markdown(report), encoding="utf-8")
     paths["review_sheet"].write_text(render_markdown(report, chunk_text), encoding="utf-8")
     return {name: path.as_posix() for name, path in paths.items()}
+
+
+def cell(text: str | None) -> str:
+    """Notes as one table cell; an escaped pipe survives the round trip through the sheet."""
+    return " ".join((text or "").split()).replace("|", "\\|")
+
+
+def read_review_sheet(path: Path) -> tuple[str, dict]:
+    """The run ID and each rated row's rating and notes, from the review table of a filled sheet."""
+    try:
+        lines = Path(path).read_text(encoding="utf-8").splitlines()
+    except (OSError, UnicodeDecodeError):
+        raise TechDocQAError("INVALID_ARGUMENT", "The review sheet cannot be read.", stage="arguments") from None
+    # The run ID names the report file, so it must be exactly an answer run ID.
+    if not lines or not re.fullmatch(r"# Answer review answers_[0-9a-f]{32}", lines[0].strip()) or TABLE_HEADER not in lines:
+        raise TechDocQAError("INVALID_ARGUMENT", "The file is not an answer review sheet.", stage="arguments")
+    ratings = {}
+    for line in lines[lines.index(TABLE_HEADER) + 2:]:
+        if not line.startswith("|"):
+            break
+        cells = [part.strip().replace("\\|", "|") for part in re.split(r"(?<!\\)\|", line.strip())[1:-1]]
+        if len(cells) != 6 or cells[4].lower() not in RATINGS + ("",):
+            raise TechDocQAError("INVALID_ARGUMENT", "Each Supported cell must be yes, partly, no or empty.", stage="arguments")
+        if cells[4]:
+            ratings[cells[0]] = {"supported": cells[4].lower(), "notes": cells[5] or None}
+    return lines[0].removeprefix("# Answer review ").strip(), ratings
+
+
+def apply_review(report: dict, ratings: dict, reviewer: str) -> dict:
+    """AC-16.6: at least 80% of the reviewed answers rated yes, once every answer is rated."""
+    rows = report["questions"]
+    if set(ratings) - {row["id"] for row in rows}:
+        raise TechDocQAError("INVALID_ARGUMENT", "The sheet rates a question that is not in this report.", stage="arguments")
+    for row in rows:
+        rating = ratings.get(row["id"])
+        row["review"] = ({"supported": rating["supported"], "reviewer": reviewer, "notes": rating["notes"]} if rating
+                         else {"supported": None, "reviewer": None, "notes": None})
+    counts = {name: sum(1 for row in rows if row["review"]["supported"] == name) for name in RATINGS}
+    rated = sum(counts.values())
+    complete = rated == len(rows) and bool(rows)
+    met = complete and counts["yes"] >= AC_16_6_TARGET * len(rows)
+    report["summary"]["ac_16_6"] = {"rated": rated, **counts, "yes_rate": rate(counts["yes"], len(rows)), "target": AC_16_6_TARGET,
+                                    "met": met if complete else None, "reviewer": reviewer,
+                                    "recorded_at": datetime.now(timezone.utc).isoformat()}
+    report["summary"]["human_review"] = (
+        f"{counts['yes']} of {len(rows)} rated yes, {counts['partly']} partly, {counts['no']} no, by {reviewer} "
+        f"({'met' if met else 'NOT met'})" if complete else f"pending: {rated} of {len(rows)} answers rated")
+    return report
+
+
+def record_review(sheet: Path, directory: Path, reviewer: str) -> tuple[dict, dict]:
+    """Copy a filled sheet's ratings into its JSON and Markdown report; the sheet itself is left as it is."""
+    if not reviewer or not reviewer.strip():
+        raise TechDocQAError("INVALID_ARGUMENT", "--record-review needs --reviewer with the reviewer's name.", stage="arguments")
+    run_id, ratings = read_review_sheet(sheet)
+    paths = {"json": Path(directory) / f"{run_id}.json", "markdown": Path(directory) / f"{run_id}.md"}
+    if not paths["json"].is_file():
+        raise TechDocQAError("INVALID_ARGUMENT", "No answer report for this sheet's run is in the report directory.", stage="arguments")
+    report = apply_review(json.loads(paths["json"].read_text(encoding="utf-8")), ratings, " ".join(reviewer.split()))
+    paths["json"].write_text(json.dumps(report, indent=2, ensure_ascii=True) + "\n", encoding="utf-8")
+    paths["markdown"].write_text(render_markdown(report), encoding="utf-8")
+    return report, {name: path.as_posix() for name, path in paths.items()}
 
 
 AC_18_1_TARGET, AC_18_2_TARGET = 0.90, 0.85

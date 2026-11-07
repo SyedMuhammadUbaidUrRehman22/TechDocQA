@@ -1,5 +1,12 @@
 # TechDocQA architectural decisions
 
+## P0 gate amendments (2026-11-04)
+
+The project owner made two changes to the P0 release gate after the Phase 8 report. The source requirement text is unchanged; these entries record how the two criteria are judged.
+
+- **AC-12.1 amended.** As written, AC-12.1 asks that a query built from one sentence of a chunk returns that chunk in the top 3. On the real corpus that is 124 of 152 for the Chroma index and also 124 for exact cosine search over the same vectors. So the figure measures how well one sentence resembles a much longer chunk under the embedding model, not the index. As amended, AC-12.1 is index fidelity: **recall@3 of the vector index against exact search over the stored vectors, at least 0.99**, averaged over the same sentence sample. This is the usual measure for an approximate index. `datasets/verify_index.py --live` checks it. It still reports the sentence-to-chunk hits for the index, exact search, exact search on public documents only and BM25, as diagnostics. Retrieval quality stays gated by the reviewed benchmark (FR-19). The sampler was also corrected: a sampled sentence must end at whitespace or the end of the text, so a dotted name such as `enable.idempotence` no longer ends a sentence at its first dot.
+- **AC-16.6 reviewer.** The owner designated Claude Opus 5.5 (AI assistant) as the reviewer for the 10 answers. **AC-16.6 as written asks for a human reviewer, so this is a deviation from the source text**, and the reviewer's name, including "AI assistant", is recorded in the report. `eval --record-review SHEET --reviewer NAME` reads the Supported and notes cells of a filled review sheet and writes them into its JSON and Markdown report. It touches no registry, index or model. A cell must be `yes`, `partly`, `no` or empty. AC-16.6 is judged only when every answer is rated, and needs at least 80% `yes`. A person can rate again and record over it; the last record wins.
+
 ## Phase 8 contracts (2026-11-04)
 
 These rules implement FR-18 and the FR-21 QA slice, and resolve Q-07 for the two P0 modes **as proposed**. Q-07 has not been formally approved, so its policy IDs below are recorded in every score, threshold and report, and an approval or amendment changes them. Evidence is in [Phase 8](PHASE_8_STATUS.md).

@@ -122,6 +122,8 @@ Implementation checkpoint 2026-11-04: FR-18 is implemented and met with the real
 
 ## Phase 9 — P1 NLP enrichment
 
+Detailed plan proposed 2026-11-04, not yet approved: [Phase 9 plan](PHASE_9_PLAN.md). It adds an entry gate for the blocked P0 release and ten decisions to approve before coding.
+
 - Objective: improve structured metadata without sacrificing technical text/provenance.
 - FRs: FR-06 full, FR-07, FR-08, FR-09; filter extensions FR-12/13.
 - Files: processing/enrichment.py, segmentation.py, registry metadata/search projections, optional NLP extras/config; test_entities.py, test_keyphrases.py, test_classification.py and annotated fixtures.
