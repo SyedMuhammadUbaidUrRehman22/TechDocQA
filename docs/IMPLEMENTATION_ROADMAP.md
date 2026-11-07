@@ -122,7 +122,7 @@ Implementation checkpoint 2026-11-04: FR-18 is implemented and met with the real
 
 ## Phase 9 — P1 NLP enrichment
 
-Detailed plan proposed 2026-11-04, revised 2026-11-07 after a risk assessment, not yet approved: [Phase 9 plan](PHASE_9_PLAN.md). Its entry gate, the P0 release, passed on 2026-11-07; its twelve decisions P9-1 to P9-12 still need approval before coding.
+Detailed plan proposed 2026-11-04, revised after a risk assessment and approved on 2026-11-07: [Phase 9 plan](PHASE_9_PLAN.md). Its entry gate, the P0 release, passed the same day. In progress: the dependency gate passed with RAKE in place of YAKE, and `enrich`, entities, keyphrases and classification are built; gold labels, the classification threshold, segmentation and `eval --enrichment` are open ([progress](PHASE_9_PLAN.md#progress-2026-11-07)).
 
 - Objective: improve structured metadata without sacrificing technical text/provenance.
 - FRs: FR-06 full, FR-07, FR-08, FR-09; filter extensions FR-12/13.
@@ -164,4 +164,4 @@ Detailed plan proposed 2026-11-04, revised 2026-11-07 after a risk assessment, n
 
 ## Recommended next action
 
-The P0 release gate passed on 2026-11-07 ([approvals](DECISIONS.md#p0-approvals-2026-11-07)). Next, approve or amend decisions P9-1 to P9-12 in the [Phase 9 plan](PHASE_9_PLAN.md), then start with its dependency gate. Cold-start timeouts are settled in [Phase 8](PHASE_8_STATUS.md#cold-start). Do not treat DDIA as part of the public reference or silently count it toward the approximate 3,000-chunk target. Performance gates, including NFR-02, are measured in Phase 11.
+The P0 release gate passed on 2026-11-07 ([approvals](DECISIONS.md#p0-approvals-2026-11-07)). Phase 9 is in progress. Next, the project owner labels the entity and key-term gold sets and reviews the sentence draft ([review log](../datasets/nlp/review_log.md)); then `eval --enrichment`, the classification threshold and the spaCy segmenter comparison follow. Cold-start timeouts are settled in [Phase 8](PHASE_8_STATUS.md#cold-start). Do not treat DDIA as part of the public reference or silently count it toward the approximate 3,000-chunk target. Performance gates, including NFR-02, are measured in Phase 11.
