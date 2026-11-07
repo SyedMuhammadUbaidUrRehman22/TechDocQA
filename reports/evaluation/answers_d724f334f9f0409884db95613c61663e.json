@@ -71,7 +71,18 @@
       "max_bound": 5843,
       "bound_held": true
     },
-    "human_review": "pending: AC-16.6 needs a person to rate support against the cited chunks"
+    "human_review": "8 of 10 rated yes, 1 partly, 1 no, by Claude Opus 5.5 (AI assistant), designated by the project owner on 2026-11-04 (met)",
+    "ac_16_6": {
+      "rated": 10,
+      "yes": 8,
+      "partly": 1,
+      "no": 1,
+      "yes_rate": 0.8,
+      "target": 0.8,
+      "met": true,
+      "reviewer": "Claude Opus 5.5 (AI assistant), designated by the project owner on 2026-11-04",
+      "recorded_at": "2026-11-04T16:57:07.976483+00:00"
+    }
   },
   "questions": [
     {
@@ -144,9 +155,9 @@
       "cites_labeled_passage": true,
       "evidence_has_labeled_passage": true,
       "review": {
-        "supported": null,
-        "reviewer": null,
-        "notes": null
+        "supported": "yes",
+        "reviewer": "Claude Opus 5.5 (AI assistant), designated by the project owner on 2026-11-04",
+        "notes": "C3 gives the purpose, a delay so that records sent meanwhile are batched together, and the 5 ms default. 'Arrive between request transmissions' paraphrases that batching."
       }
     },
     {
@@ -219,9 +230,9 @@
       "cites_labeled_passage": true,
       "evidence_has_labeled_passage": true,
       "review": {
-        "supported": null,
-        "reviewer": null,
-        "notes": null
+        "supported": "yes",
+        "reviewer": "Claude Opus 5.5 (AI assistant), designated by the project owner on 2026-11-04",
+        "notes": "C1: execution_timeout takes a datetime.timedelta that is the maximum permissible runtime."
       }
     },
     {
@@ -294,9 +305,9 @@
       "cites_labeled_passage": true,
       "evidence_has_labeled_passage": true,
       "review": {
-        "supported": null,
-        "reviewer": null,
-        "notes": null
+        "supported": "yes",
+        "reviewer": "Claude Opus 5.5 (AI assistant), designated by the project owner on 2026-11-04",
+        "notes": "Definition and default 0.6 match C1."
       }
     },
     {
@@ -369,9 +380,9 @@
       "cites_labeled_passage": true,
       "evidence_has_labeled_passage": true,
       "review": {
-        "supported": null,
-        "reviewer": null,
-        "notes": null
+        "supported": "yes",
+        "reviewer": "Claude Opus 5.5 (AI assistant), designated by the project owner on 2026-11-04",
+        "notes": "C4 names Read Committed as the default."
       }
     },
     {
@@ -455,9 +466,9 @@
       "cites_labeled_passage": true,
       "evidence_has_labeled_passage": true,
       "review": {
-        "supported": null,
-        "reviewer": null,
-        "notes": null
+        "supported": "yes",
+        "reviewer": "Claude Opus 5.5 (AI assistant), designated by the project owner on 2026-11-04",
+        "notes": "The command is in C1 and C3. One partition and replication factor 1 come from C1's describe output for this topic."
       }
     },
     {
@@ -530,9 +541,9 @@
       "cites_labeled_passage": true,
       "evidence_has_labeled_passage": true,
       "review": {
-        "supported": null,
-        "reviewer": null,
-        "notes": null
+        "supported": "yes",
+        "reviewer": "Claude Opus 5.5 (AI assistant), designated by the project owner on 2026-11-04",
+        "notes": "Both leaf-state rules match C3; 'terminal state' is framing only."
       }
     },
     {
@@ -616,9 +627,9 @@
       "cites_labeled_passage": true,
       "evidence_has_labeled_passage": true,
       "review": {
-        "supported": null,
-        "reviewer": null,
-        "notes": null
+        "supported": "yes",
+        "reviewer": "Claude Opus 5.5 (AI assistant), designated by the project owner on 2026-11-04",
+        "notes": "The SparkConf setting and its scope are in C1; registerKryoClasses with an array of classes is in C2."
       }
     },
     {
@@ -702,9 +713,9 @@
       "cites_labeled_passage": true,
       "evidence_has_labeled_passage": true,
       "review": {
-        "supported": null,
-        "reviewer": null,
-        "notes": null
+        "supported": "yes",
+        "reviewer": "Claude Opus 5.5 (AI assistant), designated by the project owner on 2026-11-04",
+        "notes": "Use case and presence queries are in C1; @> and <@ are in C2's array operator list."
       }
     },
     {
@@ -777,9 +788,9 @@
       "cites_labeled_passage": false,
       "evidence_has_labeled_passage": true,
       "review": {
-        "supported": null,
-        "reviewer": null,
-        "notes": null
+        "supported": "no",
+        "reviewer": "Claude Opus 5.5 (AI assistant), designated by the project owner on 2026-11-04",
+        "notes": "C4 covers delivery guarantees, not visibility. 'Committed by the producer' and 'acknowledged by the producer' are unsupported and wrong: Kafka gives out a message once all in-sync replicas have it. The labeled passage was in the prompt but not cited."
       }
     },
     {
@@ -852,9 +863,9 @@
       "cites_labeled_passage": true,
       "evidence_has_labeled_passage": true,
       "review": {
-        "supported": null,
-        "reviewer": null,
-        "notes": null
+        "supported": "partly",
+        "reviewer": "Claude Opus 5.5 (AI assistant), designated by the project owner on 2026-11-04",
+        "notes": "The first sentence matches C3. 'Sequentially' is not stated in C3."
       }
     }
   ]

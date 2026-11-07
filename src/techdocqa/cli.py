@@ -145,6 +145,9 @@ def make_parser() -> argparse.ArgumentParser:
                              help="instead of retrieval metrics, answer N answerable questions with the configured model for human review")
     answer_runs.add_argument("--refusal", action="store_true",
                              help="instead of retrieval metrics, ask every question with the configured model and report AC-18.1/18.2")
+    answer_runs.add_argument("--record-review", type=Path, metavar="SHEET",
+                             help="copy the ratings from a filled answer review sheet into its report and judge AC-16.6")
+    evaluation.add_argument("--reviewer", help="who rated the answers, recorded with --record-review")
     for command in (check, ingest, status, listing, history, processing, chunking, indexing, searching, asking, withdrawal,
                     deletion, evaluation):
         command.add_argument("--config", type=Path, default=Path("config/default.toml"))
@@ -187,6 +190,14 @@ def main(argv: list[str] | None = None) -> int:
             return 0
         if args.command == "delete" and not args.yes:
             raise TechDocQAError("CONFIRMATION_REQUIRED", "Deletion cannot be undone; repeat with --yes to confirm.", stage="arguments")
+        if args.command == "eval" and args.record_review is not None:
+            # Files only: no registry, index or model is touched.
+            from techdocqa.evaluation.answers import record_review
+            report, files = record_review(args.record_review, args.report_dir or Path(settings.data_directory) / "evaluation",
+                                          args.reviewer)
+            print(json.dumps({"run_id": report["run_id"], "ac_16_6": report["summary"]["ac_16_6"], "report_files": files},
+                             ensure_ascii=True))
+            return 0
         request = None
         if args.command == "search":
             try:

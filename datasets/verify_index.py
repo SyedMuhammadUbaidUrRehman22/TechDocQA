@@ -32,8 +32,11 @@ QUERIES = [
 # Each occurs in the frozen public reference; the rank 1 chunk must contain it.
 IDENTIFIERS = ["linger.ms", "enable.idempotence", "spark.memory.fraction", "spark.local.dir", "pg_subtrans",
                "wal_writer_delay", "idle_in_transaction_session_timeout", "execution_timeout"]
-# A whole sentence: it follows a boundary, so it cannot be the tail of one cut by the chunk start.
-SENTENCE = re.compile(r"(?<=[.!?]\s)[A-Z][^.!?\n]{40,300}[.!?]")
+# A whole sentence: it follows a boundary, so it cannot be the tail of one cut by the chunk start, and it ends at one,
+# so a dotted name such as enable.idempotence or a link target is not cut at its first dot.
+SENTENCE = re.compile(r"(?<=[.!?]\s)[A-Z][^.!?\n]{40,300}[.!?](?=\s|$)")
+# AC-12.1 as amended on 2026-11-04: the index returns what exact search over the stored vectors returns.
+INDEX_AGREEMENT_TARGET = 0.99
 SAMPLE_EVERY = 3
 TIMING_ROUNDS = 5
 
@@ -96,18 +99,28 @@ def sentence_checks(settings, registry, profile, embedder, reference_ids):
     # The overlap prefix also belongs to the preceding chunk, so it cannot identify this one.
     sampled = [(index, match.group().strip()) for index, chunk in enumerate(chunks)
                if public[index] and (match := SENTENCE.search(chunk["text"], chunk["overlap_characters"]))][::SAMPLE_EVERY]
-    index_hits = exact_hits = public_hits = agreement = 0
+    index_hits = exact_hits = public_hits = agreement = lost = bm25_hits = overlap = 0
     for index, sentence in sampled:
         vector = np.asarray(embedder.embed_query(settings.model.embedding_query_prefix + sentence), dtype=np.float32)
         order = np.argsort(-(matrix @ vector))
         exact = [chunks[position]["chunk_id"] for position in order[:3]]
         found = [item.chunk_id for item in run_query(settings, registry, sentence, "vector", top_k=3)]
-        index_hits += chunks[index]["chunk_id"] in found
-        exact_hits += chunks[index]["chunk_id"] in exact
+        target = chunks[index]["chunk_id"]
+        index_hits += target in found
+        exact_hits += target in exact
+        lost += target in exact and target not in found
         public_hits += index in order[public[order]][:3]
         agreement += set(found) == set(exact)
+        overlap += len(set(found) & set(exact)) / 3
+        bm25_hits += target in [item.chunk_id for item in run_query(settings, registry, sentence, "bm25", top_k=3)]
+    # Fidelity is the gate: recall@3 of the index against exact search, the usual measure for an approximate index.
+    # How often a lone sentence finds its chunk measures the embedding model, so it is reported here, and retrieval
+    # quality is gated by the reviewed benchmark (FR-19).
+    recall = round(overlap / len(sampled), 4)
+    check(recall >= INDEX_AGREEMENT_TARGET, "AC-12.1: index recall@3 against exact search is below target")
     return {"sentence_queries": len(sampled), "index_top3_hits": index_hits, "exact_top3_hits": exact_hits,
-            "exact_top3_hits_public_only": public_hits, "index_equals_exact_top3": agreement}
+            "exact_top3_hits_public_only": public_hits, "index_equals_exact_top3": agreement,
+            "index_recall_at_3": recall, "exact_hits_lost_by_index": lost, "bm25_top3_hits": bm25_hits}
 
 
 def live_checks(settings, registry, profile, reference_ids):
