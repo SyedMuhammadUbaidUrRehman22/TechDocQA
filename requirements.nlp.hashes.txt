@@ -1,0 +1,28 @@
+# Phase 9 nlp extra: SHA-256 of each wheel added by the 2026-11-07 dependency gate (Windows, CPython 3.13, win_amd64 where
+# platform-specific). After installing requirements.lock.txt, verify with:
+#   python -m pip install --require-hashes --no-deps -r requirements.nlp.hashes.txt
+# Licenses (from each wheel's license file): MIT, BSD, Apache-2.0, PSF. pip-audit 2.10.1 found no known vulnerability in them.
+blis==1.3.4 --hash=sha256:9fd0af1281cf8df543d13f507a94325871c35c3900e32742db9520f730d240cb
+catalogue==2.0.10 --hash=sha256:58c2de0020aa90f4a2da7dfad161bf7b3b054c86a5f09fcedc0b2b740c109a9f
+cloudpathlib==0.26.0 --hash=sha256:abcd7f54bcbb2fbb79c0e96b79241f08866760aee6276586882b3558672d571b
+cloudpickle==3.1.2 --hash=sha256:9acb47f6afd73f60dc1df93bb801b472f05ff42fa6c84167d25cb206be1fbf4a
+confection==1.3.4 --hash=sha256:6c2e1ae87de7d989a79bdb62977eb9c43c28fb3371f3462492667eb0520e6796
+cymem==2.0.16 --hash=sha256:a1048dcc5540f76bc0811695d21b5afb437ba45cbd173b1363b36a5dda8b1091
+defusedxml==0.7.1 --hash=sha256:a352e7e428770286cc899e2542b6cdaedb2b4953ff269a210103ec58f6198a61
+jinja2==3.1.6 --hash=sha256:85ece4451f492d0c13c5dd7c13a64681a86afae63a5f347908daf103ce6d2f67
+joblib==1.6.0 --hash=sha256:3dbbf9f6e4b592a2357b854608e980fe6390d131d7a82f011a377ef2ebef7aba
+markupsafe==3.0.4 --hash=sha256:1f1f9477e174582b0a1b583d60b66e1f2cf5d3fe12cee985e4aedf44766600e5
+murmurhash==1.0.16 --hash=sha256:f94b20122641b3c871acc2f404917709ae8b39a5da6d68d86607900be7bcafcb
+nltk==3.10.4 --hash=sha256:769ba5413f265b7d3e87cd163cc28efa01e29eeef8bb6080bc907949d9fcfb51
+preshed==3.0.15 --hash=sha256:6baf9e3bf15766ff80f6c3dcd93608676987109cd295e3f5879db877f41817ba
+rake-nltk==1.0.6 --hash=sha256:1c1ffdb64cae8cb99d169d53a5ffa4635f1c4abd3a02c6e22d5d083136bdc5c1
+regex==2026.11.7 --hash=sha256:0e97ced8b122b6f2e2a9435762a0f305383bbcce7a166aa5df6e4b9a28a6a2f3
+smart-open==9.0.2 --hash=sha256:945216f3360166fdb42fdee0e19b37f032caaf9429d5797bc06b01d2c75a71a4
+spacy==3.8.18 --hash=sha256:c332e2aef42e05e8d96d557fd420f298723bb0d856f1293ef61a9dc362a4cf31
+spacy-legacy==3.0.12 --hash=sha256:476e3bd0d05f8c339ed60f40986c07387c0a71479245d6d0f4298dbd52cda55f
+spacy-loggers==1.0.5 --hash=sha256:196284c9c446cc0cdb944005384270d775fdeaf4f494d8e269466cfa497ef645
+srsly==2.5.6 --hash=sha256:a7707e339903caab55383e521da7d36087f7ce1a641af15a8c99f053c8a6bfdf
+thinc==8.3.14 --hash=sha256:4a4e4f599909d498ef2346e3c28ceb4140a5bbad8b6da49c1c73cbe857bdec4d
+wasabi==1.1.3 --hash=sha256:f76e16e8f7e79f8c4c8be49b4024ac725713ab10cd7f19350ad18a8e3f71728c
+weasel==1.0.1 --hash=sha256:a7d37540e4b5e53c783bae292d2e5dfaa8f6054160cec633e0782afce89c504d
+wrapt==2.5.2 --hash=sha256:5726faa7342ba473041bc1a276486d232b42e3927d35427729b266b1b5ecaa42

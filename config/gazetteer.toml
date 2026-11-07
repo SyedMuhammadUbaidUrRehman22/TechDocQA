@@ -1,0 +1,519 @@
+# FR-07 gazetteer (P9-3). Written by Claude Code on 2026-11-07, before any gold labels exist; it is frozen and its
+# SHA-256 recorded before the entity gold set is scored (P9-9). Any later change needs a fresh sample or is reported
+# as tuned.
+#
+# name: the canonical name, also the --entity filter key (compared without case); it must be one of its aliases.
+# aliases: matched as whole words. case_sensitive applies to every alias of the entry.
+# ambiguous: aliases that are also ordinary words or names. They count as exact (confidence 1.0) only in a document
+#   whose user technology is the entry or the entry's technology, or that also contains an unambiguous alias of the
+#   entry, or whose technology holds by either rule. Otherwise they are stored at 0.4, unverified, and never filter.
+# technology: the product a component or concept belongs to. category: an optional FR-09 category link.
+#
+# Types: TECHNOLOGY (a product, language or platform), COMPONENT (a named part of a system),
+# CONCEPT (an abstract technical idea), PROTOCOL (a network or wire protocol).
+# Identifiers (dotted names, snake_case, --flags, camelCase) and common protocols come from fixed patterns in code.
+version = "techdocqa-gazetteer-2026-11-07"
+
+# Technologies
+
+[[entities]]
+name = "Apache Kafka"
+type = "TECHNOLOGY"
+aliases = ["Apache Kafka", "Kafka"]
+ambiguous = ["Kafka"]
+category = "Distributed streaming"
+
+[[entities]]
+name = "Apache Airflow"
+type = "TECHNOLOGY"
+aliases = ["Apache Airflow", "Airflow"]
+ambiguous = ["Airflow"]
+category = "Workflow orchestration"
+
+[[entities]]
+name = "Apache Spark"
+type = "TECHNOLOGY"
+aliases = ["Apache Spark", "Spark"]
+ambiguous = ["Spark"]
+category = "Distributed computing"
+
+[[entities]]
+name = "PostgreSQL"
+type = "TECHNOLOGY"
+aliases = ["PostgreSQL", "Postgres"]
+category = "Databases"
+
+[[entities]]
+name = "Redis"
+type = "TECHNOLOGY"
+aliases = ["Redis"]
+category = "Caching"
+
+[[entities]]
+name = "Apache ZooKeeper"
+type = "TECHNOLOGY"
+aliases = ["Apache ZooKeeper", "ZooKeeper"]
+
+[[entities]]
+name = "Apache Hadoop"
+type = "TECHNOLOGY"
+aliases = ["Apache Hadoop", "Hadoop"]
+
+[[entities]]
+name = "HDFS"
+type = "TECHNOLOGY"
+aliases = ["HDFS"]
+
+[[entities]]
+name = "YARN"
+type = "TECHNOLOGY"
+aliases = ["YARN"]
+
+[[entities]]
+name = "Kubernetes"
+type = "TECHNOLOGY"
+aliases = ["Kubernetes", "K8s"]
+category = "Containers and infrastructure"
+
+[[entities]]
+name = "Docker"
+type = "TECHNOLOGY"
+aliases = ["Docker"]
+category = "Containers and infrastructure"
+
+[[entities]]
+name = "Celery"
+type = "TECHNOLOGY"
+aliases = ["Celery"]
+
+[[entities]]
+name = "Python"
+type = "TECHNOLOGY"
+aliases = ["Python"]
+
+[[entities]]
+name = "Java"
+type = "TECHNOLOGY"
+aliases = ["Java"]
+
+[[entities]]
+name = "Scala"
+type = "TECHNOLOGY"
+aliases = ["Scala"]
+
+[[entities]]
+name = "SQL"
+type = "TECHNOLOGY"
+aliases = ["SQL"]
+
+[[entities]]
+name = "MySQL"
+type = "TECHNOLOGY"
+aliases = ["MySQL"]
+
+[[entities]]
+name = "PySpark"
+type = "TECHNOLOGY"
+aliases = ["PySpark"]
+category = "Distributed computing"
+
+# Named components of the corpus technologies
+
+[[entities]]
+name = "Kafka Connect"
+type = "COMPONENT"
+aliases = ["Kafka Connect"]
+technology = "Apache Kafka"
+
+[[entities]]
+name = "Kafka Streams"
+type = "COMPONENT"
+aliases = ["Kafka Streams"]
+technology = "Apache Kafka"
+
+[[entities]]
+name = "broker"
+type = "COMPONENT"
+aliases = ["broker", "brokers"]
+case_sensitive = false
+technology = "Apache Kafka"
+
+[[entities]]
+name = "producer"
+type = "COMPONENT"
+aliases = ["producer", "producers"]
+case_sensitive = false
+technology = "Apache Kafka"
+
+[[entities]]
+name = "consumer"
+type = "COMPONENT"
+aliases = ["consumer", "consumers"]
+ambiguous = ["consumer", "consumers"]
+case_sensitive = false
+technology = "Apache Kafka"
+
+[[entities]]
+name = "controller"
+type = "COMPONENT"
+aliases = ["controller", "controllers"]
+ambiguous = ["controller", "controllers"]
+case_sensitive = false
+technology = "Apache Kafka"
+
+[[entities]]
+name = "scheduler"
+type = "COMPONENT"
+aliases = ["scheduler", "schedulers"]
+case_sensitive = false
+
+[[entities]]
+name = "executor"
+type = "COMPONENT"
+aliases = ["executor", "executors"]
+case_sensitive = false
+
+[[entities]]
+name = "worker"
+type = "COMPONENT"
+aliases = ["worker", "workers"]
+ambiguous = ["worker", "workers"]
+case_sensitive = false
+
+[[entities]]
+name = "operator"
+type = "COMPONENT"
+aliases = ["operator", "operators"]
+ambiguous = ["operator", "operators"]
+case_sensitive = false
+technology = "Apache Airflow"
+
+[[entities]]
+name = "sensor"
+type = "COMPONENT"
+aliases = ["sensor", "sensors"]
+case_sensitive = false
+technology = "Apache Airflow"
+
+[[entities]]
+name = "XCom"
+type = "COMPONENT"
+aliases = ["XCom", "XComs"]
+technology = "Apache Airflow"
+
+[[entities]]
+name = "TaskFlow API"
+type = "COMPONENT"
+aliases = ["TaskFlow API", "TaskFlow"]
+technology = "Apache Airflow"
+
+[[entities]]
+name = "Spark driver"
+type = "COMPONENT"
+aliases = ["Spark driver", "driver program", "driver"]
+ambiguous = ["driver"]
+case_sensitive = false
+technology = "Apache Spark"
+
+[[entities]]
+name = "cluster manager"
+type = "COMPONENT"
+aliases = ["cluster manager", "cluster managers"]
+case_sensitive = false
+technology = "Apache Spark"
+
+[[entities]]
+name = "SparkContext"
+type = "COMPONENT"
+aliases = ["SparkContext"]
+technology = "Apache Spark"
+
+[[entities]]
+name = "SparkSession"
+type = "COMPONENT"
+aliases = ["SparkSession"]
+technology = "Apache Spark"
+
+[[entities]]
+name = "SparkConf"
+type = "COMPONENT"
+aliases = ["SparkConf"]
+technology = "Apache Spark"
+
+[[entities]]
+name = "Spark SQL"
+type = "COMPONENT"
+aliases = ["Spark SQL"]
+technology = "Apache Spark"
+
+[[entities]]
+name = "Structured Streaming"
+type = "COMPONENT"
+aliases = ["Structured Streaming"]
+technology = "Apache Spark"
+
+[[entities]]
+name = "spark-submit"
+type = "COMPONENT"
+aliases = ["spark-submit"]
+technology = "Apache Spark"
+
+[[entities]]
+name = "RDD"
+type = "COMPONENT"
+aliases = ["RDD", "RDDs", "resilient distributed dataset", "resilient distributed datasets"]
+technology = "Apache Spark"
+
+[[entities]]
+name = "DataFrame"
+type = "COMPONENT"
+aliases = ["DataFrame", "DataFrames"]
+
+[[entities]]
+name = "query planner"
+type = "COMPONENT"
+aliases = ["query planner", "planner", "query optimizer", "optimizer"]
+ambiguous = ["planner", "optimizer"]
+case_sensitive = false
+technology = "PostgreSQL"
+
+[[entities]]
+name = "VACUUM"
+type = "COMPONENT"
+aliases = ["VACUUM", "autovacuum"]
+technology = "PostgreSQL"
+
+[[entities]]
+name = "EXPLAIN"
+type = "COMPONENT"
+aliases = ["EXPLAIN ANALYZE", "EXPLAIN"]
+technology = "PostgreSQL"
+
+[[entities]]
+name = "B-tree"
+type = "COMPONENT"
+aliases = ["B-tree", "B-trees", "btree"]
+technology = "PostgreSQL"
+
+[[entities]]
+name = "GIN"
+type = "COMPONENT"
+aliases = ["GIN"]
+technology = "PostgreSQL"
+
+[[entities]]
+name = "GiST"
+type = "COMPONENT"
+aliases = ["GiST", "SP-GiST"]
+technology = "PostgreSQL"
+
+[[entities]]
+name = "BRIN"
+type = "COMPONENT"
+aliases = ["BRIN"]
+technology = "PostgreSQL"
+
+# Concepts
+
+[[entities]]
+name = "consumer group"
+type = "CONCEPT"
+aliases = ["consumer group", "consumer groups"]
+case_sensitive = false
+technology = "Apache Kafka"
+
+[[entities]]
+name = "topic"
+type = "CONCEPT"
+aliases = ["topic", "topics"]
+ambiguous = ["topic", "topics"]
+case_sensitive = false
+technology = "Apache Kafka"
+
+[[entities]]
+name = "partition"
+type = "CONCEPT"
+aliases = ["partition", "partitions"]
+case_sensitive = false
+
+[[entities]]
+name = "replica"
+type = "CONCEPT"
+aliases = ["in-sync replica", "in-sync replicas", "ISR", "replica", "replicas"]
+case_sensitive = false
+
+[[entities]]
+name = "replication factor"
+type = "CONCEPT"
+aliases = ["replication factor"]
+case_sensitive = false
+
+[[entities]]
+name = "offset"
+type = "CONCEPT"
+aliases = ["consumer offset", "consumer offsets", "offset", "offsets"]
+ambiguous = ["offset", "offsets"]
+case_sensitive = false
+technology = "Apache Kafka"
+
+[[entities]]
+name = "exactly-once semantics"
+type = "CONCEPT"
+aliases = ["exactly-once semantics", "exactly-once", "exactly once"]
+case_sensitive = false
+
+[[entities]]
+name = "at-least-once delivery"
+type = "CONCEPT"
+aliases = ["at-least-once delivery", "at-least-once", "at least once"]
+case_sensitive = false
+
+[[entities]]
+name = "idempotence"
+type = "CONCEPT"
+aliases = ["idempotence", "idempotent producer"]
+case_sensitive = false
+
+[[entities]]
+name = "log compaction"
+type = "CONCEPT"
+aliases = ["log compaction", "compacted topic", "compacted topics"]
+case_sensitive = false
+
+[[entities]]
+name = "DAG"
+type = "CONCEPT"
+aliases = ["DAG", "DAGs", "directed acyclic graph", "directed acyclic graphs"]
+case_sensitive = false
+technology = "Apache Airflow"
+
+[[entities]]
+name = "DAG run"
+type = "CONCEPT"
+aliases = ["DAG run", "DAG runs"]
+case_sensitive = false
+technology = "Apache Airflow"
+
+[[entities]]
+name = "task instance"
+type = "CONCEPT"
+aliases = ["task instance", "task instances"]
+case_sensitive = false
+technology = "Apache Airflow"
+
+[[entities]]
+name = "trigger rule"
+type = "CONCEPT"
+aliases = ["trigger rule", "trigger rules"]
+case_sensitive = false
+technology = "Apache Airflow"
+
+[[entities]]
+name = "backfill"
+type = "CONCEPT"
+aliases = ["backfill", "backfills", "catchup"]
+case_sensitive = false
+technology = "Apache Airflow"
+
+[[entities]]
+name = "data interval"
+type = "CONCEPT"
+aliases = ["data interval", "data intervals", "logical date"]
+case_sensitive = false
+technology = "Apache Airflow"
+
+[[entities]]
+name = "shuffle"
+type = "CONCEPT"
+aliases = ["shuffle", "shuffles"]
+ambiguous = ["shuffle", "shuffles"]
+case_sensitive = false
+technology = "Apache Spark"
+
+[[entities]]
+name = "lazy evaluation"
+type = "CONCEPT"
+aliases = ["lazy evaluation", "lazily evaluated"]
+case_sensitive = false
+
+[[entities]]
+name = "deploy mode"
+type = "CONCEPT"
+aliases = ["deploy mode", "cluster mode", "client mode"]
+case_sensitive = false
+technology = "Apache Spark"
+
+[[entities]]
+name = "broadcast variable"
+type = "CONCEPT"
+aliases = ["broadcast variable", "broadcast variables"]
+case_sensitive = false
+technology = "Apache Spark"
+
+[[entities]]
+name = "MVCC"
+type = "CONCEPT"
+aliases = ["MVCC", "multiversion concurrency control"]
+
+[[entities]]
+name = "write-ahead log"
+type = "CONCEPT"
+aliases = ["write-ahead log", "write-ahead logging", "WAL"]
+case_sensitive = false
+
+[[entities]]
+name = "transaction isolation"
+type = "CONCEPT"
+aliases = ["transaction isolation", "isolation level", "isolation levels"]
+case_sensitive = false
+
+[[entities]]
+name = "Read Committed"
+type = "CONCEPT"
+aliases = ["Read Committed"]
+technology = "PostgreSQL"
+
+[[entities]]
+name = "Repeatable Read"
+type = "CONCEPT"
+aliases = ["Repeatable Read"]
+technology = "PostgreSQL"
+
+[[entities]]
+name = "Serializable"
+type = "CONCEPT"
+aliases = ["Serializable", "serializable isolation"]
+ambiguous = ["Serializable"]
+technology = "PostgreSQL"
+
+[[entities]]
+name = "serialization anomaly"
+type = "CONCEPT"
+aliases = ["serialization anomaly", "serialization anomalies", "serialization failure", "serialization failures"]
+case_sensitive = false
+
+[[entities]]
+name = "dirty read"
+type = "CONCEPT"
+aliases = ["dirty read", "dirty reads", "nonrepeatable read", "nonrepeatable reads", "phantom read", "phantom reads"]
+case_sensitive = false
+
+[[entities]]
+name = "index scan"
+type = "CONCEPT"
+aliases = ["index scan", "index scans", "sequential scan", "sequential scans", "seq scan", "bitmap scan", "bitmap heap scan"]
+case_sensitive = false
+technology = "PostgreSQL"
+
+[[entities]]
+name = "query plan"
+type = "CONCEPT"
+aliases = ["query plan", "query plans", "execution plan", "execution plans"]
+case_sensitive = false
+
+[[entities]]
+name = "tablespace"
+type = "CONCEPT"
+aliases = ["tablespace", "tablespaces"]
+case_sensitive = false
+technology = "PostgreSQL"

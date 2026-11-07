@@ -10,6 +10,7 @@ import sqlite3
 import pytest
 
 from techdocqa.cli import main
+from techdocqa.enrichment.entities import Gazetteer, config_id
 from techdocqa.errors import TechDocQAError
 from techdocqa.indexing import embeddings
 from techdocqa.indexing.lifecycle import delete_document, withdraw_document
@@ -401,7 +402,23 @@ def test_entity_filter_uses_verified_registry_memberships(indexed, model_setting
     version = indexed['redis.md'].version_id
     chunk = active_chunks(version, model_settings, registry)[0]['chunk_id']
     registry.execute('INSERT INTO verified_entities(chunk_id,version_id,entity) VALUES (?,?,?)', (chunk, version, 'redis'))
+    # A membership with no enrichment identity behind it is not current, so it filters nothing.
+    assert query(model_settings, registry, 'keys memory', mode=mode, entity='REDIS').results == []
+    enrichment = model_settings.enrichment
+    current = config_id(Gazetteer(enrichment.gazetteer), enrichment.entity_verification_threshold)
+    seed_enrichment(registry, version, current)
     assert [r.chunk_id for r in query(model_settings, registry, 'keys memory', mode=mode, entity='REDIS').results] == [chunk]
+    # Rows written under another entity configuration (an old gazetteer or threshold) are stale until enrich reruns.
+    registry.execute('UPDATE enrichments SET entity_config_id=? WHERE version_id=?', ('ec_stale', version))
+    assert query(model_settings, registry, 'keys memory', mode=mode, entity='REDIS').results == []
+
+
+def seed_enrichment(registry, version_id, entity_config_id):
+    chunking = registry.get_version(version_id).chunking
+    registry.execute('''INSERT INTO enrichments(version_id,chunking_config_id,snapshot_hash,enrichment_config_id,entity_config_id,
+                        keyphrase_config_id,classifier_config_id,entity_count,verified_count,keyphrase_status,
+                        classification_status,updated_at) VALUES (?,?,?,'en_x',?,'kc_x','cc_x',1,1,'unavailable','not_configured','t')''',
+                     (version_id, chunking.chunking_config_id, chunking.snapshot_hash, entity_config_id))
 
 
 QUERIES = ['Kafka brokers', 'consumer polling', 'Redis memory', 'eviction policy', 'HTTP/2 streams',
@@ -671,11 +688,11 @@ def test_schema_version_one_registry_migrates_in_place(tmp_path, corpus, setting
     connection.commit()
     connection.close()
     with Registry(path) as registry:
-        assert registry.execute('PRAGMA user_version').fetchone()[0] == 2
+        assert registry.execute('PRAGMA user_version').fetchone()[0] == 3
         assert registry.execute('SELECT document_id FROM documents').fetchone()[0] == 'doc_1'
         assert registry.execute('SELECT COUNT(*) FROM embeddings').fetchone()[0] == 0
     with Registry(path) as again:
-        assert again.execute('PRAGMA user_version').fetchone()[0] == 2
+        assert again.execute('PRAGMA user_version').fetchone()[0] == 3
 
 
 def test_cli_workflow_index_search_withdraw_delete(indexed, model_settings, registry, monkeypatch, capsys):

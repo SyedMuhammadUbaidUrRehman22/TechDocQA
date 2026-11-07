@@ -1,4 +1,4 @@
-"""Command-line interface: configuration, ingestion, processing, search, answers, lifecycle and evaluation."""
+"""Command-line interface: configuration, ingestion, processing, enrichment, search, answers, lifecycle and evaluation."""
 
 import argparse
 import json
@@ -112,6 +112,12 @@ def make_parser() -> argparse.ArgumentParser:
     indexing = commands.add_parser("index", help="embed active chunks and update the vector index; unchanged chunks make no model call")
     indexing.add_argument("version_ids", nargs="*")
     indexing.add_argument("--rebuild", action="store_true", help="restore the whole vector index from stored embeddings")
+    enriching = commands.add_parser("enrich", help="extract entities, keyphrases and categories from active chunks; "
+                                                   "unchanged documents are skipped")
+    enriching.add_argument("version_ids", nargs="*")
+    showing = commands.add_parser("enrichment", help="show a document's entities, keyphrases and categories (read-only)")
+    showing.add_argument("document_id")
+    showing.add_argument("--chunk-id", help="only this current chunk's entities and keyphrases")
     searching = commands.add_parser("search", help="search active chunks by BM25 or vector similarity")
     searching.add_argument("query", help="query text; put -- first if it begins with a dash")
     searching.add_argument("--mode", choices=["bm25", "vector", "hybrid"])
@@ -148,8 +154,8 @@ def make_parser() -> argparse.ArgumentParser:
     answer_runs.add_argument("--record-review", type=Path, metavar="SHEET",
                              help="copy the ratings from a filled answer review sheet into its report and judge AC-16.6")
     evaluation.add_argument("--reviewer", help="who rated the answers, recorded with --record-review")
-    for command in (check, ingest, status, listing, history, processing, chunking, indexing, searching, asking, withdrawal,
-                    deletion, evaluation):
+    for command in (check, ingest, status, listing, history, processing, chunking, indexing, enriching, showing, searching, asking,
+                    withdrawal, deletion, evaluation):
         command.add_argument("--config", type=Path, default=Path("config/default.toml"))
         command.add_argument("--profile", type=Path)
         command.add_argument("--json", action="store_true", default=argparse.SUPPRESS,
@@ -226,6 +232,15 @@ def main(argv: list[str] | None = None) -> int:
                 result = index_versions(args.version_ids, settings, registry, rebuild=args.rebuild)
                 emit(result)
                 return 1 if result.run.failed else 0
+            if args.command == "enrich":
+                from techdocqa.enrichment.pipeline import enrich_versions
+                result = enrich_versions(args.version_ids, settings, registry)
+                emit(result)
+                return 1 if result.run.failed else 0
+            if args.command == "enrichment":
+                from techdocqa.enrichment.pipeline import show_enrichment
+                print(json.dumps(show_enrichment(args.document_id, settings, registry, args.chunk_id), ensure_ascii=True))
+                return 0
             if args.command == "search":
                 from techdocqa.retrieval.search import search
                 emit(search(request, settings, registry))
