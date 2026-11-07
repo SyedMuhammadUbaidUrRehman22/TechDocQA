@@ -1,5 +1,9 @@
 # Requirements traceability
 
+## P0 gate update
+
+2026-11-07: `tests/test_generation.py` covers `eval --record-review`: copying ratings and notes into the report, partial and complete reviews, AC-16.6's 8-of-10 boundary, and invalid sheets, ratings and reviewer names. AC-16.6 is recorded at 8 of 10 by an AI reviewer the owner designated, a deviation from "a human reviewer". `datasets/verify_index.py --live` meets AC-12.1 as amended on 2026-11-04, with index recall@3 against exact search at 1.0 on 143 queries. Both amendments are in [decisions](DECISIONS.md#p0-gate-amendments-2026-11-04). Original source AC text below is unchanged.
+
 ## Implemented acceptance slices - Phase 8
 
 2026-11-04: `tests/test_sufficiency.py` covers the FR-18 gate and its Q-07 scales: a hand-computed BM25 relevance, worked calibration examples with leave-one-out errors, threshold validation and binding to one mode's score scale, refusal without a model call (call counter), the post-trimming recheck, AC-18.3 for an empty index and an empty filter result, AC-18.4 with good retrieval and a failing model or embedder, AC-18.5 in configuration, responses, `config-check` and eval reports, AC-21.1 after a withdrawal, and `eval --refusal`. `tests/test_indexing.py` adds the chunk and index counts of AC-05.1 and AC-05.4. With the real model, `eval --refusal` meets AC-18.1 (10 of 10) and AC-18.2 (19 of 20) in both BM25 and vector mode, `scripts/cli_smoke.ps1` meets AC-22.3 and AC-21.1, and the live injection test meets AC-23.3 at its first attempt. **AC-16.6 and AC-12.1 remain open, so P0 is not released.** The [Phase 8 report](PHASE_8_STATUS.md#p0-acceptance-reconciliation) reconciles every P0 criterion. Original source AC text below is unchanged.

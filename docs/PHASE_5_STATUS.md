@@ -81,6 +81,8 @@ Remove-Item -Recurse -Force data\index\chroma
 
 The index is not the cause: it hits the target exactly as often as exact search and returns the same top 3 on 151 of 152 queries. The misses are mostly short, generic sentences with little to identify their source, such as "These possibilities are not covered in this tutorial." In these cases a single-sentence query does not resemble the much longer chunk. DDIA accounts for 9 of the 28 misses by competing for the top 3. Nothing was tuned to raise this figure. An earlier sampler that took the first sentence-like text in a chunk scored 32 of 38, and all 6 of its misses were fragments shared with a neighboring chunk's overlap; it was replaced, and the wider sample above is the result to use. Phase 6 measures retrieval on reviewed questions, and P1 hybrid search is the planned improvement. The criterion should be either met or explicitly amended before P0 release; it is not waived here.
 
+**Update 2026-11-07.** AC-12.1 was amended on 2026-11-04 to index fidelity, recall@3 against exact search, and is met at 1.0 on 143 sentence queries. See [decisions](DECISIONS.md#p0-gate-amendments-2026-11-04) and the [Phase 8 gate update](PHASE_8_STATUS.md#gate-update-2026-11-07).
+
 **NFR-02 is not met for vector search.** The target is p95 at most 1 s without reranking. Warm vector search measured 1.377 s; BM25 measured 0.138 s. Stage timings were not separated, so how much of this is query embedding is not established. A one-shot CLI command takes 3.6 to 5.3 s in total, including process startup, which was not timed separately. Phase 11 remains the formal measurement.
 
 ## Acceptance boundaries

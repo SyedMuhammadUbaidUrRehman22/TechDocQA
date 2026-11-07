@@ -8,11 +8,11 @@ The roadmap puts Phase 9 after the P0 release gate, and that gate is blocked:
 
 | Blocker | What clears it |
 |---|---|
-| AC-16.6 | You rate the 10 answers in `data/evaluation/answers_d724f334f9f0409884db95613c61663e_review.md`; at least 8 must be supported. If fewer are, answer quality needs work before P1. |
-| AC-12.1 | 124 of 152 sentence queries on the real corpus. It needs a fix or an approved amendment. P1 hybrid search does not make vector search itself pass, so it is not a fix for this criterion as written. |
+| AC-16.6 | Rated 8 of 10 supported on 2026-11-04 by Claude as the designated reviewer. Confirm that designation, or rate the sheet yourself and record it with `eval --record-review`. |
+| AC-12.1 | Amended on 2026-11-04 to index recall@3 against exact search, at least 0.99; measured 1.0 on 143 queries on 2026-11-07. Confirm the amendment. |
 | Q-07, Q-12, Q-13 | Approve or amend; this changes recorded policy IDs, not code. |
 
-**Recommendation:** rate AC-16.6 first. Then start Phase 9 alongside the AC-12.1 decision, with P0 still marked unreleased. Phase 9 must not change retrieval or answers. Each run proves that: `eval` gives the same `results_fingerprint` before and after enrichment, so the Phase 8 calibration stays valid.
+**Recommendation:** confirm the two amendments and Q-07, Q-12 and Q-13, then start Phase 9. Until then, P0 stays marked unreleased. Phase 9 must not change retrieval or answers. Each run proves that: `eval` gives the same `results_fingerprint` before and after enrichment, so the Phase 8 calibration stays valid.
 
 ## What already exists
 

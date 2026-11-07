@@ -2,7 +2,7 @@
 
 Implementation and evidence checkpoint 2026-11-04 on Windows, Python 3.13.3, local Ollama 0.40.13 with `qwen3:1.7b` and `nomic-embed-text:latest`. Phase 8 adds the FR-18 sufficiency gate: each retrieval mode has its own 0-1 relevance scale and its own thresholds, calibrated on the reviewed smoke benchmark. When the chunks kept for the prompt are not relevant enough, `ask` refuses without calling the model. Phase 8 also adds a real-model refusal check, a real-model CLI smoke script, and a reconciliation of every P0 acceptance criterion.
 
-**Result:** FR-18 is met. On all 30 smoke questions with the real model, each mode refused 10 of 10 out-of-domain questions and answered 19 of 20 answerable ones, against targets of 90% and 85%. No gate refusal made a model call. AC-18.3 to AC-18.5 and AC-21.1 are met in tests, and AC-21.1 and AC-22.3 are also met through the CLI script with the real models. **P0 is not released.** Two P0 criteria are open: AC-16.6, because no support rating has been recorded for the 10 Phase 7 answers, and AC-12.1 on the real corpus, at 124 of 152. Q-07, Q-12 and Q-13 are implemented as proposed but not formally approved. See [P0 reconciliation](#p0-acceptance-reconciliation).
+**Result:** FR-18 is met. On all 30 smoke questions with the real model, each mode refused 10 of 10 out-of-domain questions and answered 19 of 20 answerable ones, against targets of 90% and 85%. No gate refusal made a model call. AC-18.3 to AC-18.5 and AC-21.1 are met in tests, and AC-21.1 and AC-22.3 are also met through the CLI script with the real models. **P0 is not released.** Q-07, Q-12 and Q-13 are implemented as proposed but not formally approved. AC-16.6 and AC-12.1, open at this checkpoint, were settled by the [gate update of 2026-11-07](#gate-update-2026-11-07) under the owner's amendments of 2026-11-04, which still await confirmation. See [P0 reconciliation](#p0-acceptance-reconciliation).
 
 ## What was added
 
@@ -107,12 +107,12 @@ Every P0 acceptance criterion, with where its evidence is. "Tests" means the off
 | FR-10 | AC-10.1 to AC-10.7 | Met | Tests and real: 816 public-reference chunks against about 3,000 ([Phase 4](PHASE_4_STATUS.md)); the re-chunked index part of AC-10.5 in Phase 5 tests. |
 | FR-11 | AC-11.1 to AC-11.3, AC-11.5 | Met | Real and tests ([Phase 5](PHASE_5_STATUS.md)). |
 | FR-11 | AC-11.4 | Met in tests only | A fake second embedder; no real second model was run. |
-| FR-12 | AC-12.1 | **Open** | Fixture passes; real corpus **124 of 152** sentence queries ([Phase 5](PHASE_5_STATUS.md#open-results)). Needs a fix or an approved amendment. |
+| FR-12 | AC-12.1 | Met as amended | Index recall@3 against exact search **1.0** on 143 sentence queries, target 0.99 ([gate update](#gate-update-2026-11-07)). As written, 112 of 143. |
 | FR-12 | AC-12.2 to AC-12.7 | Met | Real and tests ([Phase 5](PHASE_5_STATUS.md)). |
 | FR-13 | AC-13.1 to AC-13.5 | Met | Real and tests ([Phase 5](PHASE_5_STATUS.md)). |
 | FR-16 | AC-16.1 | Met | Real 10 of 10 ([Phase 7](PHASE_7_STATUS.md)); 19 of 20 in the vector refusal check. |
 | FR-16 | AC-16.2 to AC-16.5 | Met | Tests; AC-16.3 also on the real adapter ([Phase 7](PHASE_7_STATUS.md)). |
-| FR-16 | AC-16.6 | **Open** | No support rating is recorded. The review sheet and the committed report still have empty Supported columns. |
+| FR-16 | AC-16.6 | Met, AI reviewer | 8 of 10 rated yes, 1 partly, 1 no, in the [answer report](../reports/evaluation/answers_d724f334f9f0409884db95613c61663e.md). The reviewer is Claude, designated by the owner; the criterion as written asks for a human reviewer. |
 | FR-17 | AC-17.1 to AC-17.4 | Met | Tests ([Phase 7](PHASE_7_STATUS.md)). |
 | FR-18 | AC-18.1, AC-18.2 | Met | Real: see [Refusal](#refusal-with-the-real-model-ac-181-ac-182). |
 | FR-18 | AC-18.3, AC-18.4, AC-18.5 | Met | Tests in this phase; AC-18.5 also in [default.toml](../config/default.toml), every report and `config-check`. |
@@ -126,12 +126,31 @@ Every P0 acceptance criterion, with where its evidence is. "Tests" means the off
 | FR-23 | AC-23.1, AC-23.2, AC-23.4 | Met | Tests ([Phase 2](PHASE_2_STATUS.md), [Phase 7](PHASE_7_STATUS.md)). |
 | FR-23 | AC-23.3 | Met | Real model, as a mitigation check; see the rerun above. AC-23.5 is P2. |
 
-**P0 release decision: blocked.** AC-16.6 and AC-12.1 are open. Release also needs approval or amendment of Q-07, Q-12 and Q-13, which change policy IDs rather than code. The NFRs, including NFR-02's vector-search latency (p95 1.377 s against 1 s in Phase 5), are measured formally in Phase 11.
+**P0 release decision: blocked.** AC-16.6 and AC-12.1 are settled only under the 2026-11-04 amendments, which the owner has yet to confirm. Release also needs approval or amendment of Q-07, Q-12 and Q-13, which change policy IDs rather than code. The NFRs, including NFR-02's vector-search latency (p95 1.377 s against 1 s in Phase 5), are measured formally in Phase 11.
+
+## Gate update (2026-11-07)
+
+Both changes are recorded in [decisions](DECISIONS.md#p0-gate-amendments-2026-11-04).
+
+**AC-16.6.** `eval --record-review` copied the ratings into the [answer report](../reports/evaluation/answers_d724f334f9f0409884db95613c61663e.md): 8 of 10 yes, 1 partly (`smoke-airflow-03`, an unsupported "sequentially") and 1 no (`smoke-kafka-03`, an unsupported and wrong claim about when a consumer sees a message). The reviewer is Claude Opus 5.5, designated by the project owner. The source text asks for a human reviewer.
+
+**AC-12.1.** `datasets/verify_index.py --live` on the real corpus, 7 min 52 s, result `passed`:
+
+| Measure | Value |
+|---|---|
+| Sentence queries (every third public chunk with a whole sentence outside its overlap) | 143 |
+| **Index recall@3 against exact search** (amended criterion, target 0.99) | **1.0** |
+| Index top 3 equal to exact top 3 | 143 of 143 |
+| Exact hits lost by the index | 0 |
+| Sentence finds its chunk in the top 3: index / exact / exact on public documents only | 112 / 112 / 122 |
+| Sentence finds its chunk in the top 3: BM25 | 143 |
+| Identifier queries at rank 1 | 8 of 8 |
+
+The sample is 143 rather than Phase 5's 152 because the corrected sampler no longer ends a sentence at a dotted name. As written, AC-12.1 would be 112 of 143 (78.3%). BM25 found every sentence's chunk, which supports the P1 hybrid plan. Warm vector search in this run had p95 3.564 s and max 21.762 s, against 1.377 s in Phase 5, with BM25 at 0.157 s. The run followed a long stall in which Ollama stopped answering, so this timing is not a clean measurement; NFR-02 is measured in Phase 11.
 
 ## Open items
 
-- **AC-16.6.** A person rates the 10 answers in `data/evaluation/answers_d724f334f9f0409884db95613c61663e_review.md` as yes, partly or no, and the ratings go into the committed [answer report](../reports/evaluation/answers_d724f334f9f0409884db95613c61663e.md). At least 8 must be yes.
-- **AC-12.1** on the real corpus, at 124 of 152: meet it, for example with P1 hybrid search, or amend it with approval.
+- **Confirm the 2026-11-04 amendments.** AC-12.1 as index fidelity, and Claude as the AC-16.6 reviewer. For a human rating instead, a person fills in `data/evaluation/answers_d724f334f9f0409884db95613c61663e_review.md` and runs `eval --record-review`, which replaces the recorded ratings.
 - **Q-07, Q-12, Q-13 approval.** Each is implemented as proposed; an approval or amendment changes its policy ID.
 - **Recalibration.** The thresholds belong to this corpus, models and BM25 settings. A new embedding model or BM25 setting makes them stale, which `ask` and `config-check` report. Corpus changes do not, so rerun `eval` after material corpus changes.
 
