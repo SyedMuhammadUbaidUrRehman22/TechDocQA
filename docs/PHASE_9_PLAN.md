@@ -1,6 +1,6 @@
 # Phase 9 plan: P1 NLP enrichment
 
-Status: **proposed 2026-11-04, revised 2026-11-07 after the [risk assessment](#risk-assessment-2026-11-07), not approved.** Nothing in this plan is implemented. It covers roadmap Phase 9: FR-06 full, FR-07, FR-08, FR-09 and their FR-12/FR-13 filter extensions. Sources: [Revision 3 requirements](../TechDocQA_Requirements_v2.md), [roadmap](IMPLEMENTATION_ROADMAP.md#phase-9--p1-nlp-enrichment), [decisions](DECISIONS.md) D-08, Q-11, Q-14 and Q-16, and the [Phase 8 report](PHASE_8_STATUS.md).
+Status: **proposed 2026-11-04, revised 2026-11-07 after the [risk assessment](#risk-assessment-2026-11-07), approved 2026-11-07; in progress.** P9-1 to P9-12 are recorded as [Phase 9 contracts](DECISIONS.md#phase-9-contracts-2026-11-07), with YAKE replaced by RAKE at the dependency gate. See [Progress](#progress-2026-11-07). It covers roadmap Phase 9: FR-06 full, FR-07, FR-08, FR-09 and their FR-12/FR-13 filter extensions. Sources: [Revision 3 requirements](../TechDocQA_Requirements_v2.md), [roadmap](IMPLEMENTATION_ROADMAP.md#phase-9--p1-nlp-enrichment), [decisions](DECISIONS.md) D-08, Q-11, Q-14 and Q-16, and the [Phase 8 report](PHASE_8_STATUS.md).
 
 ## Entry gate
 
@@ -81,6 +81,23 @@ Each step ends with offline tests passing. Steps 2 and 3 run in parallel; scorin
 | 9 | Phase 9 report, traceability, README and roadmap; full offline suite | `docs/PHASE_9_STATUS.md` |
 
 Step 7 is last and isolated, so a spaCy gate failure does not hold up FR-07 to FR-09.
+
+## Progress (2026-11-07)
+
+| Step | State |
+|---|---|
+| 0 Decisions | ✅ Approved 2026-11-07 |
+| 1 Dependency gate | ✅ Passed; spaCy 3.8.18 kept, YAKE replaced by `rake-nltk` 1.0.6 (license) |
+| 2 Gold data | 🟡 Sheets and guidelines written, gazetteer frozen; awaiting the owner's labels and sentence review ([review log](../datasets/nlp/review_log.md)) |
+| 3 Storage and command | ✅ Schema v3 migration with verified backup, `enrich`, read-only `enrichment`; offline tests |
+| 4 Entities | ✅ Gazetteer and regex extractor; verified entities feed `--entity` in both modes |
+| 5 Keyphrases | ✅ RAKE, top 10 per document |
+| 6 Classification | 🟡 Built with user precedence and the P9-7 filter; no `unclassified` threshold yet, so documents are `not_calibrated` |
+| 7 Segmentation | ⬜ Not started |
+| 8 Evaluation | ⬜ `eval --enrichment` not built; no measurement on the real corpus |
+| 9 Report | ⬜ |
+
+The real registry is still at schema version 2: `enrich` has not been run on it yet.
 
 ## Provenance
 

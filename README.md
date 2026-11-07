@@ -1,9 +1,11 @@
 # TechDocQA
-TechDocQA is a domain-specific RAG project for answering software and data engineering questions from technical documentation with source citations. It uses LangChain, local embeddings, a persisted Chroma index and BM25 search, and answers questions with a local Ollama model that cites the stored source of each claim. When no retrieved passage is relevant enough, it refuses without calling the model. NLP enrichment and hybrid search are planned.
+TechDocQA is a domain-specific RAG project for answering software and data engineering questions from technical documentation with source citations. It uses LangChain, local embeddings, a persisted Chroma index and BM25 search, and answers questions with a local Ollama model that cites the stored source of each claim. When no retrieved passage is relevant enough, it refuses without calling the model. NLP enrichment (entities, keyphrases and categories) is being built in Phase 9; hybrid search is planned.
 
 ## Current status
 
 Phases 1-8 are implemented. You can ingest local files and approved web pages, normalize and chunk them, build a local index, search it by BM25 or vector similarity, ask questions with `ask`, withdraw or delete documents, and measure retrieval and refusal with `eval`.
+
+**Phase 9 (P1 NLP enrichment) is in progress.** The project owner approved its decisions P9-1 to P9-12 on 2026-11-07. The new `enrich` command extracts entities from a gazetteer and regex rules, extracts keyphrases with RAKE, and classifies documents by embedding similarity; `enrichment` shows the results. Verified entities feed `--entity`, and inferred categories feed `--category` for documents without a user category. The dependency gate passed with one substitution: YAKE ships an AGPL license file, so keyphrases use `rake-nltk` instead. Still open: annotating the gold sets, `eval --enrichment` with its measurements, the classification threshold, the spaCy segmenter comparison, and a first `enrich` run on the real corpus. See the [Phase 9 plan](docs/PHASE_9_PLAN.md) and its [contracts](docs/DECISIONS.md#phase-9-contracts-2026-11-07).
 
 `ask` now refuses a question when no retrieved chunk meets a relevance threshold calibrated on the smoke benchmark, and it makes no model call when it does. On all 30 smoke questions in vector mode, it refused 10 of 10 out-of-domain questions and answered 19 of 20 answerable ones, against targets of 90% and 85%. **The P0 release gate passed on 2026-11-07.** 8 of 10 answers were rated supported by their citations (AC-16.6), by Claude as the reviewer the project owner designated, where the requirement asks for a person. AC-12.1 is met as amended. The owner approved both changes and Q-07, Q-12 and Q-13. See the [Phase 8 report](docs/PHASE_8_STATUS.md#gate-update-2026-11-07).
 
@@ -13,7 +15,7 @@ All 2,735 chunks are indexed: 816 from the 20-document public reference and 1,91
 
 The selected local models are Ollama `qwen3:1.7b` and `nomic-embed-text:latest`. Installed metadata verifies the embedding model's BERT tokenizer family and 2,048-token input limit; its advertised `num_ctx=8192` does not override the API's metadata clamp. Exact provider token counting is unavailable, so chunks use recorded character counting plus a conservative UTF-8 bound: at most 1000 characters and 2,029 bytes, overlap 150, minimum 100. The generation tokenizer is independent. Offline tests and chunking never call a provider; embedding runs through local Ollama. OpenAI chunking profiles are accepted with `embedding_tokenizer = "tiktoken"` and a context window. The OpenAI chat adapter is wired, but its LangChain package is not installed, and OpenAI embeddings are not implemented.
 
-**Jump to:** [Pipeline](#how-it-works) · [Search](#which-search-sees-what) · [Progress](#progress) · [Results](#measured-results) · [Ask](#asking-questions) · [Commands](#command-guide)
+**Jump to:** [Pipeline](#how-it-works) · [Search](#which-search-sees-what) · [Progress](#progress) · [Results](#measured-results) · [Ask](#asking-questions) · [Enrichment](#nlp-enrichment) · [Commands](#command-guide)
 
 Select any section below to expand it.
 
@@ -69,7 +71,8 @@ stateDiagram-v2
 | 6 | [Smoke benchmark and retrieval metrics](docs/PHASE_6_STATUS.md) | ✅ Done, benchmark reviewed |
 | 7 | [Answers and citations](docs/PHASE_7_STATUS.md) | ✅ Built, human answer review open |
 | 8 | [Calibrated refusal and P0 release gate](docs/PHASE_8_STATUS.md) | ✅ Built, P0 release gate passed 2026-11-07 |
-| 9-10 | NLP enrichment, hybrid search, reranking | ⬜ Planned |
+| 9 | [NLP enrichment](docs/PHASE_9_PLAN.md): entities, keyphrases, categories | 🟡 In progress: commands built, measurements open |
+| 10 | Hybrid search, reranking | ⬜ Planned |
 | 11-12 | Operational verification, optional extras | ⬜ Planned |
 
 ## Measured results
@@ -87,7 +90,7 @@ stateDiagram-v2
 | Benchmark reviewed by a second person | Reviewed | All 30 accepted | ✅ |
 | Smoke questions answered with a citation | 10 of 10 | 10 of 10 | ✅ |
 | Injected instruction ignored by the model | Not followed | 3 of 3 | ✅ |
-| Answers rated supported by a person | At least 8 of 10 | Not yet rated | ❌ |
+| Answers rated supported by the designated reviewer | At least 8 of 10 | 8 of 10 | ✅ |
 | Out-of-domain smoke questions refused, each mode | At least 90% | 10 of 10 | ✅ |
 | Answerable smoke questions answered, each mode | At least 85% | 19 of 20 | ✅ |
 | Model calls when the relevance gate refuses | 0 | 0 | ✅ |
@@ -143,7 +146,7 @@ py -3.13 -m venv .venv
 
 `config-check` validates settings without contacting providers. `config-check --require-models` succeeds for the selected default profile; it verifies selection, not connectivity or model quality. TOML settings are in [config/default.toml](config/default.toml). TECHDOCQA_CHAT_MODEL and TECHDOCQA_EMBEDDING_MODEL override model names. Changing embeddings requires a verified context/tokenizer/digest profile and explicit re-chunking; unsupported profiles fail safely. Relative paths resolve against the base configuration file.
 
-Keep credentials out of TOML, logs and version control. Local runtime data and virtual environments are ignored. Phase 3A uses LangChain's pinned `BSHTMLLoader`, BeautifulSoup, urllib3 and certifi. The archived loader package is a documented maintenance limitation; its network client is never used. NLP and reranking integrations remain later work.
+Keep credentials out of TOML, logs and version control. Local runtime data and virtual environments are ignored. Phase 3A uses LangChain's pinned `BSHTMLLoader`, BeautifulSoup, urllib3 and certifi. The archived loader package is a documented maintenance limitation; its network client is never used. The lock also installs spaCy and `rake-nltk`, the optional `nlp` extra used for keyphrases and the planned spaCy segmenter; without them, `enrich` reports keyphrases as unavailable. Reranking remains later work.
 
 </details>
 
@@ -238,7 +241,7 @@ Requires the local Ollama service with the pinned `nomic-embed-text:latest` for 
 .\.venv\Scripts\techdocqa.exe index --rebuild
 ```
 
-`index` embeds only chunks without a stored vector, so a repeat run needs no provider. `--rebuild` restores the whole vector index from stored vectors, also with no model call. BM25 needs no provider and serves chunked versions straight away; vector search needs `index` first. Filters are `--document-id`, `--technology`, `--category` and `--entity`. Unfiltered search includes every active document, including any private ones you have indexed. `hybrid` is not implemented yet. After changing the embedding model, run `chunk` and then `index`; each model keeps its own collection.
+`index` embeds only chunks without a stored vector, so a repeat run needs no provider. `--rebuild` restores the whole vector index from stored vectors, also with no model call. BM25 needs no provider and serves chunked versions straight away; vector search needs `index` first. Filters are `--document-id`, `--technology`, `--category` and `--entity`; `--entity` matches only after `enrich` has run (see [NLP enrichment](#nlp-enrichment)). Unfiltered search includes every active document, including any private ones you have indexed. `hybrid` is not implemented yet. After changing the embedding model, run `chunk` and then `index`; each model keeps its own collection.
 
 `search` prints matching chunk text. Everything stays on this machine under the Ollama profile. A one-off CLI search takes about 4 to 5 seconds, including startup. Known limits and measured results are in the [Phase 5 report](docs/PHASE_5_STATUS.md).
 
@@ -288,6 +291,30 @@ Questions and document text stay on this machine. Each question adds a line to t
 
 </details>
 
+<a id="nlp-enrichment"></a>
+<details>
+<summary><strong>NLP enrichment (Phase 9, in progress)</strong></summary>
+
+Run after `index`. Entities and keyphrases need no provider; classification uses the stored chunk vectors and embeds only the category descriptions, so it needs Ollama with `nomic-embed-text`.
+
+```powershell
+.\.venv\Scripts\techdocqa.exe enrich
+.\.venv\Scripts\techdocqa.exe enrich ver_ID
+.\.venv\Scripts\techdocqa.exe enrichment doc_ID
+.\.venv\Scripts\techdocqa.exe enrichment doc_ID --chunk-id chunk_ID
+.\.venv\Scripts\techdocqa.exe search "consumer groups" --mode bm25 --entity "Apache Kafka"
+```
+
+The first `enrich` upgrades the registry to schema version 3, after an automatic, verified backup to `registry.sqlite3.pre-v3.bak`. Unchanged documents are skipped on later runs, and re-chunking, withdrawal and deletion leave no stale entities or categories. `enrichment` is read-only.
+
+- **Entities (FR-07)** come from [config/gazetteer.toml](config/gazetteer.toml) and regex rules for identifiers and protocols. Ambiguous names such as `Spark` or `Kafka` count as exact only in context, and only verified entities feed `--entity`.
+- **Keyphrases (FR-08)** are the top 10 per document from RAKE. They are stored and shown but do not enter BM25.
+- **Categories (FR-09)** compare each document with the four configured category descriptions. Until an `unclassified` threshold is calibrated, documents are marked `not_calibrated` and get no inferred category. A user category always takes precedence.
+
+Unfiltered search and `ask` read no enrichment data, so the Phase 6 to 8 results stay valid. The gold sets for the enrichment measurements are prepared with `datasets/nlp_gold.py`; their state is in the [review log](datasets/nlp/review_log.md).
+
+</details>
+
 <a id="withdrawing-and-deleting-documents"></a>
 <details>
 <summary><strong>Withdrawing and deleting documents</strong></summary>
@@ -322,9 +349,10 @@ The source filename says v2, but its contents identify **Revision 3**; those con
 - [Phase 6 implementation checkpoint](docs/PHASE_6_STATUS.md)
 - [Phase 7 implementation checkpoint](docs/PHASE_7_STATUS.md)
 - [Phase 8 implementation checkpoint and P0 reconciliation](docs/PHASE_8_STATUS.md)
+- [Phase 9 plan: P1 NLP enrichment](docs/PHASE_9_PLAN.md)
 - [Development log](DEVELOPMENT_LOG.md)
 - [LangChain loaders, corpus formats and metadata plan](docs/LANGCHAIN_INGESTION_PLAN.md)
 - [Local development setup](deployment/local_setup.md)
 - [Corpus preparation](datasets/README.md)
 
-The reference corpus is frozen as `techdocqa-reference-2026-10-24-v2` and the local models are selected. The smoke benchmark is reviewed, and Phases 7 and 8 answering and calibrated refusal are built. The P0 release gate passed on 2026-11-07, and Phase 9 (P1 NLP enrichment) is next once its plan is approved. Hardware and budget remain open.
+The reference corpus is frozen as `techdocqa-reference-2026-10-24-v2` and the local models are selected. The smoke benchmark is reviewed, and Phases 7 and 8 answering and calibrated refusal are built. The P0 release gate passed on 2026-11-07. The Phase 9 plan was approved the same day, and its enrichment commands are built; the gold-set annotation and measurements are next. Hardware and budget remain open.
