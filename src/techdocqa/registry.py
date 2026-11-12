@@ -6,6 +6,7 @@ import json
 import os
 from pathlib import Path
 import sqlite3
+from urllib.parse import quote
 from uuid import uuid4
 
 from techdocqa.errors import TechDocQAError
@@ -228,6 +229,7 @@ def storage_error(error: sqlite3.Error) -> TechDocQAError:
 class Registry:
     def __init__(self, path: Path, *, timeout: float = 5):
         self.path = Path(path)
+        self.timeout = timeout
         self.connection = None
         self.backup_path = None
         try:
@@ -268,10 +270,14 @@ class Registry:
         """Copy through SQLite's backup API, then reopen the copy: integrity and every table's row count must match.
 
         Runs inside the migration's BEGIN IMMEDIATE transaction, so nothing can commit between the copy and the upgrade.
+        SQLite refuses to back up from a connection in a write transaction (sqlite3_backup_step returns SQLITE_BUSY, which
+        Python retries forever), so the copy is read through a second, read-only connection. This connection holds the
+        write lock but has written nothing yet, so the reader sees exactly the committed state that is about to be
+        migrated. The reader is closed before the migration commits, which needs every reader gone.
         The file is created exclusively, so this process only ever writes, or removes, a backup it made itself.
         """
         tables = [row[0] for row in self.execute("SELECT name FROM sqlite_master WHERE type='table' ORDER BY name").fetchall()]
-        copy = target = None
+        copy = target = source = None
         try:
             for number in range(1000):
                 suffix = f".pre-v{SCHEMA_VERSION}.bak" if number == 0 else f".pre-v{SCHEMA_VERSION}.{number}.bak"
@@ -285,23 +291,29 @@ class Registry:
             if target is None:
                 raise ValueError
             copy = sqlite3.connect(target)
-            self.connection.backup(copy)
+            source = sqlite3.connect(f"file:{quote(self.path.resolve().as_posix(), safe='/:')}?mode=ro", uri=True,
+                                     timeout=self.timeout)
+            source.backup(copy)
+            source.close()
+            source = None
             live = {name: self.execute(f'SELECT COUNT(*) FROM "{name}"').fetchone()[0] for name in tables}
             copied = {name: copy.execute(f'SELECT COUNT(*) FROM "{name}"').fetchone()[0] for name in tables}
             if (copy.execute("PRAGMA integrity_check").fetchone()[0] != "ok" or copied != live
                     or copy.execute("PRAGMA user_version").fetchone()[0] != version):
                 raise ValueError
         except (sqlite3.Error, OSError, ValueError):
-            if copy is not None:
-                copy.close()
-                copy = None
+            for handle in (source, copy):
+                if handle is not None:
+                    handle.close()
+            source = copy = None
             if target is not None:
                 target.unlink(missing_ok=True)
             raise TechDocQAError("REGISTRY_BACKUP_FAILED", "The registry could not be backed up before its upgrade; nothing was changed.",
                                  stage="registry") from None
         finally:
-            if copy is not None:
-                copy.close()
+            for handle in (source, copy):
+                if handle is not None:
+                    handle.close()
         self.backup_path = target
 
     def apply_schema(self, schema: str):

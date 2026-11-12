@@ -9,9 +9,10 @@ import sqlite3
 import pytest
 
 from techdocqa.cli import main
-from techdocqa.enrichment import keyphrases, pipeline
+from techdocqa.enrichment import classification, keyphrases, pipeline
 from techdocqa.enrichment.pipeline import enrich_versions, show_enrichment
 from techdocqa.errors import TechDocQAError
+from techdocqa.indexing.embeddings import embedding_profile
 from techdocqa.indexing.lifecycle import delete_document, withdraw_document
 from techdocqa.ingestion.chunks import active_chunks
 from techdocqa.ingestion.processing import finalized_documents
@@ -29,10 +30,19 @@ CATEGORIES = [
 ]
 
 
+def calibrated(profile, threshold=0.45, **changes) -> EnrichmentSettings:
+    """Enrichment settings whose threshold applies to this embedding profile's similarity scale."""
+    values = {"gazetteer": str(GAZETTEER), "categories": CATEGORIES, **changes}
+    if threshold is None:
+        return EnrichmentSettings(**values)
+    scale = classification.similarity_config_id(EnrichmentSettings(**values), profile)
+    return EnrichmentSettings(**values, unclassified_threshold=threshold, calibration_run_id="test_calibration",
+                              similarity_config_id=scale)
+
+
 @pytest.fixture
 def enrich_settings(model_settings):
-    model_settings.enrichment = EnrichmentSettings(gazetteer=str(GAZETTEER), categories=CATEGORIES,
-                                                   unclassified_threshold=0.45, calibration_run_id="test_calibration")
+    model_settings.enrichment = calibrated(embedding_profile(model_settings.model))
     return model_settings
 
 
@@ -117,7 +127,7 @@ def test_no_commit_can_land_between_the_backup_and_the_migration(tmp_path, monke
     monkeypatch.setattr(Registry, "backup_before_upgrade", racing)
     with Registry(path) as registry:
         assert registry.execute("PRAGMA user_version").fetchone()[0] == 3
-        assert registry.execute("SELECT document_id FROM documents").fetchall() == [("doc_1",)]
+        assert [tuple(row) for row in registry.execute("SELECT document_id FROM documents").fetchall()] == [("doc_1",)]
     assert blocked and "locked" in blocked[0]
     copy = sqlite3.connect(tmp_path / "old.sqlite3.pre-v3.bak")
     assert copy.execute("SELECT document_id FROM documents").fetchall() == [("doc_1",)]
@@ -294,8 +304,7 @@ def test_unfiltered_search_is_identical_before_and_after_enrich(indexed, enrich_
 
 
 def test_the_qa_prompt_does_not_read_enrichment(indexed, qa_settings, registry, chat, embedder):
-    qa_settings.enrichment = EnrichmentSettings(gazetteer=str(GAZETTEER), categories=CATEGORIES,
-                                                unclassified_threshold=0.45, calibration_run_id="test_calibration")
+    qa_settings.enrichment = calibrated(embedding_profile(qa_settings.model))
     first = ask(qa_settings, registry)
     assert enrich_versions([], qa_settings, registry).run.failed == 0
     second = ask(qa_settings, registry)
@@ -307,7 +316,8 @@ def test_the_qa_prompt_does_not_read_enrichment(indexed, qa_settings, registry, 
 
 def cli_config(tmp_path, settings) -> str:
     path = Path(write_config(tmp_path, settings))
-    lines = [f"gazetteer = '{GAZETTEER.as_posix()}'", "unclassified_threshold = 0.45", 'calibration_run_id = "test_calibration"']
+    lines = [f"gazetteer = '{GAZETTEER.as_posix()}'", "unclassified_threshold = 0.45", 'calibration_run_id = "test_calibration"',
+             f'similarity_config_id = "{settings.enrichment.similarity_config_id}"']
     for category in CATEGORIES:
         lines += ["[[enrichment.categories]]", f'name = "{category.name}"', f'description = "{category.description}"']
     path.write_text(path.read_text(encoding="utf-8") + "[enrichment]\n" + "\n".join(lines) + "\n", encoding="utf-8")

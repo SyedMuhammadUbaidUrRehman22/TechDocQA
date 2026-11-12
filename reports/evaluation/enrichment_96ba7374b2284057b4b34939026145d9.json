@@ -1,0 +1,1438 @@
+{
+  "run_id": "enrichment_96ba7374b2284057b4b34939026145d9",
+  "started_at": "2026-11-12T14:43:59.308547+00:00",
+  "finished_at": "2026-11-12T14:44:27.493210+00:00",
+  "duration_seconds": 28.185,
+  "stage_seconds": {
+    "segmentation": 0.0,
+    "entities": 0.0,
+    "keyphrases": 0.0,
+    "classification": 20.04,
+    "corpus_checks": 4.949,
+    "enrichment_times": 1.065
+  },
+  "scope": {
+    "documents": 20,
+    "unavailable": []
+  },
+  "targets": {
+    "AC-06.4": {
+      "boundary_f1": 0.95,
+      "min_sentences": 50
+    },
+    "AC-07.4": {
+      "precision": 0.8,
+      "recall": 0.6,
+      "min_chunks": 20
+    },
+    "AC-08.3": {
+      "mean_hit_rate": 0.5,
+      "documents": 5,
+      "top": 10
+    },
+    "AC-09.1": {
+      "accuracy": 0.85,
+      "min_documents_per_category": 2
+    }
+  },
+  "segmentation": {
+    "status": "awaiting_gold_data"
+  },
+  "entities": {
+    "status": "awaiting_gold_data"
+  },
+  "keyphrases": {
+    "status": "awaiting_gold_data"
+  },
+  "classification": {
+    "status": "scored",
+    "similarity_policy": "centroid-cosine-v1",
+    "similarity_config_id": "cs_f138c575d3b18c6553bf96f57e55f743f6637eb359e7d24fbbd95b63451e3803",
+    "classifier_config_id": "cc_b300c609bfa2ad4d6d467c74b8e25b374fd4442a6d8f6c2dd6b3c0eb7bf4ef18",
+    "active_threshold": {
+      "status": "calibrated",
+      "unclassified_threshold": 0.649099,
+      "calibration_run_id": "enrichment_eaf9c6a675d647008a9a99a0944b1bab"
+    },
+    "documents": [
+      {
+        "source_key": "[\"postgresql-18-transaction-system.txt\",null]",
+        "format": "txt",
+        "label": "Databases",
+        "status": "scored",
+        "ranked": [
+          [
+            "Databases",
+            0.715901
+          ],
+          [
+            "Distributed streaming",
+            0.714396
+          ],
+          [
+            "Distributed computing",
+            0.674293
+          ]
+        ],
+        "predicted": "Databases",
+        "top_score": 0.715901,
+        "rule_baseline": "Databases",
+        "assigned_under_proposal": [
+          "Databases",
+          "Distributed streaming",
+          "Distributed computing"
+        ],
+        "assigned_under_active": [
+          "Databases",
+          "Distributed streaming",
+          "Distributed computing"
+        ]
+      },
+      {
+        "source_key": "[\"postgresql-18-tutorial-advanced-features.pdf\",null]",
+        "format": "pdf",
+        "label": "Databases",
+        "status": "scored",
+        "ranked": [
+          [
+            "Databases",
+            0.782043
+          ],
+          [
+            "Distributed streaming",
+            0.721048
+          ],
+          [
+            "Distributed computing",
+            0.678403
+          ]
+        ],
+        "predicted": "Databases",
+        "top_score": 0.782043,
+        "rule_baseline": "Databases",
+        "assigned_under_proposal": [
+          "Databases",
+          "Distributed streaming",
+          "Distributed computing"
+        ],
+        "assigned_under_active": [
+          "Databases",
+          "Distributed streaming",
+          "Distributed computing"
+        ]
+      },
+      {
+        "source_key": "[\"postgresql-18-tutorial-getting-started.pdf\",null]",
+        "format": "pdf",
+        "label": "Databases",
+        "status": "scored",
+        "ranked": [
+          [
+            "Databases",
+            0.755453
+          ],
+          [
+            "Distributed streaming",
+            0.637395
+          ],
+          [
+            "Distributed computing",
+            0.608526
+          ]
+        ],
+        "predicted": "Databases",
+        "top_score": 0.755453,
+        "rule_baseline": "Databases",
+        "assigned_under_proposal": [
+          "Databases"
+        ],
+        "assigned_under_active": [
+          "Databases"
+        ]
+      },
+      {
+        "source_key": "[\"postgresql-18-tutorial-sql-language.pdf\",null]",
+        "format": "pdf",
+        "label": "Databases",
+        "status": "scored",
+        "ranked": [
+          [
+            "Databases",
+            0.742587
+          ],
+          [
+            "Distributed streaming",
+            0.65772
+          ],
+          [
+            "Distributed computing",
+            0.631945
+          ]
+        ],
+        "predicted": "Databases",
+        "top_score": 0.742587,
+        "rule_baseline": "Databases",
+        "assigned_under_proposal": [
+          "Databases",
+          "Distributed streaming"
+        ],
+        "assigned_under_active": [
+          "Databases",
+          "Distributed streaming"
+        ]
+      },
+      {
+        "source_key": "[\"spark-4.0.1-cluster-overview.md\",null]",
+        "format": "md",
+        "label": "Distributed computing",
+        "status": "scored",
+        "ranked": [
+          [
+            "Distributed computing",
+            0.799406
+          ],
+          [
+            "Databases",
+            0.687094
+          ],
+          [
+            "Distributed streaming",
+            0.685683
+          ]
+        ],
+        "predicted": "Distributed computing",
+        "top_score": 0.799406,
+        "rule_baseline": "unclassified",
+        "assigned_under_proposal": [
+          "Distributed computing",
+          "Databases",
+          "Distributed streaming"
+        ],
+        "assigned_under_active": [
+          "Distributed computing",
+          "Databases",
+          "Distributed streaming"
+        ]
+      },
+      {
+        "source_key": "[\"spark-4.0.1-hardware-provisioning.md\",null]",
+        "format": "md",
+        "label": "Distributed computing",
+        "status": "scored",
+        "ranked": [
+          [
+            "Distributed computing",
+            0.74255
+          ],
+          [
+            "Distributed streaming",
+            0.674586
+          ],
+          [
+            "Databases",
+            0.666975
+          ]
+        ],
+        "predicted": "Distributed computing",
+        "top_score": 0.74255,
+        "rule_baseline": "unclassified",
+        "assigned_under_proposal": [
+          "Distributed computing",
+          "Distributed streaming",
+          "Databases"
+        ],
+        "assigned_under_active": [
+          "Distributed computing",
+          "Distributed streaming",
+          "Databases"
+        ]
+      },
+      {
+        "source_key": "[\"spark-4.0.1-tuning.md\",null]",
+        "format": "md",
+        "label": "Distributed computing",
+        "status": "scored",
+        "ranked": [
+          [
+            "Distributed computing",
+            0.753117
+          ],
+          [
+            "Databases",
+            0.713966
+          ],
+          [
+            "Distributed streaming",
+            0.705524
+          ]
+        ],
+        "predicted": "Distributed computing",
+        "top_score": 0.753117,
+        "rule_baseline": "unclassified",
+        "assigned_under_proposal": [
+          "Distributed computing",
+          "Databases",
+          "Distributed streaming"
+        ],
+        "assigned_under_active": [
+          "Distributed computing",
+          "Databases",
+          "Distributed streaming"
+        ]
+      },
+      {
+        "source_key": "https://airflow.apache.org/docs/apache-airflow/stable/core-concepts/dag-run.html",
+        "format": "html",
+        "label": "Workflow orchestration",
+        "status": "scored",
+        "ranked": [
+          [
+            "Workflow orchestration",
+            0.682148
+          ],
+          [
+            "Distributed streaming",
+            0.677213
+          ],
+          [
+            "Distributed computing",
+            0.657908
+          ]
+        ],
+        "predicted": "Workflow orchestration",
+        "top_score": 0.682148,
+        "rule_baseline": "unclassified",
+        "assigned_under_proposal": [
+          "Workflow orchestration",
+          "Distributed streaming",
+          "Distributed computing"
+        ],
+        "assigned_under_active": [
+          "Workflow orchestration",
+          "Distributed streaming",
+          "Distributed computing"
+        ]
+      },
+      {
+        "source_key": "https://airflow.apache.org/docs/apache-airflow/stable/core-concepts/dags.html",
+        "format": "html",
+        "label": "Workflow orchestration",
+        "status": "scored",
+        "ranked": [
+          [
+            "Workflow orchestration",
+            0.708304
+          ],
+          [
+            "Distributed computing",
+            0.680905
+          ],
+          [
+            "Distributed streaming",
+            0.678747
+          ]
+        ],
+        "predicted": "Workflow orchestration",
+        "top_score": 0.708304,
+        "rule_baseline": "unclassified",
+        "assigned_under_proposal": [
+          "Workflow orchestration",
+          "Distributed computing",
+          "Distributed streaming"
+        ],
+        "assigned_under_active": [
+          "Workflow orchestration",
+          "Distributed computing",
+          "Distributed streaming"
+        ]
+      },
+      {
+        "source_key": "https://airflow.apache.org/docs/apache-airflow/stable/core-concepts/overview.html",
+        "format": "html",
+        "label": "Workflow orchestration",
+        "status": "scored",
+        "ranked": [
+          [
+            "Workflow orchestration",
+            0.754568
+          ],
+          [
+            "Distributed computing",
+            0.736818
+          ],
+          [
+            "Distributed streaming",
+            0.705769
+          ]
+        ],
+        "predicted": "Workflow orchestration",
+        "top_score": 0.754568,
+        "rule_baseline": "Databases",
+        "assigned_under_proposal": [
+          "Workflow orchestration",
+          "Distributed computing",
+          "Distributed streaming"
+        ],
+        "assigned_under_active": [
+          "Workflow orchestration",
+          "Distributed computing",
+          "Distributed streaming"
+        ]
+      },
+      {
+        "source_key": "https://airflow.apache.org/docs/apache-airflow/stable/core-concepts/tasks.html",
+        "format": "html",
+        "label": "Workflow orchestration",
+        "status": "scored",
+        "ranked": [
+          [
+            "Workflow orchestration",
+            0.738988
+          ],
+          [
+            "Distributed streaming",
+            0.699684
+          ],
+          [
+            "Distributed computing",
+            0.689195
+          ]
+        ],
+        "predicted": "Workflow orchestration",
+        "top_score": 0.738988,
+        "rule_baseline": "unclassified",
+        "assigned_under_proposal": [
+          "Workflow orchestration",
+          "Distributed streaming",
+          "Distributed computing"
+        ],
+        "assigned_under_active": [
+          "Workflow orchestration",
+          "Distributed streaming",
+          "Distributed computing"
+        ]
+      },
+      {
+        "source_key": "https://kafka.apache.org/43/configuration/producer-configs/",
+        "format": "html",
+        "label": "Distributed streaming",
+        "status": "scored",
+        "ranked": [
+          [
+            "Distributed streaming",
+            0.729127
+          ],
+          [
+            "Databases",
+            0.696118
+          ],
+          [
+            "Distributed computing",
+            0.675863
+          ]
+        ],
+        "predicted": "Distributed streaming",
+        "top_score": 0.729127,
+        "rule_baseline": "Distributed streaming",
+        "assigned_under_proposal": [
+          "Distributed streaming",
+          "Databases",
+          "Distributed computing"
+        ],
+        "assigned_under_active": [
+          "Distributed streaming",
+          "Databases",
+          "Distributed computing"
+        ]
+      },
+      {
+        "source_key": "https://kafka.apache.org/43/design/design/",
+        "format": "html",
+        "label": "Distributed streaming",
+        "status": "scored",
+        "ranked": [
+          [
+            "Distributed streaming",
+            0.794091
+          ],
+          [
+            "Databases",
+            0.750608
+          ],
+          [
+            "Distributed computing",
+            0.742429
+          ]
+        ],
+        "predicted": "Distributed streaming",
+        "top_score": 0.794091,
+        "rule_baseline": "unclassified",
+        "assigned_under_proposal": [
+          "Distributed streaming",
+          "Databases",
+          "Distributed computing"
+        ],
+        "assigned_under_active": [
+          "Distributed streaming",
+          "Databases",
+          "Distributed computing"
+        ]
+      },
+      {
+        "source_key": "https://kafka.apache.org/43/getting-started/introduction/",
+        "format": "html",
+        "label": "Distributed streaming",
+        "status": "scored",
+        "ranked": [
+          [
+            "Distributed streaming",
+            0.825978
+          ],
+          [
+            "Databases",
+            0.70598
+          ],
+          [
+            "Distributed computing",
+            0.70507
+          ]
+        ],
+        "predicted": "Distributed streaming",
+        "top_score": 0.825978,
+        "rule_baseline": "Distributed streaming",
+        "assigned_under_proposal": [
+          "Distributed streaming",
+          "Databases",
+          "Distributed computing"
+        ],
+        "assigned_under_active": [
+          "Distributed streaming",
+          "Databases",
+          "Distributed computing"
+        ]
+      },
+      {
+        "source_key": "https://kafka.apache.org/43/getting-started/quickstart/",
+        "format": "html",
+        "label": "Distributed streaming",
+        "status": "scored",
+        "ranked": [
+          [
+            "Distributed streaming",
+            0.715174
+          ],
+          [
+            "Distributed computing",
+            0.652734
+          ],
+          [
+            "Databases",
+            0.642563
+          ]
+        ],
+        "predicted": "Distributed streaming",
+        "top_score": 0.715174,
+        "rule_baseline": "Distributed streaming",
+        "assigned_under_proposal": [
+          "Distributed streaming",
+          "Distributed computing"
+        ],
+        "assigned_under_active": [
+          "Distributed streaming",
+          "Distributed computing"
+        ]
+      },
+      {
+        "source_key": "https://spark.apache.org/docs/4.0.1/sql-data-sources-load-save-functions.html",
+        "format": "html",
+        "label": "Distributed computing",
+        "status": "scored",
+        "ranked": [
+          [
+            "Databases",
+            0.700564
+          ],
+          [
+            "Distributed computing",
+            0.685302
+          ],
+          [
+            "Distributed streaming",
+            0.672137
+          ]
+        ],
+        "predicted": "Databases",
+        "top_score": 0.700564,
+        "rule_baseline": "Distributed computing",
+        "assigned_under_proposal": [
+          "Databases",
+          "Distributed computing",
+          "Distributed streaming"
+        ],
+        "assigned_under_active": [
+          "Databases",
+          "Distributed computing",
+          "Distributed streaming"
+        ]
+      },
+      {
+        "source_key": "https://spark.apache.org/docs/4.0.1/submitting-applications.html",
+        "format": "html",
+        "label": "Distributed computing",
+        "status": "scored",
+        "ranked": [
+          [
+            "Distributed computing",
+            0.718267
+          ],
+          [
+            "Distributed streaming",
+            0.659648
+          ],
+          [
+            "Databases",
+            0.64007
+          ]
+        ],
+        "predicted": "Distributed computing",
+        "top_score": 0.718267,
+        "rule_baseline": "unclassified",
+        "assigned_under_proposal": [
+          "Distributed computing",
+          "Distributed streaming"
+        ],
+        "assigned_under_active": [
+          "Distributed computing",
+          "Distributed streaming"
+        ]
+      },
+      {
+        "source_key": "https://www.postgresql.org/docs/18/indexes-types.html",
+        "format": "html",
+        "label": "Databases",
+        "status": "scored",
+        "ranked": [
+          [
+            "Databases",
+            0.733152
+          ],
+          [
+            "Distributed streaming",
+            0.669445
+          ],
+          [
+            "Distributed computing",
+            0.663686
+          ]
+        ],
+        "predicted": "Databases",
+        "top_score": 0.733152,
+        "rule_baseline": "Databases",
+        "assigned_under_proposal": [
+          "Databases",
+          "Distributed streaming",
+          "Distributed computing"
+        ],
+        "assigned_under_active": [
+          "Databases",
+          "Distributed streaming",
+          "Distributed computing"
+        ]
+      },
+      {
+        "source_key": "https://www.postgresql.org/docs/18/transaction-iso.html",
+        "format": "html",
+        "label": "Databases",
+        "status": "scored",
+        "ranked": [
+          [
+            "Databases",
+            0.776167
+          ],
+          [
+            "Distributed streaming",
+            0.720254
+          ],
+          [
+            "Distributed computing",
+            0.675161
+          ]
+        ],
+        "predicted": "Databases",
+        "top_score": 0.776167,
+        "rule_baseline": "Databases",
+        "assigned_under_proposal": [
+          "Databases",
+          "Distributed streaming",
+          "Distributed computing"
+        ],
+        "assigned_under_active": [
+          "Databases",
+          "Distributed streaming",
+          "Distributed computing"
+        ]
+      },
+      {
+        "source_key": "https://www.postgresql.org/docs/18/using-explain.html",
+        "format": "html",
+        "label": "Databases",
+        "status": "scored",
+        "ranked": [
+          [
+            "Databases",
+            0.737823
+          ],
+          [
+            "Distributed computing",
+            0.702466
+          ],
+          [
+            "Distributed streaming",
+            0.655557
+          ]
+        ],
+        "predicted": "Databases",
+        "top_score": 0.737823,
+        "rule_baseline": "Databases",
+        "assigned_under_proposal": [
+          "Databases",
+          "Distributed computing",
+          "Distributed streaming"
+        ],
+        "assigned_under_active": [
+          "Databases",
+          "Distributed computing",
+          "Distributed streaming"
+        ]
+      }
+    ],
+    "fixtures": [
+      {
+        "id": "oot-01",
+        "split": "calibration",
+        "topic": "gardening",
+        "chunks": 3,
+        "ranked": [
+          [
+            "Distributed streaming",
+            0.56232
+          ],
+          [
+            "Distributed computing",
+            0.559673
+          ],
+          [
+            "Databases",
+            0.555017
+          ]
+        ],
+        "top_score": 0.56232,
+        "unclassified_under_proposal": true,
+        "unclassified_under_active": true
+      },
+      {
+        "id": "oot-02",
+        "split": "calibration",
+        "topic": "chess",
+        "chunks": 2,
+        "ranked": [
+          [
+            "Databases",
+            0.580414
+          ],
+          [
+            "Distributed computing",
+            0.535199
+          ],
+          [
+            "Distributed streaming",
+            0.520545
+          ]
+        ],
+        "top_score": 0.580414,
+        "unclassified_under_proposal": true,
+        "unclassified_under_active": true
+      },
+      {
+        "id": "oot-03",
+        "split": "calibration",
+        "topic": "personal finance",
+        "chunks": 2,
+        "ranked": [
+          [
+            "Databases",
+            0.600961
+          ],
+          [
+            "Distributed streaming",
+            0.584518
+          ],
+          [
+            "Workflow orchestration",
+            0.548421
+          ]
+        ],
+        "top_score": 0.600961,
+        "unclassified_under_proposal": true,
+        "unclassified_under_active": true
+      },
+      {
+        "id": "oot-04",
+        "split": "calibration",
+        "topic": "web page layout",
+        "chunks": 2,
+        "ranked": [
+          [
+            "Databases",
+            0.590976
+          ],
+          [
+            "Distributed streaming",
+            0.587597
+          ],
+          [
+            "Distributed computing",
+            0.576758
+          ]
+        ],
+        "top_score": 0.590976,
+        "unclassified_under_proposal": true,
+        "unclassified_under_active": true
+      },
+      {
+        "id": "oot-05",
+        "split": "calibration",
+        "topic": "version control",
+        "chunks": 3,
+        "ranked": [
+          [
+            "Databases",
+            0.616049
+          ],
+          [
+            "Distributed streaming",
+            0.615314
+          ],
+          [
+            "Distributed computing",
+            0.582313
+          ]
+        ],
+        "top_score": 0.616049,
+        "unclassified_under_proposal": true,
+        "unclassified_under_active": true
+      },
+      {
+        "id": "oot-06",
+        "split": "held_out",
+        "topic": "cooking",
+        "chunks": 2,
+        "ranked": [
+          [
+            "Distributed streaming",
+            0.507459
+          ],
+          [
+            "Distributed computing",
+            0.481241
+          ],
+          [
+            "Workflow orchestration",
+            0.428629
+          ]
+        ],
+        "top_score": 0.507459,
+        "unclassified_under_proposal": true,
+        "unclassified_under_active": true
+      },
+      {
+        "id": "oot-07",
+        "split": "held_out",
+        "topic": "birdwatching",
+        "chunks": 2,
+        "ranked": [
+          [
+            "Databases",
+            0.504954
+          ],
+          [
+            "Distributed streaming",
+            0.477973
+          ],
+          [
+            "Distributed computing",
+            0.466784
+          ]
+        ],
+        "top_score": 0.504954,
+        "unclassified_under_proposal": true,
+        "unclassified_under_active": true
+      },
+      {
+        "id": "oot-08",
+        "split": "held_out",
+        "topic": "bicycle maintenance",
+        "chunks": 2,
+        "ranked": [
+          [
+            "Distributed computing",
+            0.528236
+          ],
+          [
+            "Databases",
+            0.511137
+          ],
+          [
+            "Distributed streaming",
+            0.485848
+          ]
+        ],
+        "top_score": 0.528236,
+        "unclassified_under_proposal": true,
+        "unclassified_under_active": true
+      },
+      {
+        "id": "oot-09",
+        "split": "held_out",
+        "topic": "home networking",
+        "chunks": 3,
+        "ranked": [
+          [
+            "Databases",
+            0.594087
+          ],
+          [
+            "Distributed computing",
+            0.5874
+          ],
+          [
+            "Distributed streaming",
+            0.583889
+          ]
+        ],
+        "top_score": 0.594087,
+        "unclassified_under_proposal": true,
+        "unclassified_under_active": true
+      },
+      {
+        "id": "oot-10",
+        "split": "held_out",
+        "topic": "document typesetting",
+        "chunks": 3,
+        "ranked": [
+          [
+            "Databases",
+            0.65692
+          ],
+          [
+            "Distributed streaming",
+            0.612456
+          ],
+          [
+            "Workflow orchestration",
+            0.586857
+          ]
+        ],
+        "top_score": 0.65692,
+        "unclassified_under_proposal": false,
+        "unclassified_under_active": false
+      }
+    ],
+    "proposal": {
+      "policy": "balanced-accuracy-midpoint-v1",
+      "unclassified_threshold": 0.649099,
+      "similarity_config_id": "cs_f138c575d3b18c6553bf96f57e55f743f6637eb359e7d24fbbd95b63451e3803",
+      "margin": 0.033049,
+      "separable": true,
+      "in_topic": 20,
+      "in_topic_classified": 20,
+      "calibration_out_of_topic": 5,
+      "calibration_unclassified": 5,
+      "leave_one_out_errors": 0
+    },
+    "ac_09_1": {
+      "top1_accuracy": {
+        "value": 0.95,
+        "numerator": 19,
+        "denominator": 20,
+        "interval": {
+          "low": 0.7639,
+          "high": 0.9911
+        }
+      },
+      "accuracy_with_threshold": {
+        "value": 0.95,
+        "numerator": 19,
+        "denominator": 20,
+        "interval": {
+          "low": 0.7639,
+          "high": 0.9911
+        }
+      },
+      "threshold_used": 0.649099,
+      "threshold_source": "active",
+      "rule_baseline_accuracy": {
+        "value": 0.55,
+        "numerator": 11,
+        "denominator": 20,
+        "interval": {
+          "low": 0.3421,
+          "high": 0.7418
+        }
+      },
+      "documents_per_category": {
+        "Databases": 7,
+        "Distributed computing": 5,
+        "Distributed streaming": 4,
+        "Workflow orchestration": 4
+      },
+      "confusion_matrix": {
+        "Databases": {
+          "Databases": 7,
+          "Distributed computing": 0,
+          "Distributed streaming": 0,
+          "Workflow orchestration": 0
+        },
+        "Distributed computing": {
+          "Databases": 1,
+          "Distributed computing": 4,
+          "Distributed streaming": 0,
+          "Workflow orchestration": 0
+        },
+        "Distributed streaming": {
+          "Databases": 0,
+          "Distributed computing": 0,
+          "Distributed streaming": 4,
+          "Workflow orchestration": 0
+        },
+        "Workflow orchestration": {
+          "Databases": 0,
+          "Distributed computing": 0,
+          "Distributed streaming": 0,
+          "Workflow orchestration": 4
+        }
+      },
+      "assigned_per_document": {
+        "0": 0,
+        "1": 1,
+        "2": 3,
+        "3": 16
+      },
+      "verdict": "met_at_point_estimate_only",
+      "errors": [
+        {
+          "source_key": "https://spark.apache.org/docs/4.0.1/sql-data-sources-load-save-functions.html",
+          "label": "Distributed computing",
+          "ranked": [
+            [
+              "Databases",
+              0.700564
+            ],
+            [
+              "Distributed computing",
+              0.685302
+            ],
+            [
+              "Distributed streaming",
+              0.672137
+            ]
+          ]
+        }
+      ]
+    },
+    "ac_09_2": {
+      "threshold_source": "active",
+      "held_out_unclassified": {
+        "value": 0.8,
+        "numerator": 4,
+        "denominator": 5,
+        "interval": {
+          "low": 0.3755,
+          "high": 0.9638
+        }
+      },
+      "cooking_unclassified": true,
+      "verdict": "met"
+    }
+  },
+  "corpus_checks": {
+    "status": "checked",
+    "enrichment": {
+      "[\"postgresql-18-transaction-system.txt\",null]": "current",
+      "[\"postgresql-18-tutorial-advanced-features.pdf\",null]": "current",
+      "[\"postgresql-18-tutorial-getting-started.pdf\",null]": "current",
+      "[\"postgresql-18-tutorial-sql-language.pdf\",null]": "current",
+      "[\"spark-4.0.1-cluster-overview.md\",null]": "current",
+      "[\"spark-4.0.1-hardware-provisioning.md\",null]": "current",
+      "[\"spark-4.0.1-tuning.md\",null]": "current",
+      "https://airflow.apache.org/docs/apache-airflow/stable/core-concepts/dag-run.html": "current",
+      "https://airflow.apache.org/docs/apache-airflow/stable/core-concepts/dags.html": "current",
+      "https://airflow.apache.org/docs/apache-airflow/stable/core-concepts/overview.html": "current",
+      "https://airflow.apache.org/docs/apache-airflow/stable/core-concepts/tasks.html": "current",
+      "https://kafka.apache.org/43/configuration/producer-configs/": "current",
+      "https://kafka.apache.org/43/design/design/": "current",
+      "https://kafka.apache.org/43/getting-started/introduction/": "current",
+      "https://kafka.apache.org/43/getting-started/quickstart/": "current",
+      "https://spark.apache.org/docs/4.0.1/sql-data-sources-load-save-functions.html": "current",
+      "https://spark.apache.org/docs/4.0.1/submitting-applications.html": "current",
+      "https://www.postgresql.org/docs/18/indexes-types.html": "current",
+      "https://www.postgresql.org/docs/18/transaction-iso.html": "current",
+      "https://www.postgresql.org/docs/18/using-explain.html": "current"
+    },
+    "ac_07_2": {
+      "entities": 5598,
+      "invalid": 0,
+      "verdict": "met"
+    },
+    "ac_07_3": {
+      "filter": {
+        "entity": "PostgreSQL"
+      },
+      "modes": {
+        "bm25": {
+          "results": 20,
+          "outside": 0,
+          "verdict": "met"
+        },
+        "vector": {
+          "results": 20,
+          "outside": 0,
+          "verdict": "met"
+        }
+      },
+      "verdict": "met"
+    },
+    "ac_09_3": {
+      "filter": {
+        "category": "Databases"
+      },
+      "modes": {
+        "bm25": {
+          "results": 20,
+          "outside": 0,
+          "verdict": "met"
+        },
+        "vector": {
+          "results": 20,
+          "outside": 0,
+          "verdict": "met"
+        }
+      },
+      "verdict": "met"
+    },
+    "ac_08_1": {
+      "documents": 20,
+      "invalid": [],
+      "verdict": "met"
+    }
+  },
+  "enrichment_times": [
+    {
+      "source_key": "[\"postgresql-18-transaction-system.txt\",null]",
+      "chunks": 75,
+      "characters": 59061,
+      "entities": 491,
+      "entities_ms": 54.2,
+      "keyphrases_ms": 68.5
+    },
+    {
+      "source_key": "[\"postgresql-18-tutorial-advanced-features.pdf\",null]",
+      "chunks": 30,
+      "characters": 23482,
+      "entities": 70,
+      "entities_ms": 25.2,
+      "keyphrases_ms": 19.7
+    },
+    {
+      "source_key": "[\"postgresql-18-tutorial-getting-started.pdf\",null]",
+      "chunks": 18,
+      "characters": 13792,
+      "entities": 59,
+      "entities_ms": 11.3,
+      "keyphrases_ms": 10.5
+    },
+    {
+      "source_key": "[\"postgresql-18-tutorial-sql-language.pdf\",null]",
+      "chunks": 37,
+      "characters": 25930,
+      "entities": 145,
+      "entities_ms": 34.9,
+      "keyphrases_ms": 25.6
+    },
+    {
+      "source_key": "[\"spark-4.0.1-cluster-overview.md\",null]",
+      "chunks": 13,
+      "characters": 7800,
+      "entities": 106,
+      "entities_ms": 8.9,
+      "keyphrases_ms": 8.0
+    },
+    {
+      "source_key": "[\"spark-4.0.1-hardware-provisioning.md\",null]",
+      "chunks": 9,
+      "characters": 4971,
+      "entities": 60,
+      "entities_ms": 6.0,
+      "keyphrases_ms": 5.1
+    },
+    {
+      "source_key": "[\"spark-4.0.1-tuning.md\",null]",
+      "chunks": 38,
+      "characters": 25330,
+      "entities": 205,
+      "entities_ms": 27.8,
+      "keyphrases_ms": 23.6
+    },
+    {
+      "source_key": "https://airflow.apache.org/docs/apache-airflow/stable/core-concepts/dag-run.html",
+      "chunks": 22,
+      "characters": 12949,
+      "entities": 255,
+      "entities_ms": 14.3,
+      "keyphrases_ms": 12.2
+    },
+    {
+      "source_key": "https://airflow.apache.org/docs/apache-airflow/stable/core-concepts/dags.html",
+      "chunks": 65,
+      "characters": 42813,
+      "entities": 888,
+      "entities_ms": 55.3,
+      "keyphrases_ms": 46.3
+    },
+    {
+      "source_key": "https://airflow.apache.org/docs/apache-airflow/stable/core-concepts/overview.html",
+      "chunks": 21,
+      "characters": 14148,
+      "entities": 217,
+      "entities_ms": 13.4,
+      "keyphrases_ms": 11.5
+    },
+    {
+      "source_key": "https://airflow.apache.org/docs/apache-airflow/stable/core-concepts/tasks.html",
+      "chunks": 28,
+      "characters": 17647,
+      "entities": 294,
+      "entities_ms": 18.0,
+      "keyphrases_ms": 15.2
+    },
+    {
+      "source_key": "https://kafka.apache.org/43/configuration/producer-configs/",
+      "chunks": 123,
+      "characters": 54176,
+      "entities": 505,
+      "entities_ms": 49.5,
+      "keyphrases_ms": 44.1
+    },
+    {
+      "source_key": "https://kafka.apache.org/43/design/design/",
+      "chunks": 123,
+      "characters": 85823,
+      "entities": 734,
+      "entities_ms": 79.6,
+      "keyphrases_ms": 71.7
+    },
+    {
+      "source_key": "https://kafka.apache.org/43/getting-started/introduction/",
+      "chunks": 18,
+      "characters": 10863,
+      "entities": 122,
+      "entities_ms": 10.9,
+      "keyphrases_ms": 13.7
+    },
+    {
+      "source_key": "https://kafka.apache.org/43/getting-started/quickstart/",
+      "chunks": 20,
+      "characters": 11235,
+      "entities": 210,
+      "entities_ms": 9.9,
+      "keyphrases_ms": 9.0
+    },
+    {
+      "source_key": "https://spark.apache.org/docs/4.0.1/sql-data-sources-load-save-functions.html",
+      "chunks": 26,
+      "characters": 18852,
+      "entities": 368,
+      "entities_ms": 20.3,
+      "keyphrases_ms": 14.7
+    },
+    {
+      "source_key": "https://spark.apache.org/docs/4.0.1/submitting-applications.html",
+      "chunks": 20,
+      "characters": 12256,
+      "entities": 215,
+      "entities_ms": 12.9,
+      "keyphrases_ms": 9.0
+    },
+    {
+      "source_key": "https://www.postgresql.org/docs/18/indexes-types.html",
+      "chunks": 15,
+      "characters": 9041,
+      "entities": 103,
+      "entities_ms": 10.9,
+      "keyphrases_ms": 6.3
+    },
+    {
+      "source_key": "https://www.postgresql.org/docs/18/transaction-iso.html",
+      "chunks": 40,
+      "characters": 30102,
+      "entities": 167,
+      "entities_ms": 25.8,
+      "keyphrases_ms": 21.1
+    },
+    {
+      "source_key": "https://www.postgresql.org/docs/18/using-explain.html",
+      "chunks": 75,
+      "characters": 54446,
+      "entities": 384,
+      "entities_ms": 86.9,
+      "keyphrases_ms": 47.7
+    }
+  ],
+  "provenance": {
+    "corpus": {
+      "manifest_dataset_id": "techdocqa-reference-2026-10-24-v2",
+      "manifest_status": "frozen",
+      "manifest_fingerprint": "40229e3caebc8816d6ad98d36bddc10eb133deb7d3b1c416f8a1331b9d75591a",
+      "scope_documents": 20,
+      "searchable_documents": 20,
+      "searchable_chunks": 816,
+      "excluded_eligible_documents": 1,
+      "unavailable": {},
+      "content_drift": [],
+      "corpus_fingerprint": "e8713f0c15eeb6db2c801a319c2324507302242c6265b8fff1ae67db63a2c4b5"
+    },
+    "enrichment_config": {
+      "entity_config_id": "ec_9af8ecae3d6bc4d5372af06cd86ad90ce6af2cf3ebd1b60bc2f6b9a7c99a904a",
+      "keyphrase_config_id": "kc_310a9b4b27f617d54a812df9a5e6594a3b7823f1f7c95587156f82fe07dedf32",
+      "classifier_config_id": "cc_b300c609bfa2ad4d6d467c74b8e25b374fd4442a6d8f6c2dd6b3c0eb7bf4ef18",
+      "enrichment_config_id": "en_32504a4fe33a44d72bda17ba4a96da68ba0c3b54cdfd8177449af56f66a1b41c"
+    },
+    "gazetteer_sha256": "058dc8a88a694de9673d876e71d2b1c1d68145522c06cd55bc14535e694c9d64",
+    "category_descriptions_sha256": "67d706a84744b9cde5acad6f5e5623e136d8bcca09fd3d9477383169591a2f00",
+    "gold_files": {
+      "segmentation": {
+        "status": "awaiting_gold_data",
+        "path": "datasets/nlp/segmentation_gold.jsonl"
+      },
+      "entities": {
+        "status": "awaiting_gold_data",
+        "path": "datasets/nlp/entities_gold.jsonl"
+      },
+      "keyphrases": {
+        "status": "awaiting_gold_data",
+        "path": "datasets/nlp/keyphrases_gold.jsonl"
+      }
+    },
+    "out_of_topic": {
+      "path": "datasets/nlp/out_of_topic.jsonl",
+      "sha256": "e8180839ea52c2af552172ca773049f778f02b18f00fc2ad2e4a2b280b91a71f"
+    },
+    "requirements_lock_sha256": "0818d0d24aa770fff4da8c22f3e32d7d21c9cabf17172f2e4cf0158490428d3d",
+    "nlp_libraries": {
+      "spacy": "3.8.18",
+      "rake-nltk": "1.0.6",
+      "nltk": "3.10.4"
+    },
+    "spacy_model": null,
+    "segmenter_available": true,
+    "keyphrases_available": true,
+    "environment": {
+      "code": {
+        "package": "0.1.0",
+        "commit": "95dd5213112027829bc56077737e1dfb83517cc7",
+        "dirty": true
+      },
+      "python": "3.13.3",
+      "platform": "Windows-11-10.0.26300-SP0",
+      "libraries": {
+        "langchain-core": "1.6.9",
+        "langchain-community": "0.4.2",
+        "langchain-chroma": "1.1.0",
+        "langchain-ollama": "1.1.0",
+        "chromadb": "1.5.9",
+        "rank-bm25": "0.2.2",
+        "pydantic": "2.14.0",
+        "numpy": "2.5.4"
+      },
+      "provider": "ollama",
+      "bm25": {
+        "k1": 1.2,
+        "b": 0.75,
+        "tokenizer": "technical-tokens-v1"
+      },
+      "candidate_depth": 20,
+      "embedding": {
+        "model": "nomic-embed-text:latest",
+        "digest": "0a109f422b47e3a30ba2b10eca18548e944e8a23073ee3f3e947efcf3c45e59f",
+        "dimension": 768,
+        "query_prefix": "search_query: "
+      }
+    }
+  },
+  "acceptance": [
+    {
+      "criterion": "AC-06.4",
+      "target": "boundary F1 >= 0.95 on >= 50 sentences (spaCy policy)",
+      "result": null,
+      "verdict": "awaiting_gold_data"
+    },
+    {
+      "criterion": "AC-07.4",
+      "target": "precision >= 0.80, recall >= 0.60 on >= 20 chunks",
+      "result": [
+        null,
+        null
+      ],
+      "verdict": "awaiting_gold_data"
+    },
+    {
+      "criterion": "AC-08.3",
+      "target": "mean share of key terms in the top 10 >= 0.50 over 5 documents",
+      "result": null,
+      "verdict": "awaiting_gold_data"
+    },
+    {
+      "criterion": "AC-09.1",
+      "target": "accuracy >= 0.85, >= 2 documents per category",
+      "result": 0.95,
+      "verdict": "met_at_point_estimate_only"
+    },
+    {
+      "criterion": "AC-09.2",
+      "target": "the out-of-topic cooking article is unclassified (result: held-out fixtures unclassified)",
+      "result": 0.8,
+      "verdict": "met"
+    },
+    {
+      "criterion": "AC-07.2 (real corpus)",
+      "target": "see the corpus checks",
+      "result": null,
+      "verdict": "met"
+    },
+    {
+      "criterion": "AC-07.3 (real corpus)",
+      "target": "see the corpus checks",
+      "result": null,
+      "verdict": "met"
+    },
+    {
+      "criterion": "AC-08.1 (real corpus)",
+      "target": "see the corpus checks",
+      "result": null,
+      "verdict": "met"
+    },
+    {
+      "criterion": "AC-09.3 (real corpus)",
+      "target": "see the corpus checks",
+      "result": null,
+      "verdict": "met"
+    }
+  ],
+  "notes": [
+    "Indicative only: the gold sets are the requirement minimums (P9-9). Every rate carries its denominator and a Wilson 95% interval; a target met only at the point estimate is reported that way.",
+    "Awaiting frozen gold data: segmentation, entities, keyphrases. Those criteria are not measured until the owner labels and freezes them (datasets/nlp/review_log.md).",
+    "The 20 public documents both calibrate the unclassified threshold and are assessed by AC-09.1, so that side is not independent. The held-out out-of-topic fixtures were not used to choose the threshold.",
+    "Category scores are cosine similarities between a document's mean chunk vector and each description vector, not probabilities.",
+    "DDIA and every other document outside the manifest's evaluation scope were not read."
+  ]
+}

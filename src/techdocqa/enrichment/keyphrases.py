@@ -10,9 +10,14 @@ import re
 
 from techdocqa.enrichment.entities import TOKEN
 
-KEYPHRASE_POLICY = "rake-nltk-technical-v1"
+KEYPHRASE_POLICY = "rake-nltk-technical-v2"
 DELIMITER = ","
-WORDS = re.compile(TOKEN.pattern + r"|[^\w\s]")
+# A word with an English clitic (don't, we're, Kafka's) is one token, so the apostrophe never leaves a stray "t" or "s".
+CONTRACTION = re.compile(r"[^\W\d_]+['’][^\W\d_]{1,2}(?![\w'’])")
+WORDS = re.compile(CONTRACTION.pattern + "|" + TOKEN.pattern + r"|[^\w\s]")
+# Single underscores around a word are Markdown emphasis (_without_), not part of a name such as __init__ or retry_after.
+EMPHASIS = re.compile(r"^_(?=[^\W_])|(?<=[^\W_])_$")
+METRICS = ("degree_to_frequency", "word_degree", "word_frequency")
 # A standard English function-word list, fixed here so results never depend on downloaded data.
 STOPWORDS = frozenset("""
 a about above after again against all also am an and any are as at be because been before being below between both but
@@ -39,23 +44,38 @@ def config_id(enrichment) -> str:
     values = {"policy": KEYPHRASE_POLICY, "rake_nltk": rake_version(), "per_document": enrichment.keyphrases_per_document,
               "per_chunk": enrichment.keyphrases_per_chunk, "min_words": enrichment.keyphrase_min_words,
               "max_words": enrichment.keyphrase_max_words, "include_code": enrichment.keyphrases_include_code,
+              "metric": enrichment.keyphrase_metric, "emphasis": EMPHASIS.pattern,
               "stopwords_sha256": hashlib.sha256(" ".join(sorted(STOPWORDS)).encode()).hexdigest(), "words": WORDS.pattern}
     return "kc_" + hashlib.sha256(json.dumps(values, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
 
 
+def word(token: str) -> str:
+    """One token as RAKE sees it. A contraction is a function word, so it splits phrases like a stop word does; a
+    possessive keeps its noun (Kafka's is Kafka). Emphasis underscores are dropped."""
+    if CONTRACTION.fullmatch(token):
+        stem, clitic = re.split(r"['’]", token, maxsplit=1)
+        # it's, that's and let's are function words; Kafka's is a noun.
+        return stem if clitic.casefold() == "s" and stem.casefold() not in STOPWORDS else DELIMITER
+    token = EMPHASIS.sub("", token)
+    if not token:
+        return DELIMITER
+    return token if token[0].isalnum() or token[0] == "_" or (token[0] == "-" and len(token) > 1) else DELIMITER
+
+
 def tokens(sentence: str) -> list[str]:
     """Technical tokens stay whole; every other punctuation mark becomes the one phrase delimiter."""
-    return [token if token[0].isalnum() or token[0] == "_" or (token[0] == "-" and len(token) > 1) else DELIMITER
-            for token in WORDS.findall(sentence)]
+    return [word(token) for token in WORDS.findall(sentence)]
 
 
 def ranked(sentences: list[str], enrichment, limit: int) -> list[tuple[str, float]]:
     """Top phrases as (phrase, score), best first. Very short text gives an empty list, never an error (FR-08.3)."""
     if sum(1 for sentence in sentences for token in tokens(sentence) if token != DELIMITER) < enrichment.keyphrase_min_words:
         return []
-    from rake_nltk import Rake
+    from rake_nltk import Metric, Rake
+    metric = {"degree_to_frequency": Metric.DEGREE_TO_FREQUENCY_RATIO, "word_degree": Metric.WORD_DEGREE,
+              "word_frequency": Metric.WORD_FREQUENCY}[enrichment.keyphrase_metric]
     rake = Rake(stopwords=set(STOPWORDS), punctuations={DELIMITER}, max_length=enrichment.keyphrase_max_words,
-                word_tokenizer=tokens)
+                ranking_metric=metric, word_tokenizer=tokens)
     rake.extract_keywords_from_sentences(sentences)
     best = {}
     for score, phrase in rake.get_ranked_phrases_with_scores():

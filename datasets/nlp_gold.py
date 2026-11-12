@@ -361,9 +361,11 @@ def freeze(reviewer: str, segmentation_only: bool):
                 if surface not in text:
                     fail(f"{item['id']}: {surface!r} is not in the chunk text exactly")
                 mentions.add((normalized(surface), kind, surface))
+            # The gazetteer hash at sampling lets eval --enrichment report a later gazetteer change as tuned (P9-9).
             rows.append({k: item[k] for k in ("id", "source_key", "technology", "format", "document_index", "start", "end", "text_sha256",
                                               "ambiguous_stratum")}
-                        | {"anchor": text[:ANCHOR], "mentions": [{"text": s, "normalized": n, "type": t} for n, t, s in sorted(mentions)]})
+                        | {"anchor": text[:ANCHOR], "gazetteer_sha256": state["gazetteer_sha256"],
+                           "mentions": [{"text": s, "normalized": n, "type": t} for n, t, s in sorted(mentions)]})
         written["entities"] = rows
         terms = blocks(SHEETS / "keyterms_sheet.md", "terms")
         rows = []

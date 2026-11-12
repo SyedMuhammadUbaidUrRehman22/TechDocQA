@@ -83,6 +83,7 @@ class Categories:
 
     def __init__(self, settings, profile, registry):
         self.settings, self.profile, self.registry, self.vectors = settings, profile, registry, None
+        self.threshold, self.warning = classification.active_threshold(settings.enrichment, profile)
 
     def classify(self, record) -> tuple[list[dict], str]:
         enrichment = self.settings.enrichment
@@ -97,7 +98,7 @@ class Categories:
             self.registry.save_embedding_profile(self.profile)
             self.vectors = classification.category_vectors(self.settings, self.profile, self.registry)
         ranked = classification.scores(classification.document_vector(blobs), self.vectors)
-        return classification.assign(ranked, enrichment)
+        return classification.assign(ranked, enrichment, self.threshold)
 
 
 def enrich_version(record, settings, registry, config, categories) -> dict:
@@ -154,7 +155,9 @@ def enrich_versions(version_ids: list[str], settings, registry) -> EnrichmentBat
         warnings = []
         if not config["keyphrases_available"]:
             warnings.append("KEYPHRASES_UNAVAILABLE")
-        warnings += sorted({"not_calibrated": "CLASSIFICATION_NOT_CALIBRATED", "not_embedded": "CLASSIFICATION_NOT_EMBEDDED",
+        # A stale threshold leaves documents not_calibrated; the warning says which of the two it was.
+        warnings += sorted({"not_calibrated": categories.warning or classification.NOT_CALIBRATED,
+                            "not_embedded": "CLASSIFICATION_NOT_EMBEDDED",
                             "not_configured": "CLASSIFICATION_NOT_CONFIGURED"}[status] for status in statuses
                            if status in {"not_calibrated", "not_embedded", "not_configured"})
         return EnrichmentBatchResult(**registry.get_run(run_id).model_dump(), enrichment_config_id=config["ids"]["enrichment_config_id"],

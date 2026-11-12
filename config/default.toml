@@ -87,7 +87,13 @@ keyphrase_max_words = 4
 keyphrases_include_code = true
 classification_method = "embedding"
 max_categories = 3
-# unclassified_threshold and calibration_run_id are copied in from an evaluation run's proposal, as in Phase 8.
+# FR-09 unclassified threshold (P9-6), a cosine similarity, not a probability. Copied from the proposal in
+# reports/evaluation/enrichment_eaf9c6a675d647008a9a99a0944b1bab.md: the midpoint between the 20 public documents' top
+# scores and 5 calibration out-of-topic fixtures. It applies only while similarity_config_id names the active scale, so
+# a new embedding model or an edited category description needs a new eval --enrichment run and new values here.
+unclassified_threshold = 0.649099
+calibration_run_id = "enrichment_eaf9c6a675d647008a9a99a0944b1bab"
+similarity_config_id = "cs_f138c575d3b18c6553bf96f57e55f743f6637eb359e7d24fbbd95b63451e3803"
 
 # The four FR-09 categories the corpus represents. Descriptions were written on 2026-11-07, before any measurement,
 # and name no product, so classification cannot succeed merely by matching a technology's name (P9-6).

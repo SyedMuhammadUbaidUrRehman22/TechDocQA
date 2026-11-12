@@ -10,7 +10,7 @@ from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 from techdocqa.errors import TechDocQAError
 from techdocqa.normalization import code_spans
-from techdocqa.segmentation import SEGMENTATION_POLICY, sentence_spans
+from techdocqa.segmentation import POLICIES, segmenter, spacy_version
 from techdocqa.settings import ChunkingSettings, ModelSettings
 
 CHUNKING_POLICY = "source-preserving-chunks-v3"
@@ -29,12 +29,18 @@ def verified_embedding_profile(model: ModelSettings) -> bool:
 
 def effective_config(settings: ChunkingSettings, model: ModelSettings | None = None) -> tuple[str, dict]:
     model = model or ModelSettings()
-    values = {**settings.model_dump(), "policy": CHUNKING_POLICY,
-              "segmentation_policy": SEGMENTATION_POLICY, "effective_unit": "characters",
+    # The segmentation setting enters as its policy ID. The P0 default keeps the exact values, and so the configuration
+    # ID, that every existing chunk artifact was made with; the spaCy policy also records the library version.
+    values = {**settings.model_dump(exclude={"segmentation"}), "policy": CHUNKING_POLICY,
+              "segmentation_policy": POLICIES[settings.segmentation], "effective_unit": "characters",
               "tokenizer": "python.len", "tokenizer_version": "unicode-codepoints-v1",
               "fallback_reason": "provider_tokenizer_unavailable" if settings.unit == "tokens" else None,
               "splitter": "RecursiveCharacterTextSplitter",
               "splitter_version": version("langchain-text-splitters")}
+    if settings.segmentation != "rules":
+        if spacy_version() is None:
+            raise TechDocQAError("SEGMENTER_UNAVAILABLE", "The spaCy segmentation policy needs the nlp extra.", stage="configuration")
+        values["segmentation_library"] = {"spacy": spacy_version()}
     values['embedding_input'] = None
     if model.embedding_model:
         if not verified_embedding_profile(model):
@@ -109,6 +115,7 @@ def build_chunks(documents, settings: ChunkingSettings, *, model: ModelSettings 
     config_id, config = effective_config(settings, model)
     profile = config['embedding_input']
     measure = size_measure(settings.size, profile['byte_limit'] if profile else None)
+    sentence_spans = segmenter(settings.segmentation)
     chunks, spans = [], []
     target = settings.size - settings.overlap
     for document_index, document in enumerate(documents):

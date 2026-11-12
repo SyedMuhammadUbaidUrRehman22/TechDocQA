@@ -14,6 +14,12 @@ The gold sets are scored by `eval --enrichment` (P9-9): [segmentation](segmentat
 
 At sampling, the gazetteer SHA-256 was `058dc8a88a694de9673d876e71d2b1c1d68145522c06cd55bc14535e694c9d64` and the manifest SHA-256 was `26eb4adc4483636b71ac0cd1e19bcd63cbfd8fca95360e9b4b790c883ddc4bf9`. The gazetteer is now frozen: `freeze` refuses the entity set if this hash changes.
 
+## Out-of-topic fixtures (2026-11-12)
+
+[out_of_topic.jsonl](out_of_topic.jsonl) holds the 10 texts for the FR-09 `unclassified` threshold (P9-6, AC-09.2). They are not gold labels and need no annotation. Claude Code wrote them before any measurement and fixed the split in the file: 5 for calibration (gardening, chess, a household budget, CSS layout, Git branches) and 5 held out (the cooking article, garden birds, bicycle brakes, home Wi-Fi, LaTeX). Four of the ten are technical but outside the four configured categories. SHA-256 `e8180839ea52c2af552172ca773049f778f02b18f00fc2ad2e4a2b280b91a71f`. `eval --enrichment` reads them in memory and writes nothing.
+
+Since 2026-11-12, `freeze` also writes the gazetteer hash at sampling into every entity row, so `eval --enrichment` can report a later gazetteer change as tuned.
+
 ## How the sentence draft was made
 
 A naive splitter marked a boundary after `.`, `!` or `?` followed by whitespace and a capital letter or quote, which gave 63 boundaries. Claude Code read all 20 paragraphs and changed three:
