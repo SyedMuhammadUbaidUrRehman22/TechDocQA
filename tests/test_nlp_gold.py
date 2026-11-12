@@ -58,3 +58,55 @@ def test_label_normalization_is_nfkc_casefold_and_collapsed_whitespace():
 
 def test_sample_order_is_seeded_and_stable():
     assert nlp_gold.order("abc") == nlp_gold.order("abc") != nlp_gold.order("abd")
+
+
+class FakeCorpus:
+    """Two technologies, three documents each, every chunk long enough to sample; one chunk per technology has an
+    ambiguous use."""
+
+    def __init__(self):
+        self.documents, self.texts = [], {}
+        for technology, name in (("Apache Kafka", "kafka"), ("PostgreSQL", "pg")):
+            for number in range(3):
+                key = f"{name}-{number}"
+                self.documents.append({"source_key": key, "technology": technology, "format": "html"})
+                words = "Run kafka-topics.sh to list topics. " if number == 0 else ""
+                self.texts[key] = [(words + f"Plain prose for {key} chunk {{}}. " * 20).format(*range(20))] * 4
+
+    def pages(self, document):
+        return ["".join(self.texts[document["source_key"]])]
+
+    def chunks(self, document):
+        size = len(self.texts[document["source_key"]][0])
+        return [{"document_index": 0, "start": i * size, "end": (i + 1) * size} for i in range(4)]
+
+
+@pytest.fixture
+def round_two():
+    nlp_gold.use_round(2)
+    yield
+    nlp_gold.use_round(1)
+
+
+def test_round_two_has_its_own_seed_folders_and_ids(round_two):
+    assert nlp_gold.SEED != nlp_gold.ROUNDS[1]["seed"] and nlp_gold.GOLD.name == "round2" and nlp_gold.SHEETS.name == "round2"
+    assert nlp_gold.order("abc") != nlp_gold.digest(f"{nlp_gold.ROUNDS[1]['seed']}|abc")
+    corpus = FakeCorpus()
+    # Round 2 asks for 8 per technology; three documents at two chunks each hold only 6.
+    with pytest.raises(SystemExit):
+        nlp_gold.sample_entities(corpus)
+    nlp_gold.ENTITY_CHUNKS_PER_TECHNOLOGY = 4
+    excluded = [("kafka-1", 0, 0, 10), ("pg-2", 0, 0, 10**6)]
+    chosen = nlp_gold.sample_entities(corpus, excluded)
+    assert [item["id"] for item in chosen] == [f"E{n}" for n in range(21, 29)]
+    assert not any(nlp_gold.overlaps(item, excluded) for item in chosen)
+    assert all(sum(other["source_key"] == item["source_key"] for other in chosen) <= 2 for item in chosen)
+    assert all(any(item["ambiguous_stratum"] for item in chosen if item["technology"] == t) for t in ("Apache Kafka", "PostgreSQL"))
+
+
+def test_round_two_key_terms_are_every_document_round_one_did_not_use(round_two, monkeypatch):
+    monkeypatch.setattr(nlp_gold, "round_one_keyterm_sources", lambda: {"kafka-0", "pg-1"})
+    chosen = nlp_gold.sample_keyterm_documents_round_two(FakeCorpus())
+    assert [item["id"] for item in chosen] == ["K06", "K07", "K08", "K09"]
+    assert {item["source_key"] for item in chosen} == {"kafka-1", "kafka-2", "pg-0", "pg-2"}
+    assert [item["technology"] for item in chosen] == ["Apache Kafka"] * 2 + ["PostgreSQL"] * 2

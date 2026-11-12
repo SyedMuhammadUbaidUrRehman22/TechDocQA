@@ -1,5 +1,6 @@
 from io import BytesIO
 import socket
+import sys
 
 import pytest
 from pypdf import PdfWriter
@@ -34,6 +35,27 @@ def deny_unexpected_network(request, monkeypatch):
     monkeypatch.setattr(socket.socket, "connect", denied)
     monkeypatch.setattr(socket.socket, "connect_ex", denied)
     monkeypatch.setenv("TECHDOCQA_OFFLINE", "1")
+
+
+@pytest.fixture(autouse=True)
+def release_vector_stores():
+    """Chroma caches every client system it creates for the life of the process, so each test's temporary index would
+    stay in memory and a full run would grow by hundreds of megabytes per module. Stop and drop them after each test.
+    Nothing is imported for tests that never touched Chroma."""
+    yield
+    shared = sys.modules.get("chromadb.api.shared_system_client")
+    if shared is not None:
+        systems = list(shared.SharedSystemClient._identifier_to_system.values())
+        shared.SharedSystemClient.clear_system_cache()
+        for system in systems:
+            try:
+                system.stop()
+            except Exception:
+                pass
+    search = sys.modules.get("techdocqa.retrieval.search")
+    if search is not None:
+        # The process-wide BM25 cache holds the last test's chunks.
+        search._lexical = None
 
 
 @pytest.fixture

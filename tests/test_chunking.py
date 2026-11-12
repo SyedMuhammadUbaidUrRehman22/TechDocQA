@@ -349,7 +349,7 @@ def test_failed_policy_upgrade_keeps_old_artifact_readable(chunk_source, setting
     _, version = chunk_source
     chunk_versions([version], settings, registry)
     prior = active_chunks(version, settings, registry)
-    monkeypatch.setattr('techdocqa.chunking.SEGMENTATION_POLICY', 'test-new-sentence-policy')
+    monkeypatch.setattr('techdocqa.chunking.POLICIES', {'rules': 'test-new-sentence-policy', 'spacy': 'unused'})
     def failure(*args, **kwargs):
         raise TechDocQAError('PARSE_TIMEOUT', 'Chunk generation deadline exceeded.', stage='chunking')
     monkeypatch.setattr('techdocqa.ingestion.chunks.run_processing_worker', failure)

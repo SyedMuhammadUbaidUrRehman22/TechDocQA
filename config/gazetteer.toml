@@ -1,6 +1,8 @@
-# FR-07 gazetteer (P9-3). Written by Claude Code on 2026-11-07, before any gold labels exist; it is frozen and its
-# SHA-256 recorded before the entity gold set is scored (P9-9). Any later change needs a fresh sample or is reported
-# as tuned.
+# FR-07 gazetteer (P9-3). Written by Claude Code on 2026-11-07, before any gold labels existed, and frozen for the
+# round-1 entity gold set (P9-9). Revised on 2026-11-12, after round 1 was scored, to align types with the guidelines'
+# type table: named abstractions are CONCEPT, commands, classes and SQL commands are IDENTIFIER, and COMPONENT is kept
+# for running parts. No alias was added for a term the round-1 labels missed. Round 1 is therefore reported as tuned,
+# and the round-2 entity set is sampled after this revision, so it is held out.
 #
 # name: the canonical name, also the --entity filter key (compared without case); it must be one of its aliases.
 # aliases: matched as whole words. case_sensitive applies to every alias of the entry.
@@ -9,10 +11,11 @@
 #   entry, or whose technology holds by either rule. Otherwise they are stored at 0.4, unverified, and never filter.
 # technology: the product a component or concept belongs to. category: an optional FR-09 category link.
 #
-# Types: TECHNOLOGY (a product, language or platform), COMPONENT (a named part of a system),
-# CONCEPT (an abstract technical idea), PROTOCOL (a network or wire protocol).
+# Types: TECHNOLOGY (a product, language or platform), COMPONENT (a running part of a system: a server role, process,
+# subsystem or built-in service), CONCEPT (a technical idea or named abstraction), PROTOCOL (a network or wire
+# protocol), IDENTIFIER (a name you would type: a command, class or SQL command).
 # Identifiers (dotted names, snake_case, --flags, camelCase) and common protocols come from fixed patterns in code.
-version = "techdocqa-gazetteer-2026-11-07"
+version = "techdocqa-gazetteer-2026-11-12"
 
 # Technologies
 
@@ -182,7 +185,7 @@ case_sensitive = false
 
 [[entities]]
 name = "operator"
-type = "COMPONENT"
+type = "CONCEPT"
 aliases = ["operator", "operators"]
 ambiguous = ["operator", "operators"]
 case_sensitive = false
@@ -190,14 +193,15 @@ technology = "Apache Airflow"
 
 [[entities]]
 name = "sensor"
-type = "COMPONENT"
+type = "CONCEPT"
 aliases = ["sensor", "sensors"]
+ambiguous = ["sensor", "sensors"]
 case_sensitive = false
 technology = "Apache Airflow"
 
 [[entities]]
 name = "XCom"
-type = "COMPONENT"
+type = "CONCEPT"
 aliases = ["XCom", "XComs"]
 technology = "Apache Airflow"
 
@@ -224,19 +228,19 @@ technology = "Apache Spark"
 
 [[entities]]
 name = "SparkContext"
-type = "COMPONENT"
+type = "IDENTIFIER"
 aliases = ["SparkContext"]
 technology = "Apache Spark"
 
 [[entities]]
 name = "SparkSession"
-type = "COMPONENT"
+type = "IDENTIFIER"
 aliases = ["SparkSession"]
 technology = "Apache Spark"
 
 [[entities]]
 name = "SparkConf"
-type = "COMPONENT"
+type = "IDENTIFIER"
 aliases = ["SparkConf"]
 technology = "Apache Spark"
 
@@ -254,19 +258,19 @@ technology = "Apache Spark"
 
 [[entities]]
 name = "spark-submit"
-type = "COMPONENT"
+type = "IDENTIFIER"
 aliases = ["spark-submit"]
 technology = "Apache Spark"
 
 [[entities]]
 name = "RDD"
-type = "COMPONENT"
+type = "CONCEPT"
 aliases = ["RDD", "RDDs", "resilient distributed dataset", "resilient distributed datasets"]
 technology = "Apache Spark"
 
 [[entities]]
 name = "DataFrame"
-type = "COMPONENT"
+type = "CONCEPT"
 aliases = ["DataFrame", "DataFrames"]
 
 [[entities]]
@@ -279,37 +283,43 @@ technology = "PostgreSQL"
 
 [[entities]]
 name = "VACUUM"
+type = "IDENTIFIER"
+aliases = ["VACUUM"]
+technology = "PostgreSQL"
+
+[[entities]]
+name = "autovacuum"
 type = "COMPONENT"
-aliases = ["VACUUM", "autovacuum"]
+aliases = ["autovacuum"]
 technology = "PostgreSQL"
 
 [[entities]]
 name = "EXPLAIN"
-type = "COMPONENT"
+type = "IDENTIFIER"
 aliases = ["EXPLAIN ANALYZE", "EXPLAIN"]
 technology = "PostgreSQL"
 
 [[entities]]
 name = "B-tree"
-type = "COMPONENT"
+type = "CONCEPT"
 aliases = ["B-tree", "B-trees", "btree"]
 technology = "PostgreSQL"
 
 [[entities]]
 name = "GIN"
-type = "COMPONENT"
+type = "CONCEPT"
 aliases = ["GIN"]
 technology = "PostgreSQL"
 
 [[entities]]
 name = "GiST"
-type = "COMPONENT"
+type = "CONCEPT"
 aliases = ["GiST", "SP-GiST"]
 technology = "PostgreSQL"
 
 [[entities]]
 name = "BRIN"
-type = "COMPONENT"
+type = "CONCEPT"
 aliases = ["BRIN"]
 technology = "PostgreSQL"
 

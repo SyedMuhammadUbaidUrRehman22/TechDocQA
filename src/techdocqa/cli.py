@@ -153,7 +153,14 @@ def make_parser() -> argparse.ArgumentParser:
                              help="instead of retrieval metrics, ask every question with the configured model and report AC-18.1/18.2")
     answer_runs.add_argument("--record-review", type=Path, metavar="SHEET",
                              help="copy the ratings from a filled answer review sheet into its report and judge AC-16.6")
+    answer_runs.add_argument("--enrichment", action="store_true",
+                             help="instead of retrieval metrics, score Phase 9 enrichment against the frozen gold sets, propose the "
+                                  "unclassified threshold and check the enriched corpus (read-only)")
     evaluation.add_argument("--reviewer", help="who rated the answers, recorded with --record-review")
+    evaluation.add_argument("--gold-dir", type=Path, default=Path("datasets/nlp"),
+                            help="frozen Phase 9 gold sets and out-of-topic fixtures, read by --enrichment")
+    evaluation.add_argument("--fixtures", type=Path,
+                            help="out-of-topic fixtures for --enrichment (default: out_of_topic.jsonl in --gold-dir)")
     for command in (check, ingest, status, listing, history, processing, chunking, indexing, enriching, showing, searching, asking,
                     withdrawal, deletion, evaluation):
         command.add_argument("--config", type=Path, default=Path("config/default.toml"))
@@ -174,6 +181,8 @@ def main(argv: list[str] | None = None) -> int:
             raise TechDocQAError("INVALID_ARGUMENT", "--answers needs a positive count and at most one --mode.", stage="arguments")
         if args.command == "eval" and args.refusal and len(args.mode or []) > 1:
             raise TechDocQAError("INVALID_ARGUMENT", "--refusal takes at most one --mode.", stage="arguments")
+        if args.command == "eval" and args.enrichment and args.mode:
+            raise TechDocQAError("INVALID_ARGUMENT", "--enrichment measures enrichment, not a retrieval mode.", stage="arguments")
         try:
             settings = load_settings(args.config, args.profile)
             if args.command == "config-check" and args.require_models:
@@ -265,6 +274,13 @@ def main(argv: list[str] | None = None) -> int:
                 output = {key: value for key, value in report.items() if key != "questions"}
                 print(json.dumps({**output, "report_files": files}, ensure_ascii=True))
                 return 1 if report["summary"]["statuses"]["generation_error"] else 0
+            if args.command == "eval" and args.enrichment:
+                from techdocqa.evaluation.enrichment import run_enrichment_evaluation, summary as enrichment_summary
+                from techdocqa.evaluation.enrichment import write_enrichment_report
+                report = run_enrichment_evaluation(args.manifest, args.gold_dir, settings, registry, args.fixtures)
+                files = write_enrichment_report(report, args.report_dir or Path(settings.data_directory) / "evaluation")
+                print(json.dumps({**enrichment_summary(report), "report_files": files}, ensure_ascii=True))
+                return 1 if report["classification"].get("status") == "failed" else 0
             if args.command == "eval" and args.refusal:
                 from techdocqa.evaluation.answers import run_refusal_check, write_refusal_report
                 report = run_refusal_check(args.dataset, args.manifest, settings, registry, mode=args.mode[0] if args.mode else None)

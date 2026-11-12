@@ -1,13 +1,22 @@
 """Phase 9 gold data (P9-9): sample and write annotation sheets, then freeze the filled sheets into gold files.
 
-Usage: nlp_gold.py sheets [--force]            write the sheets under data/nlp/ (git-ignored; they hold document text)
-       nlp_gold.py freeze --reviewer NAME [--segmentation-only]
-                                               validate the filled sheets and write datasets/nlp/*_gold.jsonl
-       nlp_gold.py check                       confirm every gold span still matches the corpus and print the hashes
+Usage: nlp_gold.py [--round 2] sheets [--force]
+                                    write the sheets under data/nlp/ (round 2: data/nlp/round2/; git-ignored, as the
+                                    sheets hold document text)
+       nlp_gold.py [--round 2] freeze --reviewer NAME [--segmentation-only]
+                                    validate the filled sheets and write datasets/nlp/*_gold.jsonl (round 2:
+                                    datasets/nlp/round2/)
+       nlp_gold.py [--round 2] check
+                                    confirm every gold span still matches the corpus and print the hashes
 
 The sheets never show extractor output, so labels are made before the extractor is seen. The registry is opened
 read-only, so this tool never migrates it. Gold files hold source keys, positions, hashes, short anchors and labels,
 never whole chunks.
+
+Round 1 (2026-11-07) became development data once the entity rules and the keyphrase policy were tuned on it. Round 2
+(2026-11-12) is the held-out test: a new seed, drawn after that tuning was frozen, with no chunk that overlaps a
+round-1 entity chunk or sentence passage and no round-1 key-term document. It has no sentence set; AC-06.4 is met on
+round 1, where the segmenter was not tuned to the labels.
 """
 import argparse
 from datetime import date
@@ -22,9 +31,16 @@ import unicodedata
 ROOT = Path(__file__).resolve().parents[1]
 MANIFEST = ROOT / "datasets" / "corpus_manifest.json"
 GAZETTEER = ROOT / "config" / "gazetteer.toml"
-GOLD = ROOT / "datasets" / "nlp"
-SHEETS = ROOT / "data" / "nlp"
-SEED = "techdocqa-nlp-gold-2026-11-07"
+LOG = ROOT / "datasets" / "nlp" / "review_log.md"
+ROUNDS = {1: {"seed": "techdocqa-nlp-gold-2026-11-07", "gold": ROOT / "datasets" / "nlp", "sheets": ROOT / "data" / "nlp",
+              "entity_chunks_per_technology": 5, "first_entity": 1, "first_keyterm": 1},
+          2: {"seed": "techdocqa-nlp-gold-round2-2026-11-12", "gold": ROOT / "datasets" / "nlp" / "round2",
+              "sheets": ROOT / "data" / "nlp" / "round2", "entity_chunks_per_technology": 8, "first_entity": 21,
+              "first_keyterm": 6}}
+ROUND = 1
+GOLD = ROUNDS[1]["gold"]
+SHEETS = ROUNDS[1]["sheets"]
+SEED = ROUNDS[1]["seed"]
 TYPES = ("TECHNOLOGY", "COMPONENT", "CONCEPT", "PROTOCOL", "IDENTIFIER")
 ENTITY_CHUNKS_PER_TECHNOLOGY = 5
 MIN_CHUNK_CHARACTERS = 400
@@ -42,6 +58,33 @@ ANCHOR = 40
 NAIVE = re.compile(r"(?<=[.!?])\s+(?=[A-Z\"'(\[])")
 HARD = re.compile(r"\b(?:e\.g|i\.e|etc|vs|cf)\.|\w\.\w|\d\.\d|\.\.\.|:\s")
 TOKEN_SEPARATED = re.compile(r"\w+(?:[./:#+-]+\w+)+")
+
+
+def use_round(number: int):
+    """Point the seed, sheet and gold directories at one round; every function reads them when it runs."""
+    global ROUND, GOLD, SHEETS, SEED, ENTITY_CHUNKS_PER_TECHNOLOGY
+    settings = ROUNDS[number]
+    ROUND, GOLD, SHEETS, SEED = number, settings["gold"], settings["sheets"], settings["seed"]
+    ENTITY_CHUNKS_PER_TECHNOLOGY = settings["entity_chunks_per_technology"]
+
+
+def round_one_spans() -> list[tuple]:
+    """Every round-1 entity chunk and sentence passage, which round 2 must not overlap."""
+    spans = []
+    for name in ("entities", "segmentation"):
+        path = ROUNDS[1]["gold"] / f"{name}_gold.jsonl"
+        if not path.exists():
+            fail(f"round 2 needs the frozen round-1 {path.name}")
+        spans += [(row["source_key"], row["document_index"], row["start"], row["end"])
+                  for row in map(json.loads, path.read_text(encoding="utf-8").splitlines())]
+    return spans
+
+
+def round_one_keyterm_sources() -> set[str]:
+    path = ROUNDS[1]["gold"] / "keyphrases_gold.jsonl"
+    if not path.exists():
+        fail(f"round 2 needs the frozen round-1 {path.name}")
+    return {json.loads(line)["source_key"] for line in path.read_text(encoding="utf-8").splitlines()}
 
 
 def normalized(text: str) -> str:
@@ -125,10 +168,12 @@ def has_ambiguous_use(text: str, aliases: list[str]) -> bool:
     return False
 
 
-def sample_entities(corpus: Corpus) -> list[dict]:
-    """5 chunks per technology in seeded hash order, at most 2 per document, at least 400 characters; the first pick
-    per technology comes from the chunks with an ambiguous use, so at least 4 of the 20 have one."""
+def sample_entities(corpus: Corpus, excluded: list | None = None) -> list[dict]:
+    """5 chunks per technology (round 2: 8) in seeded hash order, at most 2 per document, at least 400 characters;
+    the first pick per technology comes from the chunks with an ambiguous use, so at least 4 of the 20 have one.
+    Chunks overlapping an excluded span (round 2: every round-1 chunk and passage) are never drawn."""
     aliases = ambiguous_aliases()
+    excluded = excluded or []
     chosen = []
     for technology in sorted({d["technology"] for d in corpus.documents}):
         pool = []
@@ -139,7 +184,7 @@ def sample_entities(corpus: Corpus) -> list[dict]:
             for chunk in corpus.chunks(document):
                 item = location(document, chunk)
                 text = pages[item["document_index"]][item["start"]:item["end"]]
-                if len(text) >= MIN_CHUNK_CHARACTERS and "```" not in text:
+                if len(text) >= MIN_CHUNK_CHARACTERS and "```" not in text and not overlaps(item, excluded):
                     pool.append((order(digest(text)), item, text, has_ambiguous_use(text, aliases)))
         pool.sort(key=lambda entry: entry[0])
         picked, per_document = [], {}
@@ -160,8 +205,10 @@ def sample_entities(corpus: Corpus) -> list[dict]:
             if len(picked) == ENTITY_CHUNKS_PER_TECHNOLOGY:
                 break
             take(entry)
+        if len(picked) < ENTITY_CHUNKS_PER_TECHNOLOGY:
+            fail(f"only {len(picked)} eligible chunks for {technology}")
         chosen += [{**item, "text": text, "ambiguous_stratum": ambiguous} for _, item, text, ambiguous in picked]
-    for number, item in enumerate(chosen, 1):
+    for number, item in enumerate(chosen, ROUNDS[ROUND]["first_entity"]):
         item["id"] = f"E{number:02d}"
     return chosen
 
@@ -180,6 +227,17 @@ def sample_keyterm_documents(corpus: Corpus) -> list[dict]:
     chosen.append(next((d for d in rest if d["format"] not in formats), rest[0]))
     return [{"id": f"K{number}", "source_key": d["source_key"], "technology": d["technology"], "format": d["format"],
              "chunks": counts[d["source_key"]], "document": d} for number, d in enumerate(chosen[:KEYTERM_DOCUMENTS], 1)]
+
+
+def sample_keyterm_documents_round_two(corpus: Corpus) -> list[dict]:
+    """Every evaluation document not in the round-1 key-term set, of any length, so nothing is chosen by hand; by
+    technology, then size, then seeded hash order."""
+    seen = round_one_keyterm_sources()
+    counts = {d["source_key"]: len(corpus.chunks(d)) for d in corpus.documents}
+    rest = sorted((d for d in corpus.documents if d["source_key"] not in seen),
+                  key=lambda d: (d["technology"], counts[d["source_key"]], order(d["source_key"])))
+    return [{"id": f"K{number:02d}", "source_key": d["source_key"], "technology": d["technology"], "format": d["format"],
+             "chunks": counts[d["source_key"]], "document": d} for number, d in enumerate(rest, ROUNDS[2]["first_keyterm"])]
 
 
 HEADING = re.compile(r"\s*(?:#|[-*+]\s|\||>|```|\d+(?:\.\d+)*\.?(?:\s|$)|Chapter\s+\d)")
@@ -277,14 +335,15 @@ def write_sheets(force: bool):
         fail("data/nlp already has sheets; pass --force to overwrite them (filled labels would be lost)")
     corpus = Corpus()
     SHEETS.mkdir(parents=True, exist_ok=True)
-    entities = sample_entities(corpus)
-    lines = ["# Entity sheet (AC-07.4)", "", "Follow datasets/nlp/GUIDELINES.md. Under each chunk, write one mention per line in",
+    folder = SHEETS.relative_to(ROOT).as_posix()
+    entities = sample_entities(corpus, round_one_spans() if ROUND == 2 else None)
+    lines = [f"# Entity sheet (AC-07.4, round {ROUND})", "", "Follow datasets/nlp/GUIDELINES.md. Under each chunk, write one mention per line in",
              "the `labels` block as `TYPE | exact text`. Leave the block empty if the chunk has no entity. Do not edit the text.", ""]
     for item in entities:
         lines += [header(item), fence(item["text"]), "", "~~~~labels", "~~~~", "", "Notes:", ""]
     (SHEETS / "entities_sheet.md").write_text("\n".join(lines), encoding="utf-8")
-    keyterms = sample_keyterm_documents(corpus)
-    lines = ["# Key-term sheet (AC-08.3)", "", "Follow datasets/nlp/GUIDELINES.md. Read each document's text file in data/nlp/keyterms/",
+    keyterms = sample_keyterm_documents_round_two(corpus) if ROUND == 2 else sample_keyterm_documents(corpus)
+    lines = [f"# Key-term sheet (AC-08.3, round {ROUND})", "", f"Follow datasets/nlp/GUIDELINES.md. Read each document's text file in {folder}/keyterms/",
              "and list its key terms in the `terms` block, one per line, most important first.", ""]
     (SHEETS / "keyterms").mkdir(exist_ok=True)
     for item in keyterms:
@@ -292,20 +351,26 @@ def write_sheets(force: bool):
         name = f"{item['id']}.txt"
         (SHEETS / "keyterms" / name).write_text("\n\n".join(f"=== page {i} ===\n{page}" for i, page in enumerate(pages)), encoding="utf-8")
         lines += [f"## {item['id']}\n\n- Source: `{item['source_key']}` ({item['technology']}, {item['format']}, {item['chunks']} chunks)",
-                  f"- Text: data/nlp/keyterms/{name}", "", "~~~~terms", "~~~~", ""]
+                  f"- Text: {folder}/keyterms/{name}", "", "~~~~terms", "~~~~", ""]
     (SHEETS / "keyterms_sheet.md").write_text("\n".join(lines), encoding="utf-8")
-    passages = sample_segmentation(corpus, [(i["source_key"], i["document_index"], i["start"], i["end"]) for i in entities])
-    lines = ["# Segmentation sheet (AC-06.4)", "", f"Each `sentences` block is a whole paragraph with a {MARK} mark after every sentence",
-             f"but the last. Add, move or delete marks to fix a boundary; never change any other character. Whitespace beside a",
-             f"{MARK} belongs to neither sentence.", ""]
-    for item in passages:
-        lines += [header(item), "~~~~sentences", marked(item["text"], item["draft"]), "~~~~", ""]
-    (SHEETS / "segmentation_sheet.md").write_text("\n".join(lines), encoding="utf-8")
-    state = {"seed": SEED, "gazetteer_sha256": file_sha(GAZETTEER), "manifest_sha256": file_sha(MANIFEST),
+    passages = []
+    if ROUND == 1:
+        passages = sample_segmentation(corpus, [(i["source_key"], i["document_index"], i["start"], i["end"]) for i in entities])
+        lines = ["# Segmentation sheet (AC-06.4)", "", f"Each `sentences` block is a whole paragraph with a {MARK} mark after every sentence",
+                 f"but the last. Add, move or delete marks to fix a boundary; never change any other character. Whitespace beside a",
+                 f"{MARK} belongs to neither sentence.", ""]
+        for item in passages:
+            lines += [header(item), "~~~~sentences", marked(item["text"], item["draft"]), "~~~~", ""]
+        (SHEETS / "segmentation_sheet.md").write_text("\n".join(lines), encoding="utf-8")
+    state = {"round": ROUND, "seed": SEED, "gazetteer_sha256": file_sha(GAZETTEER), "manifest_sha256": file_sha(MANIFEST),
              "entities": [{k: v for k, v in item.items() if k != "text"} | {"text_sha256": digest(item["text"])} for item in entities],
              "keyterms": [{k: v for k, v in item.items() if k != "document"} for item in keyterms],
              "segmentation": [{k: v for k, v in item.items() if k not in ("text", "draft")} | {"text_sha256": digest(item["text"])}
                               for item in passages]}
+    if ROUND == 2:
+        # What round 2 was kept apart from, so the separation can be checked later.
+        state["round_one_sha256"] = {name: file_sha(ROUNDS[1]["gold"] / name) for name in
+                                     ("entities_gold.jsonl", "segmentation_gold.jsonl", "keyphrases_gold.jsonl")}
     (SHEETS / "sample.json").write_text(json.dumps(state, indent=1), encoding="utf-8")
     drafted = sum(len(item["draft"]) for item in passages)
     print(json.dumps({"result": "written", "entity_chunks": len(entities),
@@ -332,9 +397,13 @@ def freeze(reviewer: str, segmentation_only: bool):
     state = json.loads((SHEETS / "sample.json").read_text(encoding="utf-8"))
     if state["manifest_sha256"] != file_sha(MANIFEST):
         fail("the manifest changed since the sheets were written")
+    if state.get("round", 1) != ROUND:
+        fail(f"the sheets in {SHEETS.relative_to(ROOT).as_posix()} are from round {state.get('round', 1)}")
+    if ROUND == 2 and segmentation_only:
+        fail("round 2 has no sentence set")
     GOLD.mkdir(exist_ok=True)
     written = {}
-    sentences = blocks(SHEETS / "segmentation_sheet.md", "sentences")
+    sentences = blocks(SHEETS / "segmentation_sheet.md", "sentences") if state["segmentation"] else {}
     rows = []
     for item in state["segmentation"]:
         text = corpus.span(item)
@@ -345,7 +414,8 @@ def freeze(reviewer: str, segmentation_only: bool):
             fail(f"{item['id']}: an empty sentence between two marks")
         rows.append({k: item[k] for k in ("id", "source_key", "technology", "format", "document_index", "start", "end", "text_sha256")}
                     | {"anchor": text[:ANCHOR], "sentences": boundaries})
-    written["segmentation"] = rows
+    if rows:
+        written["segmentation"] = rows
     if not segmentation_only:
         if state["gazetteer_sha256"] != file_sha(GAZETTEER):
             fail("the gazetteer changed after sampling; resample or report the entity set as tuned (P9-9)")
@@ -361,9 +431,11 @@ def freeze(reviewer: str, segmentation_only: bool):
                 if surface not in text:
                     fail(f"{item['id']}: {surface!r} is not in the chunk text exactly")
                 mentions.add((normalized(surface), kind, surface))
+            # The gazetteer hash at sampling lets eval --enrichment report a later gazetteer change as tuned (P9-9).
             rows.append({k: item[k] for k in ("id", "source_key", "technology", "format", "document_index", "start", "end", "text_sha256",
                                               "ambiguous_stratum")}
-                        | {"anchor": text[:ANCHOR], "mentions": [{"text": s, "normalized": n, "type": t} for n, t, s in sorted(mentions)]})
+                        | {"anchor": text[:ANCHOR], "gazetteer_sha256": state["gazetteer_sha256"],
+                           "mentions": [{"text": s, "normalized": n, "type": t} for n, t, s in sorted(mentions)]})
         written["entities"] = rows
         terms = blocks(SHEETS / "keyterms_sheet.md", "terms")
         rows = []
@@ -376,16 +448,21 @@ def freeze(reviewer: str, segmentation_only: bool):
     hashes = {}
     for name, rows in written.items():
         path = GOLD / f"{name}_gold.jsonl"
-        path.write_text("".join(json.dumps(row, ensure_ascii=False, sort_keys=True) + "\n" for row in rows), encoding="utf-8")
+        # LF on every platform: the review log records these hashes, and git stores the files with LF.
+        path.write_text("".join(json.dumps(row, ensure_ascii=False, sort_keys=True) + "\n" for row in rows), encoding="utf-8",
+                        newline="\n")
         hashes[path.name] = file_sha(path)
-    entry = [f"\n## Frozen {date.today().isoformat()} by {reviewer}\n", f"- Seed `{SEED}`; manifest SHA-256 `{state['manifest_sha256']}`",
+    title = "Frozen" if ROUND == 1 else f"Round {ROUND} frozen"
+    entry = [f"\n## {title} {date.today().isoformat()} by {reviewer}\n", f"- Seed `{SEED}`; manifest SHA-256 `{state['manifest_sha256']}`",
              f"- Gazetteer SHA-256 at sampling `{state['gazetteer_sha256']}`"]
-    entry += [f"- `{name}` SHA-256 `{value}`" for name, value in hashes.items()]
-    with (GOLD / "review_log.md").open("a", encoding="utf-8") as log:
+    entry += [f"- Kept apart from round-1 `{name}` SHA-256 `{value}`" for name, value in state.get("round_one_sha256", {}).items()]
+    entry += [f"- `{GOLD.relative_to(ROOT).as_posix()}/{name}` SHA-256 `{value}`" if ROUND != 1 else f"- `{name}` SHA-256 `{value}`"
+              for name, value in hashes.items()]
+    with LOG.open("a", encoding="utf-8", newline="\n") as log:
         log.write("\n".join(entry) + "\n")
-    print(json.dumps({"result": "frozen", "hashes": hashes,
+    print(json.dumps({"result": "frozen", "round": ROUND, "hashes": hashes,
                       "counts": {name: len(rows) for name, rows in written.items()},
-                      "sentences": sum(len(row["sentences"]) for row in written["segmentation"])}, indent=1))
+                      "sentences": sum(len(row["sentences"]) for row in written.get("segmentation", []))}, indent=1))
 
 
 def check():
@@ -403,11 +480,12 @@ def check():
             elif row["source_key"] not in corpus.by_key:
                 fail(f"{row['id']}: {row['source_key']} left the evaluation scope")
         report[name] = {"rows": len(rows), "sha256": file_sha(path)}
-    print(json.dumps({"result": "passed", "gazetteer_sha256": file_sha(GAZETTEER), **report}, indent=1))
+    print(json.dumps({"result": "passed", "round": ROUND, "gazetteer_sha256": file_sha(GAZETTEER), **report}, indent=1))
 
 
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser.add_argument("--round", type=int, choices=sorted(ROUNDS), default=1)
     commands = parser.add_subparsers(dest="command", required=True)
     sheets = commands.add_parser("sheets")
     sheets.add_argument("--force", action="store_true")
@@ -416,6 +494,7 @@ def main(argv=None):
     frozen.add_argument("--segmentation-only", action="store_true")
     commands.add_parser("check")
     args = parser.parse_args(argv)
+    use_round(args.round)
     if args.command == "sheets":
         write_sheets(args.force)
     elif args.command == "freeze":

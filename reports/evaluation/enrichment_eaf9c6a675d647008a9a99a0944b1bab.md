@@ -1,0 +1,202 @@
+# Enrichment evaluation enrichment_eaf9c6a675d647008a9a99a0944b1bab
+
+- Date: 2026-11-12T14:37:58.129872+00:00, 65.348 s
+- Corpus: `techdocqa-reference-2026-10-24-v2`, 20 of 20 documents, fingerprint `e8713f0c15eeb6db2c801a319c2324507302242c6265b8fff1ae67db63a2c4b5`
+- Code: 95dd5213112027829bc56077737e1dfb83517cc7 (dirty: True); enrichment configuration `en_b382d2ee700715cd44888435a5611ec4d79dc28cb8db4f819b438c0cfc7bf93a`
+- Gazetteer SHA-256 `058dc8a88a694de9673d876e71d2b1c1d68145522c06cd55bc14535e694c9d64`; category descriptions SHA-256 `67d706a84744b9cde5acad6f5e5623e136d8bcca09fd3d9477383169591a2f00`
+- Gold data: segmentation awaiting gold data; entities awaiting gold data; keyphrases awaiting gold data
+- Out-of-topic fixtures: `datasets/nlp/out_of_topic.jsonl` SHA-256 `e8180839ea52c2af552172ca773049f778f02b18f00fc2ad2e4a2b280b91a71f`
+
+## Acceptance
+
+| Criterion | Target | Result | Verdict |
+|---|---|---|---|
+| AC-06.4 | boundary F1 >= 0.95 on >= 50 sentences (spaCy policy) | n/a | awaiting gold data |
+| AC-07.4 | precision >= 0.80, recall >= 0.60 on >= 20 chunks | n/a / n/a | awaiting gold data |
+| AC-08.3 | mean share of key terms in the top 10 >= 0.50 over 5 documents | n/a | awaiting gold data |
+| AC-09.1 | accuracy >= 0.85, >= 2 documents per category | 0.950 | met at point estimate only |
+| AC-09.2 | the out-of-topic cooking article is unclassified (result: held-out fixtures unclassified) | 0.800 | met |
+| AC-07.2 (real corpus) | see the corpus checks | n/a | met |
+| AC-07.3 (real corpus) | see the corpus checks | n/a | met |
+| AC-08.1 (real corpus) | see the corpus checks | n/a | met |
+| AC-09.3 (real corpus) | see the corpus checks | n/a | met |
+
+## Sentence boundaries (AC-06.4, P9-2)
+
+Not measured: awaiting gold data.
+
+## Entities (AC-07.4)
+
+Not measured: awaiting gold data.
+
+## Key terms (AC-08.3, P9-5)
+
+Not measured: awaiting gold data.
+
+## Classification (AC-09.1, AC-09.2, P9-6)
+
+Policy `centroid-cosine-v1`, similarity scale `cs_f138c575d3b18c6553bf96f57e55f743f6637eb359e7d24fbbd95b63451e3803`. Active threshold: not calibrated.
+
+- Top-1 accuracy 0.950 (19 of 20, 95% 0.764-0.991)
+- Accuracy with the proposal threshold 0.649 (below it counts as wrong) 0.950 (19 of 20, 95% 0.764-0.991)
+- Rule baseline (technology entities mapped to categories, no user metadata) 0.550 (11 of 20, 95% 0.342-0.742)
+- Categories assigned per document at that threshold: 0: 0, 1: 1, 2: 3, 3: 16
+
+Confusion matrix (rows: manifest label, columns: top-1):
+
+| Label | Databases | Distributed computing | Distributed streaming | Workflow orchestration |
+|---|---|---|---|---|
+| Databases (7) | 7 | 0 | 0 | 0 |
+| Distributed computing (5) | 1 | 4 | 0 | 0 |
+| Distributed streaming (4) | 0 | 0 | 4 | 0 |
+| Workflow orchestration (4) | 0 | 0 | 0 | 4 |
+
+| Document | Format | Label | Top categories (cosine) | Rule baseline | Assigned (proposal) |
+|---|---|---|---|---|---|
+| postgresql-18-transaction-system.txt | txt | Databases | Databases 0.716, Distributed streaming 0.714, Distributed computing 0.674 | Databases | Databases, Distributed streaming, Distributed computing |
+| postgresql-18-tutorial-advanced-features.pdf | pdf | Databases | Databases 0.782, Distributed streaming 0.721, Distributed computing 0.678 | Databases | Databases, Distributed streaming, Distributed computing |
+| postgresql-18-tutorial-getting-started.pdf | pdf | Databases | Databases 0.755, Distributed streaming 0.637, Distributed computing 0.609 | Databases | Databases |
+| postgresql-18-tutorial-sql-language.pdf | pdf | Databases | Databases 0.743, Distributed streaming 0.658, Distributed computing 0.632 | Databases | Databases, Distributed streaming |
+| spark-4.0.1-cluster-overview.md | md | Distributed computing | Distributed computing 0.799, Databases 0.687, Distributed streaming 0.686 | unclassified | Distributed computing, Databases, Distributed streaming |
+| spark-4.0.1-hardware-provisioning.md | md | Distributed computing | Distributed computing 0.743, Distributed streaming 0.675, Databases 0.667 | unclassified | Distributed computing, Distributed streaming, Databases |
+| spark-4.0.1-tuning.md | md | Distributed computing | Distributed computing 0.753, Databases 0.714, Distributed streaming 0.706 | unclassified | Distributed computing, Databases, Distributed streaming |
+| https://airflow.apache.org/docs/apache-airflow/stable/core-concepts/dag-run.html | html | Workflow orchestration | Workflow orchestration 0.682, Distributed streaming 0.677, Distributed computing 0.658 | unclassified | Workflow orchestration, Distributed streaming, Distributed computing |
+| https://airflow.apache.org/docs/apache-airflow/stable/core-concepts/dags.html | html | Workflow orchestration | Workflow orchestration 0.708, Distributed computing 0.681, Distributed streaming 0.679 | unclassified | Workflow orchestration, Distributed computing, Distributed streaming |
+| https://airflow.apache.org/docs/apache-airflow/stable/core-concepts/overview.html | html | Workflow orchestration | Workflow orchestration 0.755, Distributed computing 0.737, Distributed streaming 0.706 | Databases | Workflow orchestration, Distributed computing, Distributed streaming |
+| https://airflow.apache.org/docs/apache-airflow/stable/core-concepts/tasks.html | html | Workflow orchestration | Workflow orchestration 0.739, Distributed streaming 0.700, Distributed computing 0.689 | unclassified | Workflow orchestration, Distributed streaming, Distributed computing |
+| https://kafka.apache.org/43/configuration/producer-configs/ | html | Distributed streaming | Distributed streaming 0.729, Databases 0.696, Distributed computing 0.676 | Distributed streaming | Distributed streaming, Databases, Distributed computing |
+| https://kafka.apache.org/43/design/design/ | html | Distributed streaming | Distributed streaming 0.794, Databases 0.751, Distributed computing 0.742 | unclassified | Distributed streaming, Databases, Distributed computing |
+| https://kafka.apache.org/43/getting-started/introduction/ | html | Distributed streaming | Distributed streaming 0.826, Databases 0.706, Distributed computing 0.705 | Distributed streaming | Distributed streaming, Databases, Distributed computing |
+| https://kafka.apache.org/43/getting-started/quickstart/ | html | Distributed streaming | Distributed streaming 0.715, Distributed computing 0.653, Databases 0.643 | Distributed streaming | Distributed streaming, Distributed computing |
+| https://spark.apache.org/docs/4.0.1/sql-data-sources-load-save-functions.html | html | Distributed computing | Databases 0.701, Distributed computing 0.685, Distributed streaming 0.672 | Distributed computing | Databases, Distributed computing, Distributed streaming |
+| https://spark.apache.org/docs/4.0.1/submitting-applications.html | html | Distributed computing | Distributed computing 0.718, Distributed streaming 0.660, Databases 0.640 | unclassified | Distributed computing, Distributed streaming |
+| https://www.postgresql.org/docs/18/indexes-types.html | html | Databases | Databases 0.733, Distributed streaming 0.669, Distributed computing 0.664 | Databases | Databases, Distributed streaming, Distributed computing |
+| https://www.postgresql.org/docs/18/transaction-iso.html | html | Databases | Databases 0.776, Distributed streaming 0.720, Distributed computing 0.675 | Databases | Databases, Distributed streaming, Distributed computing |
+| https://www.postgresql.org/docs/18/using-explain.html | html | Databases | Databases 0.738, Distributed computing 0.702, Distributed streaming 0.656 | Databases | Databases, Distributed computing, Distributed streaming |
+
+### Unclassified threshold
+
+| Fixture | Split | Topic | Chunks | Top category (cosine) | Unclassified (proposal) |
+|---|---|---|---|---|---|
+| oot-01 | calibration | gardening | 3 | Distributed streaming 0.562 | yes |
+| oot-02 | calibration | chess | 2 | Databases 0.580 | yes |
+| oot-03 | calibration | personal finance | 2 | Databases 0.601 | yes |
+| oot-04 | calibration | web page layout | 2 | Databases 0.591 | yes |
+| oot-05 | calibration | version control | 3 | Databases 0.616 | yes |
+| oot-06 | held_out | cooking | 2 | Distributed streaming 0.507 | yes |
+| oot-07 | held_out | birdwatching | 2 | Databases 0.505 | yes |
+| oot-08 | held_out | bicycle maintenance | 2 | Distributed computing 0.528 | yes |
+| oot-09 | held_out | home networking | 3 | Databases 0.594 | yes |
+| oot-10 | held_out | document typesetting | 3 | Databases 0.657 | no |
+
+In-topic top-1 min / median / max: 0.682148 / 0.740769 / 0.825978. Calibration out-of-topic: 0.562320 / 0.590976 / 0.616049.
+
+Proposed threshold 0.649099 (`balanced-accuracy-midpoint-v1`), margin 0.033049, separable: 20 of 20 in-topic documents classified, 5 of 5 calibration fixtures unclassified, 0 leave-one-out errors.
+Held out, judged by the proposal threshold: 0.800 (4 of 5, 95% 0.376-0.964) unclassified; cooking article unclassified: yes.
+
+To adopt, set these in `[enrichment]` (this run becomes the calibration run):
+
+```toml
+[enrichment]
+unclassified_threshold = 0.649099
+calibration_run_id = "enrichment_eaf9c6a675d647008a9a99a0944b1bab"
+similarity_config_id = "cs_f138c575d3b18c6553bf96f57e55f743f6637eb359e7d24fbbd95b63451e3803"
+```
+
+## Real-corpus checks (AC-07.2, AC-07.3, AC-08.1, AC-09.3)
+
+- AC-07.2: 5598 entity rows, 0 with a chunk, document or offset that does not match: met.
+- AC-07.3 `{'entity': 'PostgreSQL'}`: bm25 20 results, 0 outside the filter; vector 20 results, 0 outside the filter: met.
+- AC-09.3 `{'category': 'Databases'}`: bm25 20 results, 0 outside the filter; vector 20 results, 0 outside the filter: met.
+- AC-08.1: 20 documents, invalid keyphrase lists: none: met.
+
+## Run times
+
+Stages (s): segmentation 0.0, entities 0.0, keyphrases 0.0, classification 16.161, corpus_checks 46.57, enrichment_times 0.885
+
+In-memory extraction per document (P9-12):
+
+| Document | Chunks | Characters | Entities | Entities ms | Keyphrases ms |
+|---|---|---|---|---|---|
+| postgresql-18-transaction-system.txt | 75 | 59061 | 491 | 53.6 | 35.2 |
+| postgresql-18-tutorial-advanced-features.pdf | 30 | 23482 | 70 | 18.5 | 10.9 |
+| postgresql-18-tutorial-getting-started.pdf | 18 | 13792 | 59 | 17.9 | 9.0 |
+| postgresql-18-tutorial-sql-language.pdf | 37 | 25930 | 145 | 29.0 | 14.1 |
+| spark-4.0.1-cluster-overview.md | 13 | 7800 | 106 | 7.0 | 3.3 |
+| spark-4.0.1-hardware-provisioning.md | 9 | 4971 | 60 | 4.3 | 3.7 |
+| spark-4.0.1-tuning.md | 38 | 25330 | 205 | 26.2 | 11.6 |
+| https://airflow.apache.org/docs/apache-airflow/stable/core-concepts/dag-run.html | 22 | 12949 | 255 | 16.3 | 9.4 |
+| https://airflow.apache.org/docs/apache-airflow/stable/core-concepts/dags.html | 65 | 42813 | 888 | 47.5 | 22.7 |
+| https://airflow.apache.org/docs/apache-airflow/stable/core-concepts/overview.html | 21 | 14148 | 217 | 14.2 | 5.4 |
+| https://airflow.apache.org/docs/apache-airflow/stable/core-concepts/tasks.html | 28 | 17647 | 294 | 16.9 | 11.8 |
+| https://kafka.apache.org/43/configuration/producer-configs/ | 123 | 54176 | 505 | 44.4 | 28.2 |
+| https://kafka.apache.org/43/design/design/ | 123 | 85823 | 734 | 87.9 | 56.3 |
+| https://kafka.apache.org/43/getting-started/introduction/ | 18 | 10863 | 122 | 16.1 | 7.0 |
+| https://kafka.apache.org/43/getting-started/quickstart/ | 20 | 11235 | 210 | 18.0 | 10.1 |
+| https://spark.apache.org/docs/4.0.1/sql-data-sources-load-save-functions.html | 26 | 18852 | 368 | 27.6 | 11.2 |
+| https://spark.apache.org/docs/4.0.1/submitting-applications.html | 20 | 12256 | 215 | 16.4 | 5.2 |
+| https://www.postgresql.org/docs/18/indexes-types.html | 15 | 9041 | 103 | 16.3 | 6.7 |
+| https://www.postgresql.org/docs/18/transaction-iso.html | 40 | 30102 | 167 | 32.4 | 10.9 |
+| https://www.postgresql.org/docs/18/using-explain.html | 75 | 54446 | 384 | 67.7 | 30.3 |
+
+## Provenance
+
+```json
+{
+ "category_descriptions_sha256": "67d706a84744b9cde5acad6f5e5623e136d8bcca09fd3d9477383169591a2f00",
+ "corpus": {
+  "content_drift": [],
+  "corpus_fingerprint": "e8713f0c15eeb6db2c801a319c2324507302242c6265b8fff1ae67db63a2c4b5",
+  "excluded_eligible_documents": 1,
+  "manifest_dataset_id": "techdocqa-reference-2026-10-24-v2",
+  "manifest_fingerprint": "40229e3caebc8816d6ad98d36bddc10eb133deb7d3b1c416f8a1331b9d75591a",
+  "manifest_status": "frozen",
+  "scope_documents": 20,
+  "searchable_chunks": 816,
+  "searchable_documents": 20,
+  "unavailable": {}
+ },
+ "enrichment_config": {
+  "classifier_config_id": "cc_2f6cc9f1f8b1522a0348ce37835911c9326f158d62bca55bedfba160d4f089d7",
+  "enrichment_config_id": "en_b382d2ee700715cd44888435a5611ec4d79dc28cb8db4f819b438c0cfc7bf93a",
+  "entity_config_id": "ec_9af8ecae3d6bc4d5372af06cd86ad90ce6af2cf3ebd1b60bc2f6b9a7c99a904a",
+  "keyphrase_config_id": "kc_8bc4d3984849be3218093b16e104c1afe08cf76bafe8096d0f14610bff085db6"
+ },
+ "gazetteer_sha256": "058dc8a88a694de9673d876e71d2b1c1d68145522c06cd55bc14535e694c9d64",
+ "gold_files": {
+  "entities": {
+   "path": "datasets/nlp/entities_gold.jsonl",
+   "status": "awaiting_gold_data"
+  },
+  "keyphrases": {
+   "path": "datasets/nlp/keyphrases_gold.jsonl",
+   "status": "awaiting_gold_data"
+  },
+  "segmentation": {
+   "path": "datasets/nlp/segmentation_gold.jsonl",
+   "status": "awaiting_gold_data"
+  }
+ },
+ "keyphrases_available": true,
+ "nlp_libraries": {
+  "nltk": "3.10.4",
+  "rake-nltk": "1.0.6",
+  "spacy": "3.8.18"
+ },
+ "out_of_topic": {
+  "path": "datasets/nlp/out_of_topic.jsonl",
+  "sha256": "e8180839ea52c2af552172ca773049f778f02b18f00fc2ad2e4a2b280b91a71f"
+ },
+ "requirements_lock_sha256": "0818d0d24aa770fff4da8c22f3e32d7d21c9cabf17172f2e4cf0158490428d3d",
+ "segmenter_available": true,
+ "spacy_model": null
+}
+```
+
+## Notes
+
+- Indicative only: the gold sets are the requirement minimums (P9-9). Every rate carries its denominator and a Wilson 95% interval; a target met only at the point estimate is reported that way.
+- Awaiting frozen gold data: segmentation, entities, keyphrases. Those criteria are not measured until the owner labels and freezes them (datasets/nlp/review_log.md).
+- The 20 public documents both calibrate the unclassified threshold and are assessed by AC-09.1, so that side is not independent. The held-out out-of-topic fixtures were not used to choose the threshold.
+- Category scores are cosine similarities between a document's mean chunk vector and each description vector, not probabilities.
+- DDIA and every other document outside the manifest's evaluation scope were not read.

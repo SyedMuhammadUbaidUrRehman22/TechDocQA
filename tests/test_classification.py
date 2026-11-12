@@ -8,16 +8,22 @@ from techdocqa.enrichment.pipeline import embedding_profile_or_none, enrich_vers
 from techdocqa.indexing.pipeline import index_versions
 from techdocqa.settings import CategorySpec, EnrichmentSettings
 
-from test_enrichment import CATEGORIES, GAZETTEER, enrich_settings, enriched  # noqa: F401
+from test_enrichment import CATEGORIES, GAZETTEER, calibrated, enrich_settings, enriched  # noqa: F401
 from test_indexing import embedder, indexed, ingest, inline_workers, model_settings, query  # noqa: F401
 
 COOKING = "# Lemon cake\n\n" + "Whisk eggs with sugar, fold in flour and bake the cake for forty minutes. " * 12
 
 
-def settings_with(**changes):
-    values = {"gazetteer": str(GAZETTEER), "categories": CATEGORIES, "unclassified_threshold": 0.45,
-              "calibration_run_id": "test_calibration", **changes}
-    return EnrichmentSettings(**values)
+PROFILE = {"profile_id": "p"}
+
+
+def settings_with(profile=PROFILE, **changes):
+    return calibrated(profile, **changes)
+
+
+def threshold_only(threshold, max_categories=3):
+    """Settings whose threshold applies to PROFILE."""
+    return calibrated(PROFILE, threshold=threshold, categories=[], max_categories=max_categories)
 
 
 def inferred(registry, version):
@@ -33,12 +39,33 @@ def test_scores_rank_by_similarity_then_name():
 
 def test_assignment_needs_a_calibrated_threshold_and_keeps_at_most_three():
     ranked = [("A", 0.9), ("B", 0.8), ("C", 0.7), ("D", 0.6)]
-    rows, status = classification.assign(ranked, EnrichmentSettings())
+    rows, status = classification.assign(ranked, EnrichmentSettings(), None)
     assert status == "not_calibrated" and len(rows) == 3 and not any(row["assigned"] for row in rows)
-    rows, status = classification.assign(ranked, EnrichmentSettings(unclassified_threshold=0.75, calibration_run_id="r"))
+    rows, status = classification.assign(ranked, EnrichmentSettings(), 0.75)
     assert status == "classified" and [row["assigned"] for row in rows] == [True, True, False]
-    rows, status = classification.assign(ranked, EnrichmentSettings(unclassified_threshold=0.95, calibration_run_id="r", max_categories=1))
+    rows, status = classification.assign(ranked, EnrichmentSettings(max_categories=1), 0.95)
     assert status == "unclassified" and len(rows) == 1
+
+
+def test_a_threshold_applies_only_on_the_scale_it_was_calibrated_on():
+    assert classification.active_threshold(EnrichmentSettings(), PROFILE) == (None, classification.NOT_CALIBRATED)
+    assert classification.active_threshold(threshold_only(0.5), PROFILE) == (0.5, None)
+    # Another embedding profile, or edited descriptions, is another scale: the threshold is stale, never reused.
+    assert classification.active_threshold(threshold_only(0.5), {"profile_id": "q"}) == (None, classification.STALE)
+    edited = settings_with(categories=[CategorySpec(name=c.name, description=c.description + " Edited.") for c in CATEGORIES])
+    stale = edited.model_copy(update={"similarity_config_id": settings_with().similarity_config_id})
+    assert classification.active_threshold(stale, PROFILE) == (None, classification.STALE)
+    # The scale ignores the threshold and max_categories.
+    assert settings_with(threshold=0.2).similarity_config_id == settings_with(max_categories=1).similarity_config_id
+
+
+def test_a_stale_threshold_classifies_nothing_and_says_so(indexed, enrich_settings, registry, embedder):
+    enrich_settings.enrichment = settings_with()  # calibrated for PROFILE, not the test embedder's profile
+    result = enrich_versions([], enrich_settings, registry)
+    assert result.run.failed == 0 and "CLASSIFICATION_CALIBRATION_STALE" in result.warnings
+    states = {registry.enrichment_state(version.version_id)["classification_status"] for version in indexed.values()}
+    assert states == {"not_calibrated"}
+    assert query(enrich_settings, registry, "keys", category="Caching").results == []
 
 
 def test_document_vector_is_the_normalized_mean():
@@ -52,12 +79,14 @@ def test_config_id_follows_descriptions_threshold_and_profile():
     base = classification.config_id(settings_with(), profile)
     changed = [CategorySpec(name=c.name, description=c.description + " Edited.") for c in CATEGORIES]
     assert classification.config_id(settings_with(categories=changed), profile) != base
-    assert classification.config_id(settings_with(unclassified_threshold=0.5), profile) != base
+    assert classification.config_id(settings_with(threshold=0.5), profile) != base
     assert classification.config_id(settings_with(), {"profile_id": "q"}) != base
     assert classification.config_id(settings_with(), profile) == base
 
 
 @pytest.mark.parametrize("values", [{"unclassified_threshold": 0.5}, {"calibration_run_id": "r"},
+                                    {"unclassified_threshold": 0.5, "calibration_run_id": "r"},
+                                    {"similarity_config_id": "cs_" + "0" * 64},
                                     {"categories": [CATEGORIES[0], CATEGORIES[0]]},
                                     {"categories": [CategorySpec(name="Unclassified", description="Anything at all here.")]}])
 def test_invalid_classifier_settings_are_rejected(values):
@@ -126,14 +155,14 @@ def test_category_vectors_are_embedded_once(indexed, enrich_settings, registry, 
     calls = embedder.queries
     assert calls == len(CATEGORIES)
     # A new threshold recomputes every document but reuses the stored description vectors.
-    enrich_settings.enrichment = settings_with(unclassified_threshold=0.5)
+    enrich_settings.enrichment = settings_with(embedding_profile_or_none(enrich_settings), threshold=0.5)
     assert enrich_versions([], enrich_settings, registry).run.processed == len(indexed)
     assert embedder.queries == calls
 
 
 def test_rows_from_another_classifier_never_filter(enriched, enrich_settings, registry):
     assert query(enrich_settings, registry, "keys", category="Caching").results
-    enrich_settings.enrichment = settings_with(unclassified_threshold=0.5)
+    enrich_settings.enrichment = settings_with(embedding_profile_or_none(enrich_settings), threshold=0.5)
     assert query(enrich_settings, registry, "keys", category="Caching").results == []
     assert show_enrichment(enriched["redis.md"].document_id, enrich_settings, registry)["status"] == "stale"
 
@@ -146,7 +175,7 @@ def test_without_vectors_or_a_threshold_classification_is_reported(corpus, enric
     assert "CLASSIFICATION_NOT_EMBEDDED" in result.warnings
     assert registry.enrichment_state(version.version_id)["classification_status"] == "not_embedded"
     assert index_versions([], enrich_settings, registry).run.failed == 0
-    enrich_settings.enrichment = settings_with(unclassified_threshold=None, calibration_run_id=None)
+    enrich_settings.enrichment = settings_with(threshold=None)
     result = enrich_versions([], enrich_settings, registry)
     assert "CLASSIFICATION_NOT_CALIBRATED" in result.warnings
     assert registry.enrichment_state(version.version_id)["classification_status"] == "not_calibrated"

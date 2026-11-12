@@ -39,10 +39,11 @@ def configuration(settings) -> dict:
     gazetteer = entities.Gazetteer(enrichment.gazetteer)
     profile = embedding_profile_or_none(settings)
     ids = {"entity_config_id": entities.config_id(gazetteer, enrichment.entity_verification_threshold),
-           "keyphrase_config_id": keyphrases.config_id(enrichment),
+           "keyphrase_config_id": keyphrases.config_id(enrichment, gazetteer.sha256),
            "classifier_config_id": classification.config_id(enrichment, profile)}
     ids["enrichment_config_id"] = "en_" + hashlib.sha256(json.dumps(ids, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
-    return {"gazetteer": gazetteer, "profile": profile, "ids": ids, "keyphrases_available": keyphrases.rake_version() is not None}
+    return {"gazetteer": gazetteer, "profile": profile, "ids": ids, "keyphrases_available": keyphrases.available(enrichment),
+            "keyphrase_domain": keyphrases.domain_terms(gazetteer)}
 
 
 def entity_rows(chunks, documents, gazetteer, technology, threshold) -> tuple[list[dict], set]:
@@ -66,14 +67,14 @@ def entity_rows(chunks, documents, gazetteer, technology, threshold) -> tuple[li
     return rows, verified
 
 
-def keyphrase_rows(chunks, documents, sentence_spans, enrichment) -> list[tuple]:
+def keyphrase_rows(chunks, documents, sentence_spans, enrichment, *, exclude=frozenset(), domain=frozenset()) -> list[tuple]:
     rows = [("document", rank, phrase, score) for rank, (phrase, score) in enumerate(keyphrases.ranked(
         keyphrases.document_sentences(documents, sentence_spans, enrichment.keyphrases_include_code), enrichment,
-        enrichment.keyphrases_per_document), 1)]
+        enrichment.keyphrases_per_document, exclude=exclude, domain=domain), 1)]
     if enrichment.keyphrases_per_chunk:
         for chunk in chunks:
             found = keyphrases.ranked(keyphrases.chunk_sentences(chunk, documents, sentence_spans, enrichment.keyphrases_include_code),
-                                      enrichment, enrichment.keyphrases_per_document)
+                                      enrichment, enrichment.keyphrases_per_document, exclude=exclude, domain=domain)
             rows += [(chunk["chunk_id"], rank, phrase, score) for rank, (phrase, score) in enumerate(found, 1)]
     return rows
 
@@ -83,6 +84,7 @@ class Categories:
 
     def __init__(self, settings, profile, registry):
         self.settings, self.profile, self.registry, self.vectors = settings, profile, registry, None
+        self.threshold, self.warning = classification.active_threshold(settings.enrichment, profile)
 
     def classify(self, record) -> tuple[list[dict], str]:
         enrichment = self.settings.enrichment
@@ -97,7 +99,7 @@ class Categories:
             self.registry.save_embedding_profile(self.profile)
             self.vectors = classification.category_vectors(self.settings, self.profile, self.registry)
         ranked = classification.scores(classification.document_vector(blobs), self.vectors)
-        return classification.assign(ranked, enrichment)
+        return classification.assign(ranked, enrichment, self.threshold)
 
 
 def enrich_version(record, settings, registry, config, categories) -> dict:
@@ -106,7 +108,10 @@ def enrich_version(record, settings, registry, config, categories) -> dict:
     chunks = data["chunks"]
     documents = finalized_documents(record.version_id, settings, registry)
     rows, verified = entity_rows(chunks, documents, config["gazetteer"], record.technology, enrichment.entity_verification_threshold)
-    phrases = keyphrase_rows(chunks, documents, data["sentence_spans"], enrichment) if config["keyphrases_available"] else []
+    phrases = (keyphrase_rows(chunks, documents, data["sentence_spans"], enrichment,
+                              exclude=keyphrases.technology_names(config["gazetteer"], record.technology),
+                              domain=config["keyphrase_domain"])
+               if config["keyphrases_available"] else [])
     category_rows, status = categories.classify(record)
     state = {**config["ids"], "chunking_config_id": record.chunking.chunking_config_id, "snapshot_hash": record.chunking.snapshot_hash,
              "keyphrase_status": "extracted" if config["keyphrases_available"] else "unavailable", "classification_status": status}
@@ -154,7 +159,9 @@ def enrich_versions(version_ids: list[str], settings, registry) -> EnrichmentBat
         warnings = []
         if not config["keyphrases_available"]:
             warnings.append("KEYPHRASES_UNAVAILABLE")
-        warnings += sorted({"not_calibrated": "CLASSIFICATION_NOT_CALIBRATED", "not_embedded": "CLASSIFICATION_NOT_EMBEDDED",
+        # A stale threshold leaves documents not_calibrated; the warning says which of the two it was.
+        warnings += sorted({"not_calibrated": categories.warning or classification.NOT_CALIBRATED,
+                            "not_embedded": "CLASSIFICATION_NOT_EMBEDDED",
                             "not_configured": "CLASSIFICATION_NOT_CONFIGURED"}[status] for status in statuses
                            if status in {"not_calibrated", "not_embedded", "not_configured"})
         return EnrichmentBatchResult(**registry.get_run(run_id).model_dump(), enrichment_config_id=config["ids"]["enrichment_config_id"],

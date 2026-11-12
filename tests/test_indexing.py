@@ -396,6 +396,9 @@ def test_filters_apply_identically_in_both_modes(indexed, model_settings, regist
 
 @pytest.mark.parametrize('mode', ['bm25', 'vector'])
 def test_entity_filter_uses_verified_registry_memberships(indexed, model_settings, registry, embedder, mode):
+    # Settings built in code keep the default gazetteer path relative; only load_settings resolves it. Use the repository
+    # gazetteer so the test does not depend on the working directory.
+    model_settings.enrichment.gazetteer = str(Path(__file__).resolve().parents[1] / 'config' / 'gazetteer.toml')
     before = embedder.queries
     assert query(model_settings, registry, 'keys', mode=mode, entity='Redis').results == []
     assert embedder.queries == before

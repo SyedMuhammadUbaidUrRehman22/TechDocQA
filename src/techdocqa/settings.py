@@ -60,6 +60,8 @@ class ChunkingSettings(StrictModel):
     overlap: int = Field(default=150, ge=0)
     minimum: int = Field(default=100, gt=0)
     unit: Literal["characters", "tokens"] = "characters"
+    # FR-06: "rules" is the P0 segmenter; "spacy" is the P1 policy (nlp extra). Changing it re-chunks every document.
+    segmentation: Literal["rules", "spacy"] = "rules"
 
     @model_validator(mode="after")
     def check_bounds(self) -> "ChunkingSettings":
@@ -130,11 +132,19 @@ class EnrichmentSettings(StrictModel):
     keyphrase_max_words: int = Field(default=4, ge=1, le=10)
     # Whether code blocks feed keyphrase extraction; decided by measurement on the key-term gold set (P9-5).
     keyphrases_include_code: bool = True
+    # The keyphrase policy: short technical n-grams (technical-ngrams-v1, the default since 2026-11-12) or RAKE
+    # (rake-nltk-technical-v2, which needs the nlp extra). keyphrase_max_words and keyphrase_metric apply to RAKE only.
+    keyphrase_policy: Literal["ngram", "rake"] = "ngram"
+    # RAKE's word score: degree / frequency (its default, which favors long rare phrases), degree, or frequency. Also
+    # decided by measurement: eval --enrichment scores every metric on the key-term gold set.
+    keyphrase_metric: Literal["degree_to_frequency", "word_degree", "word_frequency"] = "degree_to_frequency"
     classification_method: Literal["embedding"] = "embedding"
     max_categories: int = Field(default=3, ge=1, le=3)
-    # Cosine similarity, not a probability; set from an evaluation run, as the Phase 8 thresholds are.
+    # Cosine similarity, not a probability; set from an evaluation run, as the Phase 8 thresholds are. It applies only
+    # while similarity_config_id names the active similarity scale (policy, embedding profile, category descriptions).
     unclassified_threshold: float | None = Field(default=None, ge=-1, le=1)
     calibration_run_id: str | None = Field(default=None, pattern=r"^[A-Za-z0-9_-]{1,100}$")
+    similarity_config_id: str | None = Field(default=None, pattern=r"^cs_[0-9a-f]{64}$")
     categories: list[CategorySpec] = Field(default_factory=list, max_length=7)
 
     @model_validator(mode="after")
@@ -142,8 +152,8 @@ class EnrichmentSettings(StrictModel):
         names = [category.name.casefold() for category in self.categories]
         if len(set(names)) != len(names) or "unclassified" in names:
             raise ValueError("category names must be unique and cannot be 'unclassified'")
-        if (self.unclassified_threshold is None) != (self.calibration_run_id is None):
-            raise ValueError("unclassified_threshold and calibration_run_id are set together")
+        if len({self.unclassified_threshold is None, self.calibration_run_id is None, self.similarity_config_id is None}) != 1:
+            raise ValueError("unclassified_threshold, calibration_run_id and similarity_config_id are set together")
         return self
 
 

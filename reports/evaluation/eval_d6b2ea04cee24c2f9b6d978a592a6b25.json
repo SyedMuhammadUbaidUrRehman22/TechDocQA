@@ -1,0 +1,3008 @@
+{
+  "run_id": "eval_d6b2ea04cee24c2f9b6d978a592a6b25",
+  "started_at": "2026-11-12T14:44:49.078725+00:00",
+  "finished_at": "2026-11-12T14:45:36.212371+00:00",
+  "duration_seconds": 47.134,
+  "within_time_limit": true,
+  "dataset": {
+    "dataset_id": "benchmark_smoke",
+    "path": "datasets/benchmark_smoke.jsonl",
+    "sha256": "11710120d0f8bd83f5988d78813cb979511bb7aba808b679c884db3ccfb92faa",
+    "questions": 30,
+    "answerable": 20,
+    "unanswerable": 10,
+    "draft": 0,
+    "checks": {
+      "ds06_30_to_50_questions": true,
+      "smoke_at_least_10_unanswerable": true,
+      "q12_20_answerable_10_unanswerable": true
+    }
+  },
+  "corpus": {
+    "manifest_dataset_id": "techdocqa-reference-2026-10-24-v2",
+    "manifest_status": "frozen",
+    "manifest_fingerprint": "40229e3caebc8816d6ad98d36bddc10eb133deb7d3b1c416f8a1331b9d75591a",
+    "scope_documents": 20,
+    "searchable_documents": 20,
+    "searchable_chunks": 816,
+    "excluded_eligible_documents": 1,
+    "unavailable": {},
+    "content_drift": [],
+    "corpus_fingerprint": "e8713f0c15eeb6db2c801a319c2324507302242c6265b8fff1ae67db63a2c4b5"
+  },
+  "environment": {
+    "code": {
+      "package": "0.1.0",
+      "commit": "95dd5213112027829bc56077737e1dfb83517cc7",
+      "dirty": true
+    },
+    "python": "3.13.3",
+    "platform": "Windows-11-10.0.26300-SP0",
+    "libraries": {
+      "langchain-core": "1.6.9",
+      "langchain-community": "0.4.2",
+      "langchain-chroma": "1.1.0",
+      "langchain-ollama": "1.1.0",
+      "chromadb": "1.5.9",
+      "rank-bm25": "0.2.2",
+      "pydantic": "2.14.0",
+      "numpy": "2.5.4"
+    },
+    "provider": "ollama",
+    "bm25": {
+      "k1": 1.2,
+      "b": 0.75,
+      "tokenizer": "technical-tokens-v1"
+    },
+    "candidate_depth": 20,
+    "embedding": {
+      "model": "nomic-embed-text:latest",
+      "digest": "0a109f422b47e3a30ba2b10eca18548e944e8a23073ee3f3e947efcf3c45e59f",
+      "dimension": 768,
+      "query_prefix": "search_query: "
+    }
+  },
+  "metric_policy": {
+    "id": "q13-v1",
+    "k": [
+      1,
+      3,
+      5
+    ],
+    "unit": "labeled item, counted once",
+    "average": "macro over evaluated answerable questions",
+    "relevant_grades": [
+      1,
+      2
+    ],
+    "excluded": "questions with any flagged label"
+  },
+  "configurations": [
+    {
+      "mode": "bm25",
+      "status": "completed",
+      "retrieval_config_id": "rc_c1c2e21c571b9dcbe9f83de58aa610c3caea693b296337a6770969a1af895958",
+      "duration_seconds": 3.535,
+      "evaluated_questions": 20,
+      "excluded_questions": 0,
+      "metrics": {
+        "recall@1": 0.475,
+        "recall@3": 0.825,
+        "recall@5": 0.925,
+        "mrr": 0.708333
+      },
+      "by_technology": {
+        "Apache Airflow": {
+          "questions": 5,
+          "recall@1": 0.5,
+          "recall@3": 0.7,
+          "recall@5": 0.9,
+          "mrr": 0.75
+        },
+        "Apache Kafka": {
+          "questions": 5,
+          "recall@1": 0.4,
+          "recall@3": 0.8,
+          "recall@5": 0.9,
+          "mrr": 0.633333
+        },
+        "Apache Spark": {
+          "questions": 5,
+          "recall@1": 0.4,
+          "recall@3": 0.8,
+          "recall@5": 0.9,
+          "mrr": 0.65
+        },
+        "PostgreSQL": {
+          "questions": 5,
+          "recall@1": 0.6,
+          "recall@3": 1.0,
+          "recall@5": 1.0,
+          "mrr": 0.8
+        }
+      },
+      "answerable_top_score": {
+        "min": 16.251407,
+        "median": 28.760587,
+        "max": 57.030823
+      },
+      "answerable_top_relevance": {
+        "min": 0.327768,
+        "median": 0.41847,
+        "max": 0.59416
+      },
+      "unanswerable": {
+        "questions": 10,
+        "with_results": 10,
+        "top_score": {
+          "min": 10.495169,
+          "median": 14.230894,
+          "max": 22.409484
+        },
+        "top_relevance": {
+          "min": 0.115524,
+          "median": 0.151062,
+          "max": 0.266802
+        }
+      },
+      "refusal_calibration": {
+        "relevance_policy": "bm25-query-max-v1",
+        "scoring_config_id": "sc_be0c0c0942c7f01a9f79ec75effb0366f2cd39d5ec70ee4e71ba64b4a3f43507",
+        "active": {
+          "status": "calibrated",
+          "min_top_score": 0.297285,
+          "min_chunk_score": 0.297285,
+          "min_supporting_chunks": 1,
+          "calibration_run_id": "eval_c4ab1f1397fa469489137f611b74cdf7",
+          "answerable": 20,
+          "answerable_passed": 20,
+          "unanswerable": 10,
+          "unanswerable_refused": 10
+        },
+        "proposed": {
+          "policy": "balanced-accuracy-midpoint-v1",
+          "min_top_score": 0.297285,
+          "min_chunk_score": 0.297285,
+          "min_supporting_chunks": 1,
+          "margin": 0.030483,
+          "separable": true,
+          "answerable": 20,
+          "answerable_passed": 20,
+          "unanswerable": 10,
+          "unanswerable_refused": 10,
+          "leave_one_out_errors": 0
+        }
+      }
+    },
+    {
+      "mode": "vector",
+      "status": "completed",
+      "retrieval_config_id": "rc_240565250e0cb8369778d32f15c654abac47673f1e153b5e838afa8d721fb723",
+      "duration_seconds": 42.27,
+      "evaluated_questions": 20,
+      "excluded_questions": 0,
+      "metrics": {
+        "recall@1": 0.575,
+        "recall@3": 0.825,
+        "recall@5": 0.925,
+        "mrr": 0.783333
+      },
+      "by_technology": {
+        "Apache Airflow": {
+          "questions": 5,
+          "recall@1": 0.5,
+          "recall@3": 0.9,
+          "recall@5": 0.9,
+          "mrr": 0.733333
+        },
+        "Apache Kafka": {
+          "questions": 5,
+          "recall@1": 0.5,
+          "recall@3": 0.9,
+          "recall@5": 0.9,
+          "mrr": 0.8
+        },
+        "Apache Spark": {
+          "questions": 5,
+          "recall@1": 0.7,
+          "recall@3": 0.7,
+          "recall@5": 0.9,
+          "mrr": 0.85
+        },
+        "PostgreSQL": {
+          "questions": 5,
+          "recall@1": 0.6,
+          "recall@3": 0.8,
+          "recall@5": 1.0,
+          "mrr": 0.75
+        }
+      },
+      "answerable_top_score": {
+        "min": 0.879468,
+        "median": 0.902022,
+        "max": 0.938665
+      },
+      "answerable_top_relevance": {
+        "min": 0.879468,
+        "median": 0.902022,
+        "max": 0.938665
+      },
+      "unanswerable": {
+        "questions": 10,
+        "with_results": 10,
+        "top_score": {
+          "min": 0.798434,
+          "median": 0.82051,
+          "max": 0.836978
+        },
+        "top_relevance": {
+          "min": 0.798434,
+          "median": 0.82051,
+          "max": 0.836978
+        }
+      },
+      "refusal_calibration": {
+        "relevance_policy": "cosine-distance-half-v1",
+        "scoring_config_id": "sc_c40598d9e99ee950f32c22d25aff430b6602a18316cb48f50ee5996048005cb2",
+        "active": {
+          "status": "calibrated",
+          "min_top_score": 0.858223,
+          "min_chunk_score": 0.858223,
+          "min_supporting_chunks": 1,
+          "calibration_run_id": "eval_c4ab1f1397fa469489137f611b74cdf7",
+          "answerable": 20,
+          "answerable_passed": 20,
+          "unanswerable": 10,
+          "unanswerable_refused": 10
+        },
+        "proposed": {
+          "policy": "balanced-accuracy-midpoint-v1",
+          "min_top_score": 0.858223,
+          "min_chunk_score": 0.858223,
+          "min_supporting_chunks": 1,
+          "margin": 0.021245,
+          "separable": true,
+          "answerable": 20,
+          "answerable_passed": 20,
+          "unanswerable": 10,
+          "unanswerable_refused": 10,
+          "leave_one_out_errors": 0
+        }
+      }
+    }
+  ],
+  "flags": [],
+  "results_fingerprint": "48ce89dc9571f45ce3db455dc97cbaef474301fb9e49f4054cb719d21a3af410",
+  "notes": [
+    "Indicative only: 20 answerable and 10 unanswerable questions; one question moves a mean by 0.050.",
+    "The same questions calibrate FR-18 refusal, so calibration and this assessment overlap; this is not an independent holdout.",
+    "Results are cut at rank 5: MRR scores 0 when the first relevant item is below that rank.",
+    "1 searchable document(s) outside the evaluation manifest were excluded from every search."
+  ],
+  "questions": [
+    {
+      "id": "smoke-kafka-01",
+      "technology": "Apache Kafka",
+      "type": "identifier",
+      "unanswerable": false,
+      "review": "reviewed",
+      "items": [
+        {
+          "item": "smoke-kafka-01#0",
+          "source_key": "https://kafka.apache.org/43/configuration/producer-configs/",
+          "grade": 2,
+          "resolved_chunks": 1
+        },
+        {
+          "item": "smoke-kafka-01#1",
+          "source_key": "https://kafka.apache.org/43/configuration/producer-configs/",
+          "grade": 2,
+          "resolved_chunks": 1
+        }
+      ],
+      "flags": [],
+      "results": {
+        "bm25": {
+          "ranked": [
+            "chk_d56f5ce42b8871ef5fc526dd8361b077241f36b4c8f43e62dd4a5c1e73b9e18c",
+            "chk_32a99434865a3207cf634716678740398f58a92d47ce255401c7502e1b2114e5",
+            "chk_84b7ce1745cb179e3ed9068d0bc3497708506c387d65f43954c3e373659f5c44",
+            "chk_79e53c4da8b5c76672139b19d9fd70c946754e43d2e89116b294acf6c634bfe4",
+            "chk_31ee4a8c534e90e4baf5280a741c397828e3f4560ee70c53d50338da297d94f1"
+          ],
+          "scores": [
+            31.432851,
+            25.492524,
+            23.612362,
+            23.128793,
+            19.640718
+          ],
+          "relevance": [
+            0.392488,
+            0.318314,
+            0.294837,
+            0.288799,
+            0.245245
+          ],
+          "matched_items": [
+            [],
+            [],
+            [
+              "smoke-kafka-01#1"
+            ],
+            [
+              "smoke-kafka-01#0"
+            ],
+            []
+          ],
+          "latency_seconds": 2.145,
+          "first_relevant_rank": 3,
+          "metrics": {
+            "recall@1": 0.0,
+            "recall@3": 0.5,
+            "recall@5": 1.0,
+            "mrr": 0.333333
+          }
+        },
+        "vector": {
+          "ranked": [
+            "chk_d56f5ce42b8871ef5fc526dd8361b077241f36b4c8f43e62dd4a5c1e73b9e18c",
+            "chk_79e53c4da8b5c76672139b19d9fd70c946754e43d2e89116b294acf6c634bfe4",
+            "chk_84b7ce1745cb179e3ed9068d0bc3497708506c387d65f43954c3e373659f5c44",
+            "chk_ab365b4ed11831a2f1792baa89d071a66c67c9703f645efe5b528f0cc5dc72a1",
+            "chk_88e35ebe90df7279dc779c4f65064642b65bb46b9db9ec022e289b606f990bf2"
+          ],
+          "scores": [
+            0.879468,
+            0.874919,
+            0.839692,
+            0.838682,
+            0.827646
+          ],
+          "relevance": [
+            0.879468,
+            0.874919,
+            0.839692,
+            0.838682,
+            0.827646
+          ],
+          "matched_items": [
+            [],
+            [
+              "smoke-kafka-01#0"
+            ],
+            [
+              "smoke-kafka-01#1"
+            ],
+            [],
+            []
+          ],
+          "latency_seconds": 3.824,
+          "first_relevant_rank": 2,
+          "metrics": {
+            "recall@1": 0.0,
+            "recall@3": 1.0,
+            "recall@5": 1.0,
+            "mrr": 0.5
+          }
+        }
+      }
+    },
+    {
+      "id": "smoke-kafka-02",
+      "technology": "Apache Kafka",
+      "type": "how_to",
+      "unanswerable": false,
+      "review": "reviewed",
+      "items": [
+        {
+          "item": "smoke-kafka-02#0",
+          "source_key": "https://kafka.apache.org/43/getting-started/quickstart/",
+          "grade": 2,
+          "resolved_chunks": 2
+        }
+      ],
+      "flags": [],
+      "results": {
+        "bm25": {
+          "ranked": [
+            "chk_d2d64b3ce4469b0c409eb839fd9dbd3bff10308bcf6c3396b5b0010b60ef097b",
+            "chk_3345bc5cc3918ae99c71b4dd01376dc7b51a5ae15a2a12c852a773028a3fd01d",
+            "chk_fdfbb1a43e0fccf33517b2019c391583da2561cc94aa7b5a14870ef179af59a1",
+            "chk_030b6a648e42c1012a3d7a827c3c7835384e28b24fdb80a756cd2eb7a803110a",
+            "chk_7e9f71377eaec24db8c5f390d678a1ed35c37c25bb540ae314b3646cb16d2322"
+          ],
+          "scores": [
+            40.996258,
+            32.627651,
+            28.749311,
+            27.71044,
+            25.296272
+          ],
+          "relevance": [
+            0.494331,
+            0.393423,
+            0.346658,
+            0.334131,
+            0.305021
+          ],
+          "matched_items": [
+            [
+              "smoke-kafka-02#0"
+            ],
+            [
+              "smoke-kafka-02#0"
+            ],
+            [],
+            [],
+            []
+          ],
+          "latency_seconds": 0.031,
+          "first_relevant_rank": 1,
+          "metrics": {
+            "recall@1": 1.0,
+            "recall@3": 1.0,
+            "recall@5": 1.0,
+            "mrr": 1.0
+          }
+        },
+        "vector": {
+          "ranked": [
+            "chk_d2d64b3ce4469b0c409eb839fd9dbd3bff10308bcf6c3396b5b0010b60ef097b",
+            "chk_fdfbb1a43e0fccf33517b2019c391583da2561cc94aa7b5a14870ef179af59a1",
+            "chk_3345bc5cc3918ae99c71b4dd01376dc7b51a5ae15a2a12c852a773028a3fd01d",
+            "chk_7e9f71377eaec24db8c5f390d678a1ed35c37c25bb540ae314b3646cb16d2322",
+            "chk_030b6a648e42c1012a3d7a827c3c7835384e28b24fdb80a756cd2eb7a803110a"
+          ],
+          "scores": [
+            0.896836,
+            0.876131,
+            0.875665,
+            0.869036,
+            0.82754
+          ],
+          "relevance": [
+            0.896836,
+            0.876131,
+            0.875665,
+            0.869036,
+            0.82754
+          ],
+          "matched_items": [
+            [
+              "smoke-kafka-02#0"
+            ],
+            [],
+            [
+              "smoke-kafka-02#0"
+            ],
+            [],
+            []
+          ],
+          "latency_seconds": 1.664,
+          "first_relevant_rank": 1,
+          "metrics": {
+            "recall@1": 1.0,
+            "recall@3": 1.0,
+            "recall@5": 1.0,
+            "mrr": 1.0
+          }
+        }
+      }
+    },
+    {
+      "id": "smoke-kafka-03",
+      "technology": "Apache Kafka",
+      "type": "factual",
+      "unanswerable": false,
+      "review": "reviewed",
+      "items": [
+        {
+          "item": "smoke-kafka-03#0",
+          "source_key": "https://kafka.apache.org/43/design/design/",
+          "grade": 2,
+          "resolved_chunks": 1
+        },
+        {
+          "item": "smoke-kafka-03#1",
+          "source_key": "https://kafka.apache.org/43/design/design/",
+          "grade": 1,
+          "resolved_chunks": 1
+        }
+      ],
+      "flags": [],
+      "results": {
+        "bm25": {
+          "ranked": [
+            "chk_b4a49c276bb96ae347f570348d9b5dfb5cdb1514ec5369b5134eebd7f4f2c882",
+            "chk_f8f6bcf1b3eba72cd0b17eeb77fd825ca4d5490ef2d587a50a9c1129959dfcf8",
+            "chk_d859034d56404bedbe985cf6a9234efbc629bbb98dbc6f156478ec8dd47a07db",
+            "chk_e279c5a7a5241eb25859ecce805c60de291742ae34ae3c2ad9f78685b4fdcc26",
+            "chk_a3756e9492a324dc8ec253b04fe8ce25ed84287a3c1f108e760a0bbce89050dd"
+          ],
+          "scores": [
+            22.128384,
+            21.678205,
+            21.23565,
+            19.188536,
+            18.628827
+          ],
+          "relevance": [
+            0.386613,
+            0.378748,
+            0.371016,
+            0.33525,
+            0.325471
+          ],
+          "matched_items": [
+            [],
+            [],
+            [
+              "smoke-kafka-03#0"
+            ],
+            [],
+            []
+          ],
+          "latency_seconds": 0.048,
+          "first_relevant_rank": 3,
+          "metrics": {
+            "recall@1": 0.0,
+            "recall@3": 0.5,
+            "recall@5": 0.5,
+            "mrr": 0.333333
+          }
+        },
+        "vector": {
+          "ranked": [
+            "chk_a91acaaf9e2aa6b2ab07ebaf210104dbedd74de4c66d02f936783be60b69a109",
+            "chk_5e53e59d238cb99cbe01f3736042ebf9a542533a3df0d888ddd80d75d02987a9",
+            "chk_cbb109fce0bffeb308a5dd5e7dc6fa165636c7babe60903fbd247d98ca93f216",
+            "chk_b4fbf1ff0893bba2c1d06d449dc4a6e4e8949dbd595f0fbb9561d8f78e4d40e6",
+            "chk_ec9f591c93ed16b66bc31ed0e33cbd2a26c4c906de55007e85415d6029d37eff"
+          ],
+          "scores": [
+            0.885643,
+            0.878982,
+            0.876379,
+            0.873321,
+            0.872792
+          ],
+          "relevance": [
+            0.885643,
+            0.878982,
+            0.876379,
+            0.873321,
+            0.872792
+          ],
+          "matched_items": [
+            [
+              "smoke-kafka-03#1"
+            ],
+            [],
+            [],
+            [],
+            []
+          ],
+          "latency_seconds": 1.45,
+          "first_relevant_rank": 1,
+          "metrics": {
+            "recall@1": 0.5,
+            "recall@3": 0.5,
+            "recall@5": 0.5,
+            "mrr": 1.0
+          }
+        }
+      }
+    },
+    {
+      "id": "smoke-kafka-04",
+      "technology": "Apache Kafka",
+      "type": "factual",
+      "unanswerable": false,
+      "review": "reviewed",
+      "items": [
+        {
+          "item": "smoke-kafka-04#0",
+          "source_key": "https://kafka.apache.org/43/design/design/",
+          "grade": 2,
+          "resolved_chunks": 1
+        }
+      ],
+      "flags": [],
+      "results": {
+        "bm25": {
+          "ranked": [
+            "chk_a2c07c5615effe296342994f00ed2da9e8df6f0b67c8f9177774704a8509bef3",
+            "chk_bfd86415222a744c9317db9358639ea82ed31a77157fd79deb90600e8c2cb093",
+            "chk_399446e8e0aa9fa37283899c6200a19ad8b612413d1e40d5a50fe111e9a12de6",
+            "chk_da6a60590691704ce08cd3d3c90924b5ad634134715bc9426878de705d32375e",
+            "chk_be47f2f09fea4f6d84a8e0ee2f84ae3e11296b5b541e4fdf976e86a8a01bd1c3"
+          ],
+          "scores": [
+            28.128364,
+            27.237455,
+            26.452271,
+            24.614137,
+            22.585085
+          ],
+          "relevance": [
+            0.43615,
+            0.422336,
+            0.410161,
+            0.381659,
+            0.350197
+          ],
+          "matched_items": [
+            [],
+            [
+              "smoke-kafka-04#0"
+            ],
+            [],
+            [],
+            []
+          ],
+          "latency_seconds": 0.047,
+          "first_relevant_rank": 2,
+          "metrics": {
+            "recall@1": 0.0,
+            "recall@3": 1.0,
+            "recall@5": 1.0,
+            "mrr": 0.5
+          }
+        },
+        "vector": {
+          "ranked": [
+            "chk_bfd86415222a744c9317db9358639ea82ed31a77157fd79deb90600e8c2cb093",
+            "chk_da6a60590691704ce08cd3d3c90924b5ad634134715bc9426878de705d32375e",
+            "chk_13d5649edf7a6c7bda15f91e06ed80fcd60fda0b93523bdc6445a0283933f691",
+            "chk_86d74635eafdabc0cfeb6d00140204bd37bd7ea8439db47e30e990ef10b40a6e",
+            "chk_a2c07c5615effe296342994f00ed2da9e8df6f0b67c8f9177774704a8509bef3"
+          ],
+          "scores": [
+            0.938665,
+            0.90039,
+            0.884271,
+            0.883649,
+            0.882713
+          ],
+          "relevance": [
+            0.938665,
+            0.90039,
+            0.884271,
+            0.883649,
+            0.882713
+          ],
+          "matched_items": [
+            [
+              "smoke-kafka-04#0"
+            ],
+            [],
+            [],
+            [],
+            []
+          ],
+          "latency_seconds": 1.297,
+          "first_relevant_rank": 1,
+          "metrics": {
+            "recall@1": 1.0,
+            "recall@3": 1.0,
+            "recall@5": 1.0,
+            "mrr": 1.0
+          }
+        }
+      }
+    },
+    {
+      "id": "smoke-kafka-05",
+      "technology": "Apache Kafka",
+      "type": "factual",
+      "unanswerable": false,
+      "review": "reviewed",
+      "items": [
+        {
+          "item": "smoke-kafka-05#0",
+          "source_key": "https://kafka.apache.org/43/getting-started/introduction/",
+          "grade": 2,
+          "resolved_chunks": 1
+        }
+      ],
+      "flags": [],
+      "results": {
+        "bm25": {
+          "ranked": [
+            "chk_362cb5f26b5c660131d785718eaaa61e51bf5c0b0a410652a83d56b0f09d441f",
+            "chk_dc4b8d61a38b7264fd46c64446e50df614051920ec0bfa19e8a50d578ff95dfe",
+            "chk_0599e8b872e687cc3fdb392b636211a10b718497639aa2977dd3fdd66fae8674",
+            "chk_cdf02a0962aecd3ad5dc278f4fa147086d69019fa2709960f50b90ebbd609a0f",
+            "chk_cbb109fce0bffeb308a5dd5e7dc6fa165636c7babe60903fbd247d98ca93f216"
+          ],
+          "scores": [
+            28.333263,
+            28.192436,
+            22.707085,
+            20.668999,
+            20.350023
+          ],
+          "relevance": [
+            0.380923,
+            0.37903,
+            0.305282,
+            0.277882,
+            0.273593
+          ],
+          "matched_items": [
+            [
+              "smoke-kafka-05#0"
+            ],
+            [],
+            [],
+            [],
+            []
+          ],
+          "latency_seconds": 0.046,
+          "first_relevant_rank": 1,
+          "metrics": {
+            "recall@1": 1.0,
+            "recall@3": 1.0,
+            "recall@5": 1.0,
+            "mrr": 1.0
+          }
+        },
+        "vector": {
+          "ranked": [
+            "chk_dc4b8d61a38b7264fd46c64446e50df614051920ec0bfa19e8a50d578ff95dfe",
+            "chk_362cb5f26b5c660131d785718eaaa61e51bf5c0b0a410652a83d56b0f09d441f",
+            "chk_87f9cb8f7ef147d8f55f9dd8db4f0729a46c7b8d073d885ec7ebec503dd42345",
+            "chk_cb081aa97f157c72afcb5707ffcf9c76d88ffca074824c82ec88371f83cb1215",
+            "chk_7e9f71377eaec24db8c5f390d678a1ed35c37c25bb540ae314b3646cb16d2322"
+          ],
+          "scores": [
+            0.880168,
+            0.860357,
+            0.855208,
+            0.851391,
+            0.848021
+          ],
+          "relevance": [
+            0.880168,
+            0.860357,
+            0.855208,
+            0.851391,
+            0.848021
+          ],
+          "matched_items": [
+            [],
+            [
+              "smoke-kafka-05#0"
+            ],
+            [],
+            [],
+            []
+          ],
+          "latency_seconds": 1.225,
+          "first_relevant_rank": 2,
+          "metrics": {
+            "recall@1": 0.0,
+            "recall@3": 1.0,
+            "recall@5": 1.0,
+            "mrr": 0.5
+          }
+        }
+      }
+    },
+    {
+      "id": "smoke-airflow-01",
+      "technology": "Apache Airflow",
+      "type": "identifier",
+      "unanswerable": false,
+      "review": "reviewed",
+      "items": [
+        {
+          "item": "smoke-airflow-01#0",
+          "source_key": "https://airflow.apache.org/docs/apache-airflow/stable/core-concepts/tasks.html",
+          "grade": 2,
+          "resolved_chunks": 1
+        }
+      ],
+      "flags": [],
+      "results": {
+        "bm25": {
+          "ranked": [
+            "chk_8bd8bc451a3b00115fe2c3f28696bba31028b56cedd0eb6070dd9a6c9c44287e",
+            "chk_b80aed55616faee93e5dde1b624ec55cff9bd4f2e9a257090327481dc8f157b7",
+            "chk_3f2ed6ae434433af198a1aefd12b761f6c67a8bb964f6e44d0cfc7213c4808a2",
+            "chk_4c97259eaf0279813d9066197e27cfe02ed3e874562482ba4eb1c563b9ee639c",
+            "chk_6fc74ba62c92c83aec897de82832658b0364abdd5182513fd05e2053b81b1154"
+          ],
+          "scores": [
+            42.912934,
+            24.571521,
+            21.676331,
+            20.350361,
+            18.487022
+          ],
+          "relevance": [
+            0.537892,
+            0.307992,
+            0.271702,
+            0.255081,
+            0.231725
+          ],
+          "matched_items": [
+            [
+              "smoke-airflow-01#0"
+            ],
+            [],
+            [],
+            [],
+            []
+          ],
+          "latency_seconds": 0.054,
+          "first_relevant_rank": 1,
+          "metrics": {
+            "recall@1": 1.0,
+            "recall@3": 1.0,
+            "recall@5": 1.0,
+            "mrr": 1.0
+          }
+        },
+        "vector": {
+          "ranked": [
+            "chk_8bd8bc451a3b00115fe2c3f28696bba31028b56cedd0eb6070dd9a6c9c44287e",
+            "chk_3f2ed6ae434433af198a1aefd12b761f6c67a8bb964f6e44d0cfc7213c4808a2",
+            "chk_b80aed55616faee93e5dde1b624ec55cff9bd4f2e9a257090327481dc8f157b7",
+            "chk_27716719c5095a18afa227d4230cd37e772b9b4e09ba9eb17953c28b5c91dddf",
+            "chk_71c85d879e710ec4cdeddd688d3f5f65d2c07e4be13b8ced69893160ca043495"
+          ],
+          "scores": [
+            0.920111,
+            0.870488,
+            0.853567,
+            0.850109,
+            0.849989
+          ],
+          "relevance": [
+            0.920111,
+            0.870488,
+            0.853567,
+            0.850109,
+            0.849989
+          ],
+          "matched_items": [
+            [
+              "smoke-airflow-01#0"
+            ],
+            [],
+            [],
+            [],
+            []
+          ],
+          "latency_seconds": 1.567,
+          "first_relevant_rank": 1,
+          "metrics": {
+            "recall@1": 1.0,
+            "recall@3": 1.0,
+            "recall@5": 1.0,
+            "mrr": 1.0
+          }
+        }
+      }
+    },
+    {
+      "id": "smoke-airflow-02",
+      "technology": "Apache Airflow",
+      "type": "factual",
+      "unanswerable": false,
+      "review": "reviewed",
+      "items": [
+        {
+          "item": "smoke-airflow-02#0",
+          "source_key": "https://airflow.apache.org/docs/apache-airflow/stable/core-concepts/dag-run.html",
+          "grade": 2,
+          "resolved_chunks": 2
+        }
+      ],
+      "flags": [],
+      "results": {
+        "bm25": {
+          "ranked": [
+            "chk_4810b9336451670279a67be66a08df939f58bd05d593c62e1bee28492f1ae154",
+            "chk_280a1e8ce327c48c4bb4786f6600e8142fbc03254b78a83809a2c3d0e040b21a",
+            "chk_50b925dd7475847a1e313994a8a196b45a04e0896080348199d8105bae6de83c",
+            "chk_a17aadcf406260ccfce562ea344ad57a41407901f926d63332391e69fbf7763c",
+            "chk_0631a3012356bd3cdf2c884074a401fd0b83089f84c8035d87671b8aea5e28af"
+          ],
+          "scores": [
+            20.89169,
+            15.969125,
+            15.506049,
+            15.288404,
+            14.295505
+          ],
+          "relevance": [
+            0.340187,
+            0.260031,
+            0.25249,
+            0.248946,
+            0.232779
+          ],
+          "matched_items": [
+            [],
+            [],
+            [],
+            [
+              "smoke-airflow-02#0"
+            ],
+            []
+          ],
+          "latency_seconds": 0.048,
+          "first_relevant_rank": 4,
+          "metrics": {
+            "recall@1": 0.0,
+            "recall@3": 0.0,
+            "recall@5": 1.0,
+            "mrr": 0.25
+          }
+        },
+        "vector": {
+          "ranked": [
+            "chk_50b925dd7475847a1e313994a8a196b45a04e0896080348199d8105bae6de83c",
+            "chk_a619de7df6e0b525db5aceb35f171144881d403200d04b471eeadca9477486f3",
+            "chk_a17aadcf406260ccfce562ea344ad57a41407901f926d63332391e69fbf7763c",
+            "chk_f612c78c64cb14d0cf2f1b39f692021ae4136651e973094423e20eaa02ab9d06",
+            "chk_ff608f9cab28570440337c2ce8340890f7af4297c06c0581533fea7ae7a18cf5"
+          ],
+          "scores": [
+            0.910489,
+            0.902871,
+            0.902516,
+            0.890404,
+            0.890341
+          ],
+          "relevance": [
+            0.910489,
+            0.902871,
+            0.902516,
+            0.890404,
+            0.890341
+          ],
+          "matched_items": [
+            [],
+            [],
+            [
+              "smoke-airflow-02#0"
+            ],
+            [],
+            [
+              "smoke-airflow-02#0"
+            ]
+          ],
+          "latency_seconds": 1.409,
+          "first_relevant_rank": 3,
+          "metrics": {
+            "recall@1": 0.0,
+            "recall@3": 1.0,
+            "recall@5": 1.0,
+            "mrr": 0.333333
+          }
+        }
+      }
+    },
+    {
+      "id": "smoke-airflow-03",
+      "technology": "Apache Airflow",
+      "type": "factual",
+      "unanswerable": false,
+      "review": "reviewed",
+      "items": [
+        {
+          "item": "smoke-airflow-03#0",
+          "source_key": "https://airflow.apache.org/docs/apache-airflow/stable/core-concepts/dag-run.html",
+          "grade": 2,
+          "resolved_chunks": 1
+        }
+      ],
+      "flags": [],
+      "results": {
+        "bm25": {
+          "ranked": [
+            "chk_d1474f86bd6bfd0cce1eb7433769f1711437a11a40df110fb9126fe1fdfa8b8a",
+            "chk_440a7c13ae5ddc358584fa45dca3dc0ea4aebe0cab75e4dc706dd5cb7f67ecbf",
+            "chk_ae45570c9b2482d4b65389a482b39a3f94be9f848e3ffb313b0bf45d97371c15",
+            "chk_95dcead546be2c56e73395881386d7c3d43012f3f032b08d8e820310372ac688",
+            "chk_9924e65aefe44415e07ef77d483bc973b40611008c90f6f5c772d9c76e797cab"
+          ],
+          "scores": [
+            16.251407,
+            14.969351,
+            13.768185,
+            13.567034,
+            12.102443
+          ],
+          "relevance": [
+            0.347682,
+            0.320254,
+            0.294556,
+            0.290253,
+            0.258919
+          ],
+          "matched_items": [
+            [],
+            [
+              "smoke-airflow-03#0"
+            ],
+            [],
+            [],
+            []
+          ],
+          "latency_seconds": 0.043,
+          "first_relevant_rank": 2,
+          "metrics": {
+            "recall@1": 0.0,
+            "recall@3": 1.0,
+            "recall@5": 1.0,
+            "mrr": 0.5
+          }
+        },
+        "vector": {
+          "ranked": [
+            "chk_d1474f86bd6bfd0cce1eb7433769f1711437a11a40df110fb9126fe1fdfa8b8a",
+            "chk_ae45570c9b2482d4b65389a482b39a3f94be9f848e3ffb313b0bf45d97371c15",
+            "chk_440a7c13ae5ddc358584fa45dca3dc0ea4aebe0cab75e4dc706dd5cb7f67ecbf",
+            "chk_20b3e6b4569ef927e64b7dfa55401f58b132c98b9d80ecb0ce637bfdf0d11617",
+            "chk_035e5bbbf837297e54c75dbcf24a8d6570c773fbafc4221c13798f19dd1a0e1d"
+          ],
+          "scores": [
+            0.903747,
+            0.901587,
+            0.895675,
+            0.861308,
+            0.854812
+          ],
+          "relevance": [
+            0.903747,
+            0.901587,
+            0.895675,
+            0.861308,
+            0.854812
+          ],
+          "matched_items": [
+            [],
+            [],
+            [
+              "smoke-airflow-03#0"
+            ],
+            [],
+            []
+          ],
+          "latency_seconds": 2.199,
+          "first_relevant_rank": 3,
+          "metrics": {
+            "recall@1": 0.0,
+            "recall@3": 1.0,
+            "recall@5": 1.0,
+            "mrr": 0.333333
+          }
+        }
+      }
+    },
+    {
+      "id": "smoke-airflow-04",
+      "technology": "Apache Airflow",
+      "type": "how_to",
+      "unanswerable": false,
+      "review": "reviewed",
+      "items": [
+        {
+          "item": "smoke-airflow-04#0",
+          "source_key": "https://airflow.apache.org/docs/apache-airflow/stable/core-concepts/dags.html",
+          "grade": 2,
+          "resolved_chunks": 1
+        }
+      ],
+      "flags": [],
+      "results": {
+        "bm25": {
+          "ranked": [
+            "chk_596bdb2996f0386b29aa9f241c0036ac248e49b2d9296b94d2caa7eb80e63c19",
+            "chk_ae45570c9b2482d4b65389a482b39a3f94be9f848e3ffb313b0bf45d97371c15",
+            "chk_03f1f55c38fa131567b98a6c673de730ceaf8e8c4982fc32ff87cc00af8dbfe0",
+            "chk_d4f3bf6952b6cfdf3425736f706a5625b45b99cb1d62b8fd8aa2e096c11660fa",
+            "chk_ebf7ee8e4d993ab7573be712ccfff491f1ce446b52780f6cf6e576595709b390"
+          ],
+          "scores": [
+            29.09827,
+            21.991936,
+            20.182239,
+            19.648005,
+            19.52838
+          ],
+          "relevance": [
+            0.429471,
+            0.324586,
+            0.297876,
+            0.289991,
+            0.288226
+          ],
+          "matched_items": [
+            [
+              "smoke-airflow-04#0"
+            ],
+            [],
+            [],
+            [],
+            []
+          ],
+          "latency_seconds": 0.039,
+          "first_relevant_rank": 1,
+          "metrics": {
+            "recall@1": 1.0,
+            "recall@3": 1.0,
+            "recall@5": 1.0,
+            "mrr": 1.0
+          }
+        },
+        "vector": {
+          "ranked": [
+            "chk_596bdb2996f0386b29aa9f241c0036ac248e49b2d9296b94d2caa7eb80e63c19",
+            "chk_c26e7f4a1a5aa5b76fef71e941869e5161b61c10b90877cc6649b3911d64eebe",
+            "chk_7019cb27873f9907e416327ffec88d308fa772b5fc0c6340726521b7f533c16a",
+            "chk_c193a2d460c119fab8d1813e12c17162145c755ef0ce2ea55becfd89095ce1d9",
+            "chk_03f1f55c38fa131567b98a6c673de730ceaf8e8c4982fc32ff87cc00af8dbfe0"
+          ],
+          "scores": [
+            0.895089,
+            0.847275,
+            0.840235,
+            0.839178,
+            0.839051
+          ],
+          "relevance": [
+            0.895089,
+            0.847275,
+            0.840235,
+            0.839178,
+            0.839051
+          ],
+          "matched_items": [
+            [
+              "smoke-airflow-04#0"
+            ],
+            [],
+            [],
+            [],
+            []
+          ],
+          "latency_seconds": 1.355,
+          "first_relevant_rank": 1,
+          "metrics": {
+            "recall@1": 1.0,
+            "recall@3": 1.0,
+            "recall@5": 1.0,
+            "mrr": 1.0
+          }
+        }
+      }
+    },
+    {
+      "id": "smoke-airflow-05",
+      "technology": "Apache Airflow",
+      "type": "factual",
+      "unanswerable": false,
+      "review": "reviewed",
+      "items": [
+        {
+          "item": "smoke-airflow-05#0",
+          "source_key": "https://airflow.apache.org/docs/apache-airflow/stable/core-concepts/overview.html",
+          "grade": 2,
+          "resolved_chunks": 1
+        },
+        {
+          "item": "smoke-airflow-05#1",
+          "source_key": "https://airflow.apache.org/docs/apache-airflow/stable/core-concepts/overview.html",
+          "grade": 1,
+          "resolved_chunks": 1
+        }
+      ],
+      "flags": [],
+      "results": {
+        "bm25": {
+          "ranked": [
+            "chk_06fcd37601254b03a54c8be3647da44cc43cdec97fb758ed70990f33c5be9cdc",
+            "chk_d7737e8ec57ec02c5adab89300d8f21beb81f3fe9cd4e0c5ae35c04f39352de4",
+            "chk_0cf0b1b9819af8cf86366e828c9e1ac18e7869e16cf768ef868b6b5972b21e8e",
+            "chk_e7904cffd73613091ff8ee84683ad7be6b2a06070b9d40dda232758f2b1687ba",
+            "chk_9addd06665a53ef0798ee87e4efb860d409bca83a581b86fa90c58cd4c4108ef"
+          ],
+          "scores": [
+            19.735561,
+            18.176723,
+            17.99511,
+            17.197637,
+            16.503162
+          ],
+          "relevance": [
+            0.407505,
+            0.375318,
+            0.371568,
+            0.355101,
+            0.340761
+          ],
+          "matched_items": [
+            [
+              "smoke-airflow-05#0"
+            ],
+            [],
+            [],
+            [],
+            []
+          ],
+          "latency_seconds": 0.05,
+          "first_relevant_rank": 1,
+          "metrics": {
+            "recall@1": 0.5,
+            "recall@3": 0.5,
+            "recall@5": 0.5,
+            "mrr": 1.0
+          }
+        },
+        "vector": {
+          "ranked": [
+            "chk_06fcd37601254b03a54c8be3647da44cc43cdec97fb758ed70990f33c5be9cdc",
+            "chk_d7737e8ec57ec02c5adab89300d8f21beb81f3fe9cd4e0c5ae35c04f39352de4",
+            "chk_e7904cffd73613091ff8ee84683ad7be6b2a06070b9d40dda232758f2b1687ba",
+            "chk_9addd06665a53ef0798ee87e4efb860d409bca83a581b86fa90c58cd4c4108ef",
+            "chk_60180190b74b27f9b5a6f73b59935745914ba83ca67dd46b5552067cccbf85d6"
+          ],
+          "scores": [
+            0.915845,
+            0.882394,
+            0.867146,
+            0.849203,
+            0.842218
+          ],
+          "relevance": [
+            0.915845,
+            0.882394,
+            0.867146,
+            0.849203,
+            0.842218
+          ],
+          "matched_items": [
+            [
+              "smoke-airflow-05#0"
+            ],
+            [],
+            [],
+            [],
+            []
+          ],
+          "latency_seconds": 1.435,
+          "first_relevant_rank": 1,
+          "metrics": {
+            "recall@1": 0.5,
+            "recall@3": 0.5,
+            "recall@5": 0.5,
+            "mrr": 1.0
+          }
+        }
+      }
+    },
+    {
+      "id": "smoke-spark-01",
+      "technology": "Apache Spark",
+      "type": "identifier",
+      "unanswerable": false,
+      "review": "reviewed",
+      "items": [
+        {
+          "item": "smoke-spark-01#0",
+          "source_key": "[\"spark-4.0.1-tuning.md\",null]",
+          "grade": 2,
+          "resolved_chunks": 1
+        }
+      ],
+      "flags": [],
+      "results": {
+        "bm25": {
+          "ranked": [
+            "chk_d5962cf83b7216efdb79f1327fa864b8ea819f074e0020c5bbbc95a93123c264",
+            "chk_ee72b3c528ca12aac550ce038ea58369b4edc1ab2930614c3bb7a46b75217b68",
+            "chk_7bccec4c64e954a125bb480d053f5e1fb30f16771df607d4ce7911c040fb3723",
+            "chk_be7d7110c30efb9e0c868b66f45a3d4a846d1edbfa0ca8dc72d0168f68534da3",
+            "chk_1f692f859120801153f1d85b7014a847cf36f9a8f0c5aadd36214e00bce8e29d"
+          ],
+          "scores": [
+            29.129688,
+            24.225697,
+            14.812389,
+            14.533289,
+            13.929243
+          ],
+          "relevance": [
+            0.41121,
+            0.341983,
+            0.209099,
+            0.20516,
+            0.196632
+          ],
+          "matched_items": [
+            [
+              "smoke-spark-01#0"
+            ],
+            [],
+            [],
+            [],
+            []
+          ],
+          "latency_seconds": 0.045,
+          "first_relevant_rank": 1,
+          "metrics": {
+            "recall@1": 1.0,
+            "recall@3": 1.0,
+            "recall@5": 1.0,
+            "mrr": 1.0
+          }
+        },
+        "vector": {
+          "ranked": [
+            "chk_d5962cf83b7216efdb79f1327fa864b8ea819f074e0020c5bbbc95a93123c264",
+            "chk_2b10548b6b3f6b5a73ade2ae5681be169b3049b8ab3d454941daa4e1765076ea",
+            "chk_73b836fe7569e3bbf590fa663b17170efd47a64c614b2025d5204d217decc2a1",
+            "chk_614d4fb602f420ff38e280e3e58f3f9ab3d39c959735864f64bfc83e2cc1b078",
+            "chk_c56939d9924b374c3e8a57716c9df284ee099bf913c86ef04b4156b9da702ae2"
+          ],
+          "scores": [
+            0.900297,
+            0.86903,
+            0.861718,
+            0.860692,
+            0.860583
+          ],
+          "relevance": [
+            0.900297,
+            0.86903,
+            0.861718,
+            0.860692,
+            0.860583
+          ],
+          "matched_items": [
+            [
+              "smoke-spark-01#0"
+            ],
+            [],
+            [],
+            [],
+            []
+          ],
+          "latency_seconds": 1.795,
+          "first_relevant_rank": 1,
+          "metrics": {
+            "recall@1": 1.0,
+            "recall@3": 1.0,
+            "recall@5": 1.0,
+            "mrr": 1.0
+          }
+        }
+      }
+    },
+    {
+      "id": "smoke-spark-02",
+      "technology": "Apache Spark",
+      "type": "how_to",
+      "unanswerable": false,
+      "review": "reviewed",
+      "items": [
+        {
+          "item": "smoke-spark-02#0",
+          "source_key": "[\"spark-4.0.1-tuning.md\",null]",
+          "grade": 2,
+          "resolved_chunks": 1
+        }
+      ],
+      "flags": [],
+      "results": {
+        "bm25": {
+          "ranked": [
+            "chk_c24530dca639686a0a549b843fe1b12ea6d546638e53774c211e65d9bf2424ea",
+            "chk_d6b8ad1aa85d67b9cba9083643bb6a6903d28de2ddd89b62857e88c8ff948f2d",
+            "chk_8a8111ed0ab6d3653ce371dfab35fded6107ef5054f608be30ff1f137456fe22",
+            "chk_614d4fb602f420ff38e280e3e58f3f9ab3d39c959735864f64bfc83e2cc1b078",
+            "chk_a2c3aea2b1fbbd52eeafb21b5b4d5dec4db0574df8095446a108343726015273"
+          ],
+          "scores": [
+            21.815131,
+            21.017116,
+            18.391652,
+            17.576939,
+            17.393057
+          ],
+          "relevance": [
+            0.363289,
+            0.35,
+            0.306278,
+            0.29271,
+            0.289648
+          ],
+          "matched_items": [
+            [],
+            [
+              "smoke-spark-02#0"
+            ],
+            [],
+            [],
+            []
+          ],
+          "latency_seconds": 0.033,
+          "first_relevant_rank": 2,
+          "metrics": {
+            "recall@1": 0.0,
+            "recall@3": 1.0,
+            "recall@5": 1.0,
+            "mrr": 0.5
+          }
+        },
+        "vector": {
+          "ranked": [
+            "chk_d6b8ad1aa85d67b9cba9083643bb6a6903d28de2ddd89b62857e88c8ff948f2d",
+            "chk_a2c3aea2b1fbbd52eeafb21b5b4d5dec4db0574df8095446a108343726015273",
+            "chk_8a8111ed0ab6d3653ce371dfab35fded6107ef5054f608be30ff1f137456fe22",
+            "chk_c24530dca639686a0a549b843fe1b12ea6d546638e53774c211e65d9bf2424ea",
+            "chk_55d33297fe6af74297b329382e49b0f7880f747a74ab2b0d170a26d592be236a"
+          ],
+          "scores": [
+            0.916743,
+            0.888756,
+            0.883568,
+            0.882974,
+            0.863218
+          ],
+          "relevance": [
+            0.916743,
+            0.888756,
+            0.883568,
+            0.882974,
+            0.863218
+          ],
+          "matched_items": [
+            [
+              "smoke-spark-02#0"
+            ],
+            [],
+            [],
+            [],
+            []
+          ],
+          "latency_seconds": 1.221,
+          "first_relevant_rank": 1,
+          "metrics": {
+            "recall@1": 1.0,
+            "recall@3": 1.0,
+            "recall@5": 1.0,
+            "mrr": 1.0
+          }
+        }
+      }
+    },
+    {
+      "id": "smoke-spark-03",
+      "technology": "Apache Spark",
+      "type": "factual",
+      "unanswerable": false,
+      "review": "reviewed",
+      "items": [
+        {
+          "item": "smoke-spark-03#0",
+          "source_key": "[\"spark-4.0.1-hardware-provisioning.md\",null]",
+          "grade": 2,
+          "resolved_chunks": 1
+        }
+      ],
+      "flags": [],
+      "results": {
+        "bm25": {
+          "ranked": [
+            "chk_11033de1a806420f8c2f2e7a12ef6145d753b0ea20194b48146cc5929433862c",
+            "chk_614d4fb602f420ff38e280e3e58f3f9ab3d39c959735864f64bfc83e2cc1b078",
+            "chk_1e0f9a61515df6c4e75226b0c0cdc39091c19da9bc818cacbd918d3687a53556",
+            "chk_03203e5beb32e75ec2b3d3f283319e2505dc1a469304792ce3e19dd72531b2ff",
+            "chk_d6b8ad1aa85d67b9cba9083643bb6a6903d28de2ddd89b62857e88c8ff948f2d"
+          ],
+          "scores": [
+            35.627526,
+            19.533499,
+            17.77625,
+            15.472618,
+            14.019556
+          ],
+          "relevance": [
+            0.407819,
+            0.223595,
+            0.20348,
+            0.177111,
+            0.160478
+          ],
+          "matched_items": [
+            [
+              "smoke-spark-03#0"
+            ],
+            [],
+            [],
+            [],
+            []
+          ],
+          "latency_seconds": 0.045,
+          "first_relevant_rank": 1,
+          "metrics": {
+            "recall@1": 1.0,
+            "recall@3": 1.0,
+            "recall@5": 1.0,
+            "mrr": 1.0
+          }
+        },
+        "vector": {
+          "ranked": [
+            "chk_11033de1a806420f8c2f2e7a12ef6145d753b0ea20194b48146cc5929433862c",
+            "chk_614d4fb602f420ff38e280e3e58f3f9ab3d39c959735864f64bfc83e2cc1b078",
+            "chk_ecf3f0334e81ba825f877bef6f18624858f24210e9cf2cd5ec1a2eca03a14245",
+            "chk_b8132111ed619a18ceb246902c103d3ff96138f9cf55ec5150094ee9e5fc09f0",
+            "chk_9310c4d8c3e102898b9d60c994ee7e2224c85944268808fdfe608f18d7b2f21a"
+          ],
+          "scores": [
+            0.934148,
+            0.872666,
+            0.869751,
+            0.865484,
+            0.863314
+          ],
+          "relevance": [
+            0.934148,
+            0.872666,
+            0.869751,
+            0.865484,
+            0.863314
+          ],
+          "matched_items": [
+            [
+              "smoke-spark-03#0"
+            ],
+            [],
+            [],
+            [],
+            []
+          ],
+          "latency_seconds": 1.124,
+          "first_relevant_rank": 1,
+          "metrics": {
+            "recall@1": 1.0,
+            "recall@3": 1.0,
+            "recall@5": 1.0,
+            "mrr": 1.0
+          }
+        }
+      }
+    },
+    {
+      "id": "smoke-spark-04",
+      "technology": "Apache Spark",
+      "type": "factual",
+      "unanswerable": false,
+      "review": "reviewed",
+      "items": [
+        {
+          "item": "smoke-spark-04#0",
+          "source_key": "https://spark.apache.org/docs/4.0.1/sql-data-sources-load-save-functions.html",
+          "grade": 2,
+          "resolved_chunks": 1
+        }
+      ],
+      "flags": [],
+      "results": {
+        "bm25": {
+          "ranked": [
+            "chk_b5ad689f5c91111652c420df9bc858915d78adb01312e85935acd1de057400d3",
+            "chk_132e42986157c9486804630f86462bd02a40054d2d0f9eb7fc94a921ad175b88",
+            "chk_402ad85354e45d1e7f29cf780834a8138650cfcb18b27dcec311846bed3cbc34",
+            "chk_c69664ea48108f78da3b6c69ffe3533cd1d35b8e732f28c1350fae53601a4b37",
+            "chk_c6b3d2cc0be245729a69c433c70686a89786f81f32f722a5cb9b856c30eb165b"
+          ],
+          "scores": [
+            57.030823,
+            53.699104,
+            36.868548,
+            23.141313,
+            19.750915
+          ],
+          "relevance": [
+            0.567608,
+            0.534449,
+            0.36694,
+            0.230317,
+            0.196574
+          ],
+          "matched_items": [
+            [],
+            [
+              "smoke-spark-04#0"
+            ],
+            [],
+            [],
+            []
+          ],
+          "latency_seconds": 0.046,
+          "first_relevant_rank": 2,
+          "metrics": {
+            "recall@1": 0.0,
+            "recall@3": 1.0,
+            "recall@5": 1.0,
+            "mrr": 0.5
+          }
+        },
+        "vector": {
+          "ranked": [
+            "chk_402ad85354e45d1e7f29cf780834a8138650cfcb18b27dcec311846bed3cbc34",
+            "chk_3ec96c0b0776e1d05894b0bf98d47640ad56a740fce22a35ce859057905e41df",
+            "chk_c69664ea48108f78da3b6c69ffe3533cd1d35b8e732f28c1350fae53601a4b37",
+            "chk_132e42986157c9486804630f86462bd02a40054d2d0f9eb7fc94a921ad175b88",
+            "chk_2b10548b6b3f6b5a73ade2ae5681be169b3049b8ab3d454941daa4e1765076ea"
+          ],
+          "scores": [
+            0.885044,
+            0.884289,
+            0.879475,
+            0.877672,
+            0.877134
+          ],
+          "relevance": [
+            0.885044,
+            0.884289,
+            0.879475,
+            0.877672,
+            0.877134
+          ],
+          "matched_items": [
+            [],
+            [],
+            [],
+            [
+              "smoke-spark-04#0"
+            ],
+            []
+          ],
+          "latency_seconds": 1.305,
+          "first_relevant_rank": 4,
+          "metrics": {
+            "recall@1": 0.0,
+            "recall@3": 0.0,
+            "recall@5": 1.0,
+            "mrr": 0.25
+          }
+        }
+      }
+    },
+    {
+      "id": "smoke-spark-05",
+      "technology": "Apache Spark",
+      "type": "factual",
+      "unanswerable": false,
+      "review": "reviewed",
+      "items": [
+        {
+          "item": "smoke-spark-05#0",
+          "source_key": "[\"spark-4.0.1-cluster-overview.md\",null]",
+          "grade": 2,
+          "resolved_chunks": 1
+        },
+        {
+          "item": "smoke-spark-05#1",
+          "source_key": "https://spark.apache.org/docs/4.0.1/submitting-applications.html",
+          "grade": 2,
+          "resolved_chunks": 1
+        }
+      ],
+      "flags": [],
+      "results": {
+        "bm25": {
+          "ranked": [
+            "chk_cacf3871e43273be443afbb551fdfaac63cef253351c095f1d3230ccfc92aff6",
+            "chk_5d0618297bdaee40e25e0127f495c90743eb03a18bbd81708b69f971a4a21fc7",
+            "chk_793458abcd780d90f021d41d340a6f9d8039e2965780d46f90f38658927e9384",
+            "chk_48d9911cd25269c86ef7e6d947736b25ca1cf19b1dee8e90dc1586fa56e3756d",
+            "chk_244241b4d249382c050359ea4bdc55af29296211b404e91c82b26843664db635"
+          ],
+          "scores": [
+            28.422904,
+            25.722766,
+            25.569266,
+            24.619489,
+            24.540113
+          ],
+          "relevance": [
+            0.435086,
+            0.393753,
+            0.391403,
+            0.376865,
+            0.37565
+          ],
+          "matched_items": [
+            [],
+            [],
+            [],
+            [
+              "smoke-spark-05#1"
+            ],
+            []
+          ],
+          "latency_seconds": 0.056,
+          "first_relevant_rank": 4,
+          "metrics": {
+            "recall@1": 0.0,
+            "recall@3": 0.0,
+            "recall@5": 0.5,
+            "mrr": 0.25
+          }
+        },
+        "vector": {
+          "ranked": [
+            "chk_48d9911cd25269c86ef7e6d947736b25ca1cf19b1dee8e90dc1586fa56e3756d",
+            "chk_cacf3871e43273be443afbb551fdfaac63cef253351c095f1d3230ccfc92aff6",
+            "chk_5d0618297bdaee40e25e0127f495c90743eb03a18bbd81708b69f971a4a21fc7",
+            "chk_244241b4d249382c050359ea4bdc55af29296211b404e91c82b26843664db635",
+            "chk_793458abcd780d90f021d41d340a6f9d8039e2965780d46f90f38658927e9384"
+          ],
+          "scores": [
+            0.89406,
+            0.886124,
+            0.882969,
+            0.879254,
+            0.876319
+          ],
+          "relevance": [
+            0.89406,
+            0.886124,
+            0.882969,
+            0.879254,
+            0.876319
+          ],
+          "matched_items": [
+            [
+              "smoke-spark-05#1"
+            ],
+            [],
+            [],
+            [],
+            []
+          ],
+          "latency_seconds": 1.172,
+          "first_relevant_rank": 1,
+          "metrics": {
+            "recall@1": 0.5,
+            "recall@3": 0.5,
+            "recall@5": 0.5,
+            "mrr": 1.0
+          }
+        }
+      }
+    },
+    {
+      "id": "smoke-postgresql-01",
+      "technology": "PostgreSQL",
+      "type": "factual",
+      "unanswerable": false,
+      "review": "reviewed",
+      "items": [
+        {
+          "item": "smoke-postgresql-01#0",
+          "source_key": "https://www.postgresql.org/docs/18/transaction-iso.html",
+          "grade": 2,
+          "resolved_chunks": 1
+        }
+      ],
+      "flags": [],
+      "results": {
+        "bm25": {
+          "ranked": [
+            "chk_9d6f765c3000647304eff384c7d1948f056a65dc5e081c44cf9d7e9d2f169e54",
+            "chk_25179a9d3e3bfaf359f0ee59e9cee54b73c2111b9b5d25ef2522b0c131f5e213",
+            "chk_8c9c4999c6aeba7a9f87c72148a94a08f15d83434c68a6a3c5ca6ee9b5e91ffd",
+            "chk_c061132714ba14c82e69188306b5814fe2e953994a34d346c7d82f2e23842f87",
+            "chk_62737a1d2a567aa81a6f46e45121e7775adae3ccf1e5450f48ff25ec5a889cff"
+          ],
+          "scores": [
+            30.035987,
+            25.062158,
+            24.802814,
+            23.306365,
+            21.124449
+          ],
+          "relevance": [
+            0.59416,
+            0.49577,
+            0.490639,
+            0.461037,
+            0.417876
+          ],
+          "matched_items": [
+            [],
+            [
+              "smoke-postgresql-01#0"
+            ],
+            [],
+            [],
+            []
+          ],
+          "latency_seconds": 0.06,
+          "first_relevant_rank": 2,
+          "metrics": {
+            "recall@1": 0.0,
+            "recall@3": 1.0,
+            "recall@5": 1.0,
+            "mrr": 0.5
+          }
+        },
+        "vector": {
+          "ranked": [
+            "chk_8c9c4999c6aeba7a9f87c72148a94a08f15d83434c68a6a3c5ca6ee9b5e91ffd",
+            "chk_c061132714ba14c82e69188306b5814fe2e953994a34d346c7d82f2e23842f87",
+            "chk_9d6f765c3000647304eff384c7d1948f056a65dc5e081c44cf9d7e9d2f169e54",
+            "chk_25179a9d3e3bfaf359f0ee59e9cee54b73c2111b9b5d25ef2522b0c131f5e213",
+            "chk_3b03d4e8d941609e7494d64dd9f638e75cc73870f61846e4ed3e486b65cf2f32"
+          ],
+          "scores": [
+            0.91713,
+            0.910435,
+            0.906419,
+            0.905019,
+            0.903196
+          ],
+          "relevance": [
+            0.91713,
+            0.910435,
+            0.906419,
+            0.905019,
+            0.903196
+          ],
+          "matched_items": [
+            [],
+            [],
+            [],
+            [
+              "smoke-postgresql-01#0"
+            ],
+            []
+          ],
+          "latency_seconds": 1.006,
+          "first_relevant_rank": 4,
+          "metrics": {
+            "recall@1": 0.0,
+            "recall@3": 0.0,
+            "recall@5": 1.0,
+            "mrr": 0.25
+          }
+        }
+      }
+    },
+    {
+      "id": "smoke-postgresql-02",
+      "technology": "PostgreSQL",
+      "type": "factual",
+      "unanswerable": false,
+      "review": "reviewed",
+      "items": [
+        {
+          "item": "smoke-postgresql-02#0",
+          "source_key": "https://www.postgresql.org/docs/18/indexes-types.html",
+          "grade": 2,
+          "resolved_chunks": 1
+        }
+      ],
+      "flags": [],
+      "results": {
+        "bm25": {
+          "ranked": [
+            "chk_6b2ff993117c5ee3bbd2621ab24ce9cc05edd309875e50f62f0c23a6a72afceb",
+            "chk_7921f9b458a637d7ee369043f94b03f7c74c05ed256d2fa808e9d00535b9011e",
+            "chk_9b160363c165aadf187836cb88618f27f9f612cc47d059c77b6d9ce7e8b3b17f",
+            "chk_e566b75f259463c6d948fa853a9bc75fd14ab47fc71a3f3a79738fcee90e778c",
+            "chk_da4b1f6cb52491996a726858c879e8b222147baa56835c73fe846312578a3af3"
+          ],
+          "scores": [
+            30.711787,
+            28.207978,
+            22.592141,
+            21.61571,
+            20.211861
+          ],
+          "relevance": [
+            0.490617,
+            0.450619,
+            0.360907,
+            0.345308,
+            0.322882
+          ],
+          "matched_items": [
+            [],
+            [
+              "smoke-postgresql-02#0"
+            ],
+            [],
+            [],
+            []
+          ],
+          "latency_seconds": 0.056,
+          "first_relevant_rank": 2,
+          "metrics": {
+            "recall@1": 0.0,
+            "recall@3": 1.0,
+            "recall@5": 1.0,
+            "mrr": 0.5
+          }
+        },
+        "vector": {
+          "ranked": [
+            "chk_7921f9b458a637d7ee369043f94b03f7c74c05ed256d2fa808e9d00535b9011e",
+            "chk_e566b75f259463c6d948fa853a9bc75fd14ab47fc71a3f3a79738fcee90e778c",
+            "chk_6b2ff993117c5ee3bbd2621ab24ce9cc05edd309875e50f62f0c23a6a72afceb",
+            "chk_d4018438eae9e69881a83daeeafabf0bff531f934470325a31fb6e5c440c5a09",
+            "chk_da4b1f6cb52491996a726858c879e8b222147baa56835c73fe846312578a3af3"
+          ],
+          "scores": [
+            0.919492,
+            0.906189,
+            0.886304,
+            0.858985,
+            0.857104
+          ],
+          "relevance": [
+            0.919492,
+            0.906189,
+            0.886304,
+            0.858985,
+            0.857104
+          ],
+          "matched_items": [
+            [
+              "smoke-postgresql-02#0"
+            ],
+            [],
+            [],
+            [],
+            []
+          ],
+          "latency_seconds": 1.285,
+          "first_relevant_rank": 1,
+          "metrics": {
+            "recall@1": 1.0,
+            "recall@3": 1.0,
+            "recall@5": 1.0,
+            "mrr": 1.0
+          }
+        }
+      }
+    },
+    {
+      "id": "smoke-postgresql-03",
+      "technology": "PostgreSQL",
+      "type": "how_to",
+      "unanswerable": false,
+      "review": "reviewed",
+      "items": [
+        {
+          "item": "smoke-postgresql-03#0",
+          "source_key": "[\"postgresql-18-tutorial-getting-started.pdf\",null]",
+          "grade": 2,
+          "resolved_chunks": 1
+        }
+      ],
+      "flags": [],
+      "results": {
+        "bm25": {
+          "ranked": [
+            "chk_f47edda471501e127f43811d9e106b30ee581e3154ca70ffa5888c9f5ec5f980",
+            "chk_2d83efbcf7959515ba81900e3619664a5d4e6646bb837c4a35e82570e41cd027",
+            "chk_c1229b6253995820d13201e7a981bb26a97f25cac1f826ccc609facbb88c4719",
+            "chk_3f47ae1fa1e9c7a966be9cff60e1ca742f289e3dad3b3f4da04fb951bf23c930",
+            "chk_8feb7856a7840297ae9122e25f3c86ef322c9c6ed74901cc22007f3239cce8f5"
+          ],
+          "scores": [
+            41.03177,
+            31.328417,
+            30.310082,
+            28.418579,
+            28.170556
+          ],
+          "relevance": [
+            0.467812,
+            0.357182,
+            0.345572,
+            0.324006,
+            0.321179
+          ],
+          "matched_items": [
+            [
+              "smoke-postgresql-03#0"
+            ],
+            [],
+            [],
+            [],
+            []
+          ],
+          "latency_seconds": 0.055,
+          "first_relevant_rank": 1,
+          "metrics": {
+            "recall@1": 1.0,
+            "recall@3": 1.0,
+            "recall@5": 1.0,
+            "mrr": 1.0
+          }
+        },
+        "vector": {
+          "ranked": [
+            "chk_f47edda471501e127f43811d9e106b30ee581e3154ca70ffa5888c9f5ec5f980",
+            "chk_c1229b6253995820d13201e7a981bb26a97f25cac1f826ccc609facbb88c4719",
+            "chk_3f47ae1fa1e9c7a966be9cff60e1ca742f289e3dad3b3f4da04fb951bf23c930",
+            "chk_2ceb4f289076109f21dd0fcd250828fb0dd0f022b62ac0b8e601cc26fc73bf9f",
+            "chk_2d83efbcf7959515ba81900e3619664a5d4e6646bb837c4a35e82570e41cd027"
+          ],
+          "scores": [
+            0.910863,
+            0.903004,
+            0.893573,
+            0.891765,
+            0.889256
+          ],
+          "relevance": [
+            0.910863,
+            0.903004,
+            0.893573,
+            0.891765,
+            0.889256
+          ],
+          "matched_items": [
+            [
+              "smoke-postgresql-03#0"
+            ],
+            [],
+            [],
+            [],
+            []
+          ],
+          "latency_seconds": 1.398,
+          "first_relevant_rank": 1,
+          "metrics": {
+            "recall@1": 1.0,
+            "recall@3": 1.0,
+            "recall@5": 1.0,
+            "mrr": 1.0
+          }
+        }
+      }
+    },
+    {
+      "id": "smoke-postgresql-04",
+      "technology": "PostgreSQL",
+      "type": "identifier",
+      "unanswerable": false,
+      "review": "reviewed",
+      "items": [
+        {
+          "item": "smoke-postgresql-04#0",
+          "source_key": "https://www.postgresql.org/docs/18/using-explain.html",
+          "grade": 2,
+          "resolved_chunks": 1
+        }
+      ],
+      "flags": [],
+      "results": {
+        "bm25": {
+          "ranked": [
+            "chk_70361c1a7dd14e4cadc0ed0fc3dcfdbe4bc8a0a4f9d3b17359ea206f4e8df6f6",
+            "chk_0cf7a51c8e66bf620208a76f0b0362c15ce64c8c72f78d0a6423bf8a41d5da00",
+            "chk_a7d31e4566dae15c8254eba5325b29f37429eabb7c9941a2cf0966c7ccc68eec",
+            "chk_abe8f2e518b5da5c639d61e7343c8eb33d8c7542c109646ecbb0448b5da653c1",
+            "chk_69dfd542e048400c9bb2e9ebf456a8bf1e9371a5a4d0b6a45f710954bd6f58ab"
+          ],
+          "scores": [
+            22.83867,
+            20.969454,
+            19.486278,
+            17.473489,
+            16.74578
+          ],
+          "relevance": [
+            0.425729,
+            0.390885,
+            0.363238,
+            0.325718,
+            0.312153
+          ],
+          "matched_items": [
+            [
+              "smoke-postgresql-04#0"
+            ],
+            [],
+            [],
+            [],
+            []
+          ],
+          "latency_seconds": 0.059,
+          "first_relevant_rank": 1,
+          "metrics": {
+            "recall@1": 1.0,
+            "recall@3": 1.0,
+            "recall@5": 1.0,
+            "mrr": 1.0
+          }
+        },
+        "vector": {
+          "ranked": [
+            "chk_0cf7a51c8e66bf620208a76f0b0362c15ce64c8c72f78d0a6423bf8a41d5da00",
+            "chk_70361c1a7dd14e4cadc0ed0fc3dcfdbe4bc8a0a4f9d3b17359ea206f4e8df6f6",
+            "chk_045dd5fabe82c5653c8d04ab939eacb1be213ad7647fe2ecb5555e7c8a44d939",
+            "chk_a7d31e4566dae15c8254eba5325b29f37429eabb7c9941a2cf0966c7ccc68eec",
+            "chk_67e3d46f029a36eb15e743ee8ee73d9bd60f088a7c0fce03feea07232b4f9c98"
+          ],
+          "scores": [
+            0.882585,
+            0.880471,
+            0.879257,
+            0.86099,
+            0.858927
+          ],
+          "relevance": [
+            0.882585,
+            0.880471,
+            0.879257,
+            0.86099,
+            0.858927
+          ],
+          "matched_items": [
+            [],
+            [
+              "smoke-postgresql-04#0"
+            ],
+            [],
+            [],
+            []
+          ],
+          "latency_seconds": 1.054,
+          "first_relevant_rank": 2,
+          "metrics": {
+            "recall@1": 0.0,
+            "recall@3": 1.0,
+            "recall@5": 1.0,
+            "mrr": 0.5
+          }
+        }
+      }
+    },
+    {
+      "id": "smoke-postgresql-05",
+      "technology": "PostgreSQL",
+      "type": "how_to",
+      "unanswerable": false,
+      "review": "reviewed",
+      "items": [
+        {
+          "item": "smoke-postgresql-05#0",
+          "source_key": "[\"postgresql-18-tutorial-advanced-features.pdf\",null]",
+          "grade": 2,
+          "resolved_chunks": 1
+        }
+      ],
+      "flags": [],
+      "results": {
+        "bm25": {
+          "ranked": [
+            "chk_59db8db17f60a331e9072e0510e641d17fd99c1fed2335c6261b08ab3a49cdc5",
+            "chk_0963c80bf11036a3d9e12ba88115765772f5372ae504929acc637c8e3e38933e",
+            "chk_e2a0ef285d84c954effd56f40b0d1e0b2170501eb734b1e1d0d637bd07853793",
+            "chk_61f898ef7290cb816308832f787841d46ef2ba6360f5026212fe8eb8c72a4cf9",
+            "chk_07df262c26e7fb52dfcb9fbed8f542f08eafd579a08673796a263f48a0b104cb"
+          ],
+          "scores": [
+            27.608145,
+            23.058651,
+            21.18727,
+            19.888248,
+            19.753944
+          ],
+          "relevance": [
+            0.327768,
+            0.273756,
+            0.251538,
+            0.236116,
+            0.234522
+          ],
+          "matched_items": [
+            [
+              "smoke-postgresql-05#0"
+            ],
+            [],
+            [],
+            [],
+            []
+          ],
+          "latency_seconds": 0.035,
+          "first_relevant_rank": 1,
+          "metrics": {
+            "recall@1": 1.0,
+            "recall@3": 1.0,
+            "recall@5": 1.0,
+            "mrr": 1.0
+          }
+        },
+        "vector": {
+          "ranked": [
+            "chk_59db8db17f60a331e9072e0510e641d17fd99c1fed2335c6261b08ab3a49cdc5",
+            "chk_a3756e9492a324dc8ec253b04fe8ce25ed84287a3c1f108e760a0bbce89050dd",
+            "chk_b3e122c79142dd55902196983f3d182f495aa55084eeee386075d44d7387e473",
+            "chk_af4e63fc7990b038102e2a47243c7f01d8f49f2546f1c49af145f8669e6e1a4b",
+            "chk_f17f7b41ef7830bbe008085c82c34227bcc5fd127f0a3fa6ea6d74a1e138afc1"
+          ],
+          "scores": [
+            0.895139,
+            0.867565,
+            0.863413,
+            0.858507,
+            0.857686
+          ],
+          "relevance": [
+            0.895139,
+            0.867565,
+            0.863413,
+            0.858507,
+            0.857686
+          ],
+          "matched_items": [
+            [
+              "smoke-postgresql-05#0"
+            ],
+            [],
+            [],
+            [],
+            []
+          ],
+          "latency_seconds": 1.082,
+          "first_relevant_rank": 1,
+          "metrics": {
+            "recall@1": 1.0,
+            "recall@3": 1.0,
+            "recall@5": 1.0,
+            "mrr": 1.0
+          }
+        }
+      }
+    },
+    {
+      "id": "smoke-ood-01",
+      "technology": "Redis",
+      "type": "identifier",
+      "unanswerable": true,
+      "review": "reviewed",
+      "items": [],
+      "flags": [],
+      "results": {
+        "bm25": {
+          "ranked": [
+            "chk_c8d58887d7cdde16a996ccf2ae37af40f9f94b66aa1f4ec5a70aa95f7d616e96",
+            "chk_1872846ab560eb57fb48575f2cef78ef1c1d7ec0989985ba1d19d59c2759d579",
+            "chk_bb2ad302be84115a256050146ed9eb7565fce1685d65f4f7c26c84c70545b4e8",
+            "chk_be43a2236506f3c1c7498a2a12bbe2ac26207abf10d700e21e2d82ab1f485fdb",
+            "chk_52fe3b4c5073a53d76ca1eda6ee188c7133f241d89c73471fb864c69334aadf0"
+          ],
+          "scores": [
+            12.00251,
+            10.178431,
+            9.890284,
+            9.762342,
+            9.679761
+          ],
+          "relevance": [
+            0.142761,
+            0.121065,
+            0.117638,
+            0.116116,
+            0.115134
+          ],
+          "matched_items": [
+            [],
+            [],
+            [],
+            [],
+            []
+          ],
+          "latency_seconds": 0.041
+        },
+        "vector": {
+          "ranked": [
+            "chk_52fe3b4c5073a53d76ca1eda6ee188c7133f241d89c73471fb864c69334aadf0",
+            "chk_3350c31a46638391bc538f3deda8cf9adffc8b97182e696d5380714e13bf899d",
+            "chk_bb2ad302be84115a256050146ed9eb7565fce1685d65f4f7c26c84c70545b4e8",
+            "chk_45e1dd27c6e8a02a58932a1660a187240150e552d29dd5c9b3016a0faf886109",
+            "chk_5cdb044d535ff31c135823927d494fa8d7fe099c3032120f04139fdf3057a896"
+          ],
+          "scores": [
+            0.819429,
+            0.81688,
+            0.80904,
+            0.808549,
+            0.806734
+          ],
+          "relevance": [
+            0.819429,
+            0.81688,
+            0.80904,
+            0.808549,
+            0.806734
+          ],
+          "matched_items": [
+            [],
+            [],
+            [],
+            [],
+            []
+          ],
+          "latency_seconds": 1.228
+        }
+      }
+    },
+    {
+      "id": "smoke-ood-02",
+      "technology": "Docker",
+      "type": "how_to",
+      "unanswerable": true,
+      "review": "reviewed",
+      "items": [],
+      "flags": [],
+      "results": {
+        "bm25": {
+          "ranked": [
+            "chk_82c6499d992cdb9b89ab0de090f22a34b368b5783b6a254e0e9af1427d0acafc",
+            "chk_5e53e59d238cb99cbe01f3736042ebf9a542533a3df0d888ddd80d75d02987a9",
+            "chk_dea6b5cf7f3ac329a5fa109cbf94a585e408530dd08a39207c87ee94fd916482",
+            "chk_d658d53a6b8a5587adcb6a983d30c20a4904e6029d5d0c2201094d7fd2f6fc86",
+            "chk_c464646617123522335239b9777ab3f395301f353b18e20c74ee3a830616213b"
+          ],
+          "scores": [
+            19.020455,
+            16.87378,
+            15.541053,
+            15.461669,
+            15.284973
+          ],
+          "relevance": [
+            0.173442,
+            0.153867,
+            0.141714,
+            0.14099,
+            0.139379
+          ],
+          "matched_items": [
+            [],
+            [],
+            [],
+            [],
+            []
+          ],
+          "latency_seconds": 0.037
+        },
+        "vector": {
+          "ranked": [
+            "chk_c56ddf7d681af7db1eaebbe91912bb6af46b4811a4bc9495301099dd2c1f3f2a",
+            "chk_65d198728d781e15486ca3c352e277871a1d4a535e5c7d71b58d30f7bddc6dd9",
+            "chk_aed33aff7d428d2087f1246df806a57f895ce95ca84d4f3db059a77f107b11f0",
+            "chk_7e9f71377eaec24db8c5f390d678a1ed35c37c25bb540ae314b3646cb16d2322",
+            "chk_549f71e1d7c1473e44258dfd57738a8efa8040e9ce5b2db14721e987477eff16"
+          ],
+          "scores": [
+            0.808026,
+            0.803955,
+            0.80324,
+            0.785059,
+            0.782912
+          ],
+          "relevance": [
+            0.808026,
+            0.803955,
+            0.80324,
+            0.785059,
+            0.782912
+          ],
+          "matched_items": [
+            [],
+            [],
+            [],
+            [],
+            []
+          ],
+          "latency_seconds": 1.173
+        }
+      }
+    },
+    {
+      "id": "smoke-ood-03",
+      "technology": "Kubernetes",
+      "type": "how_to",
+      "unanswerable": true,
+      "review": "reviewed",
+      "items": [],
+      "flags": [],
+      "results": {
+        "bm25": {
+          "ranked": [
+            "chk_71c85d879e710ec4cdeddd688d3f5f65d2c07e4be13b8ced69893160ca043495",
+            "chk_e7904cffd73613091ff8ee84683ad7be6b2a06070b9d40dda232758f2b1687ba",
+            "chk_81db1124bb83b78b4ad7ee67296ccbff355699072c1d863039708abed07a5fdc",
+            "chk_c9465652c52e49ad9b65bde6d0c3ff88b99c918a418109181a012dd73caa598b",
+            "chk_cc889258e165219018ea5c28003217e537250342b8e47d8856fded60b632c479"
+          ],
+          "scores": [
+            22.409484,
+            16.303476,
+            13.348682,
+            12.832842,
+            12.659045
+          ],
+          "relevance": [
+            0.266802,
+            0.194105,
+            0.158926,
+            0.152785,
+            0.150715
+          ],
+          "matched_items": [
+            [],
+            [],
+            [],
+            [],
+            []
+          ],
+          "latency_seconds": 0.044
+        },
+        "vector": {
+          "ranked": [
+            "chk_0028f3efd49e9a79550334cd311a090796d7112d7be1c460eaf42450808d55d1",
+            "chk_cacf3871e43273be443afbb551fdfaac63cef253351c095f1d3230ccfc92aff6",
+            "chk_0433b29427dc02c69c3e69b706d9b9a9993ab3de020687f99e109b27128d4e3a",
+            "chk_aed33aff7d428d2087f1246df806a57f895ce95ca84d4f3db059a77f107b11f0",
+            "chk_9b887f48e0469b897c50fa4f2bbebe9754a7edbf9139c1b16a8c1b15115e083a"
+          ],
+          "scores": [
+            0.822866,
+            0.819962,
+            0.817517,
+            0.813765,
+            0.810389
+          ],
+          "relevance": [
+            0.822866,
+            0.819962,
+            0.817517,
+            0.813765,
+            0.810389
+          ],
+          "matched_items": [
+            [],
+            [],
+            [],
+            [],
+            []
+          ],
+          "latency_seconds": 1.178
+        }
+      }
+    },
+    {
+      "id": "smoke-ood-04",
+      "technology": "React",
+      "type": "factual",
+      "unanswerable": true,
+      "review": "reviewed",
+      "items": [],
+      "flags": [],
+      "results": {
+        "bm25": {
+          "ranked": [
+            "chk_66ce7c93f57afd2bfc5ca760c6556dd5c6e02d2faac6efcd25c42862d7b12d9b",
+            "chk_6d8653c530f0c86c56dccf649d9609929b0fef997bf4c190d4c799a1cc038d6d",
+            "chk_a6815407e4622f8949572518d9b821a18b1551e6da71255d69c746dc110ef838",
+            "chk_c6e4bd3a949aabb5ed04990f14b53649384de330da60159a6e1dc81901b57b43",
+            "chk_513479e3d9d941e7577868cc4563ac6d2768f8cb68e93a0d334acbec223234e9"
+          ],
+          "scores": [
+            14.020706,
+            12.195417,
+            11.825381,
+            11.564125,
+            11.497019
+          ],
+          "relevance": [
+            0.145397,
+            0.126469,
+            0.122631,
+            0.119922,
+            0.119226
+          ],
+          "matched_items": [
+            [],
+            [],
+            [],
+            [],
+            []
+          ],
+          "latency_seconds": 0.035
+        },
+        "vector": {
+          "ranked": [
+            "chk_88265bb00b4a226679aa477ad50e2b66a89e035bb22dceefd1277954d892e67b",
+            "chk_f17f7b41ef7830bbe008085c82c34227bcc5fd127f0a3fa6ea6d74a1e138afc1",
+            "chk_247414078db349f1b573557fe2d65cf164b28cb7c7ca220d0d1cbbb5074fd607",
+            "chk_07df262c26e7fb52dfcb9fbed8f542f08eafd579a08673796a263f48a0b104cb",
+            "chk_54ccff897c60cb011828435cd5842586d749738ab740418ebb8b4d269ff7db7d"
+          ],
+          "scores": [
+            0.832452,
+            0.824541,
+            0.819669,
+            0.8161,
+            0.816044
+          ],
+          "relevance": [
+            0.832452,
+            0.824541,
+            0.819669,
+            0.8161,
+            0.816044
+          ],
+          "matched_items": [
+            [],
+            [],
+            [],
+            [],
+            []
+          ],
+          "latency_seconds": 1.273
+        }
+      }
+    },
+    {
+      "id": "smoke-ood-05",
+      "technology": "Terraform",
+      "type": "how_to",
+      "unanswerable": true,
+      "review": "reviewed",
+      "items": [],
+      "flags": [],
+      "results": {
+        "bm25": {
+          "ranked": [
+            "chk_6b1a90af28701c1ecacc87cedf165e983fbe874479ffaaee7b723916a2ce6878",
+            "chk_8a8e10ae66b7e48189f54bbbf0dc97ac71ab2ebab3bdcae684fa7d5846e25758",
+            "chk_776b2e286c8328c4454de38918bc59d31f773ef457a857268fc03f6e0efeab71",
+            "chk_132e42986157c9486804630f86462bd02a40054d2d0f9eb7fc94a921ad175b88",
+            "chk_0a44b3dd9b21be0f72c40f7f4bb7719e5dc536e34c4caefcf01d98300116058d"
+          ],
+          "scores": [
+            14.712488,
+            13.10845,
+            10.714544,
+            10.087679,
+            9.215698
+          ],
+          "relevance": [
+            0.209774,
+            0.186903,
+            0.15277,
+            0.143832,
+            0.131399
+          ],
+          "matched_items": [
+            [],
+            [],
+            [],
+            [],
+            []
+          ],
+          "latency_seconds": 0.05
+        },
+        "vector": {
+          "ranked": [
+            "chk_402ad85354e45d1e7f29cf780834a8138650cfcb18b27dcec311846bed3cbc34",
+            "chk_fe747d29bc832e9131d37d56385c82df416881417ba392ddda821405b60e4e3d",
+            "chk_3ec96c0b0776e1d05894b0bf98d47640ad56a740fce22a35ce859057905e41df",
+            "chk_800b365f1b9045f8441b9105618cebb8dae07a26a15ac9cce5846b0e5a00395f",
+            "chk_56b24786754434a37ae7654618c528bd254b9448237d203e7a1a59511491d486"
+          ],
+          "scores": [
+            0.798434,
+            0.792047,
+            0.787068,
+            0.78691,
+            0.785501
+          ],
+          "relevance": [
+            0.798434,
+            0.792047,
+            0.787068,
+            0.78691,
+            0.785501
+          ],
+          "matched_items": [
+            [],
+            [],
+            [],
+            [],
+            []
+          ],
+          "latency_seconds": 1.334
+        }
+      }
+    },
+    {
+      "id": "smoke-ood-06",
+      "technology": "MongoDB",
+      "type": "factual",
+      "unanswerable": true,
+      "review": "reviewed",
+      "items": [],
+      "flags": [],
+      "results": {
+        "bm25": {
+          "ranked": [
+            "chk_cacf3871e43273be443afbb551fdfaac63cef253351c095f1d3230ccfc92aff6",
+            "chk_c84126bb73bffcbe45b793ad99b65e10c675fbba5b26b8484926a7d5f7fd94b1",
+            "chk_7e288c02aa0d4acbb0ad2901bf50109a60037d3f23846b52415dbb34f0b711fe",
+            "chk_bd9ab9166a4fae3de6b68e15450d8e2b6b0a829cb82149856e7395e16250383b",
+            "chk_1f692f859120801153f1d85b7014a847cf36f9a8f0c5aadd36214e00bce8e29d"
+          ],
+          "scores": [
+            14.441082,
+            13.988238,
+            13.116381,
+            12.439993,
+            11.457457
+          ],
+          "relevance": [
+            0.149341,
+            0.144658,
+            0.135642,
+            0.128647,
+            0.118486
+          ],
+          "matched_items": [
+            [],
+            [],
+            [],
+            [],
+            []
+          ],
+          "latency_seconds": 0.055
+        },
+        "vector": {
+          "ranked": [
+            "chk_cacf3871e43273be443afbb551fdfaac63cef253351c095f1d3230ccfc92aff6",
+            "chk_ffa0398faf286d0c0fbc4020e06ec08f86d07a3eda17bc8e638faca51fb2d0d7",
+            "chk_3dff1ee5c6bd941fbbd6d4cc4069a83e976f0a764ba5b8f3c1ce496e7db8a7ec",
+            "chk_f69d69f22a705d0e9d271b2d9b931663b50671a59dc78846abd8814b63e70c99",
+            "chk_4139ff41d36cd23e6b2de08b4218a82155d135c569a864015310d5c106428196"
+          ],
+          "scores": [
+            0.813689,
+            0.813311,
+            0.812127,
+            0.812099,
+            0.810803
+          ],
+          "relevance": [
+            0.813689,
+            0.813311,
+            0.812127,
+            0.812099,
+            0.810803
+          ],
+          "matched_items": [
+            [],
+            [],
+            [],
+            [],
+            []
+          ],
+          "latency_seconds": 1.25
+        }
+      }
+    },
+    {
+      "id": "smoke-ood-07",
+      "technology": "Elasticsearch",
+      "type": "how_to",
+      "unanswerable": true,
+      "review": "reviewed",
+      "items": [],
+      "flags": [],
+      "results": {
+        "bm25": {
+          "ranked": [
+            "chk_1ed0e69aac88f49ec87f391cd5327cc2cdee6d158b183577aee630c59c6da333",
+            "chk_ad07a0afe9ac83501b7753868cd0ef1dccc81248e3a417bb9227f317b049d264",
+            "chk_8a8e10ae66b7e48189f54bbbf0dc97ac71ab2ebab3bdcae684fa7d5846e25758",
+            "chk_6b2ff993117c5ee3bbd2621ab24ce9cc05edd309875e50f62f0c23a6a72afceb",
+            "chk_f6bfbab30b83c184b634f1149d369f3548d717240a89bd2370666ed1fea6c419"
+          ],
+          "scores": [
+            11.071106,
+            10.620744,
+            10.562519,
+            9.085481,
+            8.70332
+          ],
+          "relevance": [
+            0.189884,
+            0.182159,
+            0.181161,
+            0.155828,
+            0.149273
+          ],
+          "matched_items": [
+            [],
+            [],
+            [],
+            [],
+            []
+          ],
+          "latency_seconds": 0.057
+        },
+        "vector": {
+          "ranked": [
+            "chk_6b2ff993117c5ee3bbd2621ab24ce9cc05edd309875e50f62f0c23a6a72afceb",
+            "chk_1ed0e69aac88f49ec87f391cd5327cc2cdee6d158b183577aee630c59c6da333",
+            "chk_ce3a1d55cb27d1978974a9d3369bc19312dc9a24fbce7e483b4dd6c7585348e1",
+            "chk_1ff0060983a530b626d5e87be780bb32e991259070b6793b0a46def7c48eeb35",
+            "chk_df4233163d342aa5d84f8b57184f1060fe9160d1ffe9b37aaab5aab3638e96c2"
+          ],
+          "scores": [
+            0.828378,
+            0.819783,
+            0.815066,
+            0.811463,
+            0.811337
+          ],
+          "relevance": [
+            0.828378,
+            0.819783,
+            0.815066,
+            0.811463,
+            0.811337
+          ],
+          "matched_items": [
+            [],
+            [],
+            [],
+            [],
+            []
+          ],
+          "latency_seconds": 1.177
+        }
+      }
+    },
+    {
+      "id": "smoke-ood-08",
+      "technology": "Git",
+      "type": "how_to",
+      "unanswerable": true,
+      "review": "reviewed",
+      "items": [],
+      "flags": [],
+      "results": {
+        "bm25": {
+          "ranked": [
+            "chk_c5384a28adc137ab8cfe5c963c6603c094e2f3a9ab4ebfcf98a81509564974df",
+            "chk_00b2bca83a7e6f6ac12a9d2cd4dd7213bac909c9429b9e2f504cd79307cf9bdc",
+            "chk_7d47b88c6f4e4ca69c636ec6228b4253c40f658293e9b6f3814793696d84ec1a",
+            "chk_8a8e10ae66b7e48189f54bbbf0dc97ac71ab2ebab3bdcae684fa7d5846e25758",
+            "chk_f79a0c2c1e7814dc8d10c5e961cb31a9190e2b187fc62c59e5eed74de733d73d"
+          ],
+          "scores": [
+            12.435699,
+            12.345711,
+            12.237697,
+            11.138624,
+            10.643867
+          ],
+          "relevance": [
+            0.138147,
+            0.137147,
+            0.135947,
+            0.123738,
+            0.118242
+          ],
+          "matched_items": [
+            [],
+            [],
+            [],
+            [],
+            []
+          ],
+          "latency_seconds": 0.054
+        },
+        "vector": {
+          "ranked": [
+            "chk_2a5ba0fafd03d17c4e28ae1417e0bfef2f7815b36e71dea192494ae60ef293df",
+            "chk_7d47b88c6f4e4ca69c636ec6228b4253c40f658293e9b6f3814793696d84ec1a",
+            "chk_88265bb00b4a226679aa477ad50e2b66a89e035bb22dceefd1277954d892e67b",
+            "chk_9914473c1509f246575988580d81e495e8de4a6686955832aa1b64ab92b0fb2f",
+            "chk_c446fe2547a3f3698afedd5c658842ab56b8062e6214c5b3adcbfa55c90b35d6"
+          ],
+          "scores": [
+            0.821591,
+            0.815742,
+            0.812019,
+            0.809609,
+            0.809098
+          ],
+          "relevance": [
+            0.821591,
+            0.815742,
+            0.812019,
+            0.809609,
+            0.809098
+          ],
+          "matched_items": [
+            [],
+            [],
+            [],
+            [],
+            []
+          ],
+          "latency_seconds": 1.045
+        }
+      }
+    },
+    {
+      "id": "smoke-ood-09",
+      "technology": "Rust",
+      "type": "factual",
+      "unanswerable": true,
+      "review": "reviewed",
+      "items": [],
+      "flags": [],
+      "results": {
+        "bm25": {
+          "ranked": [
+            "chk_ff8cf2761810611cba6a981b539935e6a14e97356507e82de83f27fa2a7fe783",
+            "chk_080672b115112f231486b065e003c8bd4c0922dc467a834c517cc743b3679903",
+            "chk_36e228dec711042cb492c6843c0caddae2090621bb1d67ac38b391a1b6f1d07b",
+            "chk_9e4e9b3e86bca3a4127245aaa30d24ac7ec6d39ec347ced46b9957fd91a2415b",
+            "chk_0599e8b872e687cc3fdb392b636211a10b718497639aa2977dd3fdd66fae8674"
+          ],
+          "scores": [
+            18.010698,
+            14.862165,
+            14.384898,
+            14.262765,
+            14.143086
+          ],
+          "relevance": [
+            0.152782,
+            0.126073,
+            0.122025,
+            0.120989,
+            0.119973
+          ],
+          "matched_items": [
+            [],
+            [],
+            [],
+            [],
+            []
+          ],
+          "latency_seconds": 0.059
+        },
+        "vector": {
+          "ranked": [
+            "chk_7858b1bc27655c3050335a311fabe94b82fd0f334c68715b6a40ffb170f85524",
+            "chk_df14b96faca6f69f1649d87facc6810ed25e14f3dc5b4ee6d5020a170e3d7ae5",
+            "chk_12f0fc14c7da6480bf024d822ad45d20948ff1501ce705287680113c21bc0b9c",
+            "chk_38e7d475c8fe6ae0bde02afc698a74fd6a5397e8de673b6fa9d3f917a1d594fc",
+            "chk_ce3a1d55cb27d1978974a9d3369bc19312dc9a24fbce7e483b4dd6c7585348e1"
+          ],
+          "scores": [
+            0.836978,
+            0.836867,
+            0.836658,
+            0.834218,
+            0.833436
+          ],
+          "relevance": [
+            0.836978,
+            0.836867,
+            0.836658,
+            0.834218,
+            0.833436
+          ],
+          "matched_items": [
+            [],
+            [],
+            [],
+            [],
+            []
+          ],
+          "latency_seconds": 1.366
+        }
+      }
+    },
+    {
+      "id": "smoke-ood-10",
+      "technology": "nginx",
+      "type": "identifier",
+      "unanswerable": true,
+      "review": "reviewed",
+      "items": [],
+      "flags": [],
+      "results": {
+        "bm25": {
+          "ranked": [
+            "chk_a2c07c5615effe296342994f00ed2da9e8df6f0b67c8f9177774704a8509bef3",
+            "chk_7bccec4c64e954a125bb480d053f5e1fb30f16771df607d4ce7911c040fb3723",
+            "chk_87fad616579eec34e93efaf03824b4ca8e6948d83219d44e9966fe3d681af438",
+            "chk_aed33aff7d428d2087f1246df806a57f895ce95ca84d4f3db059a77f107b11f0",
+            "chk_ec7ce2dbd698adbc4807521a4eaf3ffd92710ce7728fc689278b751de938657a"
+          ],
+          "scores": [
+            10.495169,
+            10.397456,
+            9.172688,
+            9.106965,
+            8.521565
+          ],
+          "relevance": [
+            0.115524,
+            0.114448,
+            0.100967,
+            0.100243,
+            0.0938
+          ],
+          "matched_items": [
+            [],
+            [],
+            [],
+            [],
+            []
+          ],
+          "latency_seconds": 0.059
+        },
+        "vector": {
+          "ranked": [
+            "chk_45e1dd27c6e8a02a58932a1660a187240150e552d29dd5c9b3016a0faf886109",
+            "chk_39eabcc074757017c2fa02d2b319a5e2e8e01ae1fdb165aed1169dffa64b5b5c",
+            "chk_328944cd29e2d00ef37c9871b9d8395ef93448c56920aac9e6d730df25976a67",
+            "chk_a55cb7d642ff1fcdc5947abc3ba22fa8d2b8f8d92677ed6d3fb5fd33c6a42c01",
+            "chk_de199e50995ac15d91de5e64a9c61d6ab7c4f099d8fca71cf033601d78a49259"
+          ],
+          "scores": [
+            0.80176,
+            0.79278,
+            0.790323,
+            0.789423,
+            0.787109
+          ],
+          "relevance": [
+            0.80176,
+            0.79278,
+            0.790323,
+            0.789423,
+            0.787109
+          ],
+          "matched_items": [
+            [],
+            [],
+            [],
+            [],
+            []
+          ],
+          "latency_seconds": 1.376
+        }
+      }
+    }
+  ]
+}
