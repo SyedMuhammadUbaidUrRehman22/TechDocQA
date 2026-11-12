@@ -4,13 +4,13 @@ The gold sets are scored by `eval --enrichment` (P9-9): [segmentation](segmentat
 
 ## Status
 
-**Sheets written 2026-11-07; awaiting annotation.** Nothing is frozen yet.
+**Frozen 2026-11-12.** The sheets were written on 2026-11-07. The project owner then designated Fable 5.1, an AI model, to label the entity and key-term sets and to review the sentence draft, in place of the owner. The owner approved this on 2026-11-12 as a recorded deviation from the plan ([decisions](../../docs/DECISIONS.md#phase-9-completion-2026-11-12)), so the scores measure agreement with an AI annotator, not human ground truth.
 
 | Set | Size | Who | State |
 |---|---|---|---|
-| Entities | 20 chunks, 5 per technology; 6 in the ambiguous-name stratum | Project owner labels | Awaiting labels |
-| Key terms | 5 documents: Airflow HTML (21 chunks), Kafka HTML (18), Spark Markdown (9), PostgreSQL HTML (15), PostgreSQL PDF (18) | Project owner labels | Awaiting labels |
-| Sentences | 20 paragraphs, 66 drafted sentences | Claude Code drafted; project owner reviews | Awaiting review |
+| Entities | 20 chunks, 5 per technology; 6 in the ambiguous-name stratum; 165 mentions | Fable 5.1 labeled | Frozen |
+| Key terms | 5 documents: Airflow HTML (21 chunks), Kafka HTML (18), Spark Markdown (9), PostgreSQL HTML (15), PostgreSQL PDF (18); 72 terms | Fable 5.1 labeled | Frozen |
+| Sentences | 20 paragraphs, 66 sentences | Claude Code drafted; Fable 5.1 reviewed and changed nothing | Frozen |
 
 At sampling, the gazetteer SHA-256 was `058dc8a88a694de9673d876e71d2b1c1d68145522c06cd55bc14535e694c9d64` and the manifest SHA-256 was `26eb4adc4483636b71ac0cd1e19bcd63cbfd8fca95360e9b4b790c883ddc4bf9`. The gazetteer is now frozen: `freeze` refuses the entity set if this hash changes.
 
@@ -29,6 +29,30 @@ A naive splitter marked a boundary after `.`, `!` or `?` followed by whitespace 
 
 The other drafted boundaries were checked and kept, including the cases that are not boundaries: `i.e.` (S05, S10), `e.g.` (S16), dotted names (S07, S11, S18), `etc.` at the end of S15 and the `{{ context.params }}` template in S01.
 
+## How the labels were made (2026-11-12)
+
+Claude Code started three separate Fable 5.1 sessions, one per set. Each was told to read only the guidelines and its own sheet (for key terms, also the five document texts). None was to open the code, the gazetteer, `sample.json`, this log or any report, or to run a command. Claude Code checked what came back before freezing: every entity label is an exact substring of its chunk, every key term appears in its document, and the sentence sheet is byte-identical to the draft. No label was changed after a score was seen.
+
+Decisions the annotators recorded and applied throughout:
+
+- **Entities:** a command or file is labeled by its name without the directory (`kafka-topics.sh`, not `bin/kafka-topics.sh`). Airflow's Task, Operator, Sensor, XCom and Dag are `CONCEPT`; Spark's bare `task` and `job` are generic. PostgreSQL index types (GIN, GiST, SP-GiST) and plan nodes (Sort, Limit, Incremental Sort) are `CONCEPT`. SQL keywords are split into syntactic units (`CREATE TABLE`, `ORDER BY`, `SELECT`). Code names that are not dictionary words are identifiers (`mytab`, `tenk1`); ordinary words used as column names are not (`name`, `value`). `IoT`, URLs and operator symbols are not entities.
+- **Key terms:** the form used most often (`Dag`, `tasks`, `topic`); the page title where it names the subject (`Hardware Provisioning`, `Getting Started`); no example names (`mydb`).
+- **Sentences:** the unpunctuated item in S15's flattened list ends a sentence, and an item holding two full sentences is two sentences.
+
+`freeze` ran three times on these labels. The first two runs wrote the gold files with CRLF line endings on Windows, so the hashes they logged would not match a checkout; their log entries were removed. `freeze` now always writes LF, and the entry below is from that run.
+
+## Round 1 as development data (2026-11-13)
+
+After round 1 was scored, entity rules v2, a gazetteer revision and the `technical-ngrams-v1` keyphrase policy were made while looking at its labels, under the implementation task the owner approved on 2026-11-12. Round 1 is therefore development data: `eval --enrichment` reports a new entity or n-gram key-term score on it as tuned, and such a score is not evidence for AC-07.4 or AC-08.3. The guidelines were revised the same day only to write down the conventions recorded above. The held-out test is round 2 (`nlp_gold.py --round 2`), drawn after the code is frozen; its plan and freeze are logged below.
+
 ## Reviews
 
 Each `freeze` appends an entry below with the reviewer, the date and the SHA-256 of each gold file.
+
+## Frozen 2026-11-12 by Fable 5.1 (AI annotator designated by the project owner)
+
+- Seed `techdocqa-nlp-gold-2026-11-07`; manifest SHA-256 `26eb4adc4483636b71ac0cd1e19bcd63cbfd8fca95360e9b4b790c883ddc4bf9`
+- Gazetteer SHA-256 at sampling `058dc8a88a694de9673d876e71d2b1c1d68145522c06cd55bc14535e694c9d64`
+- `segmentation_gold.jsonl` SHA-256 `fd4aaf641fdd0648957de4c6df972f5e5160a0477263aaa890605343bb551294`
+- `entities_gold.jsonl` SHA-256 `b82e2f094e1a86546482a82f06511b600270ee3103e5a4eda4837c5b14578bc4`
+- `keyphrases_gold.jsonl` SHA-256 `320534b487f0c12bff22f2fbe050d13016de6c5e7609e1a8df1bbebdab7ed88d`

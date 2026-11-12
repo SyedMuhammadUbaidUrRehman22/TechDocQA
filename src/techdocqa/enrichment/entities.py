@@ -18,14 +18,15 @@ from pydantic import Field, model_validator
 from techdocqa.errors import TechDocQAError
 from techdocqa.settings import StrictModel
 
-ENTITY_POLICY = "techdocqa-entity-rules-v1"
+ENTITY_POLICY = "techdocqa-entity-rules-v2"
 EntityType = Literal["TECHNOLOGY", "COMPONENT", "CONCEPT", "PROTOCOL", "IDENTIFIER"]
 
 # Fixed confidences per rule. Exact gazetteer matches are 1.0 (FR-07.2); an ambiguous alias without its context
 # rule falls below the 0.5 verification threshold, so it is stored but never filters.
-CONFIDENCE = {"gazetteer": 1.0, "gazetteer-ambiguous": 0.4, "protocol": 0.9, "identifier": 0.8, "identifier-camel": 0.6}
+CONFIDENCE = {"gazetteer": 1.0, "gazetteer-ambiguous": 0.4, "protocol": 0.9, "identifier": 0.8, "identifier-camel": 0.6,
+              "sql-keyword": 0.8}
 # Longer matches win; at equal length the gazetteer beats a pattern, and a protocol beats an identifier.
-PRIORITY = {"gazetteer": 0, "gazetteer-ambiguous": 0, "protocol": 1, "identifier": 2, "identifier-camel": 2}
+PRIORITY = {"gazetteer": 0, "gazetteer-ambiguous": 0, "protocol": 1, "identifier": 2, "identifier-camel": 2, "sql-keyword": 2}
 
 # Case-sensitive protocol names; HTTP versions are whole matches.
 PROTOCOL = re.compile(r"(?<![\w/.-])(?:HTTPS?(?:/[1-3](?:\.[01])?)?|TCP|UDP|mTLS|TLS(?:v1\.[0-3])?|SSL|gRPC|REST|SASL|"
@@ -36,11 +37,36 @@ PROTOCOL = re.compile(r"(?<![\w/.-])(?:HTTPS?(?:/[1-3](?:\.[01])?)?|TCP|UDP|mTLS
 TOKEN = re.compile(r"-{1,2}[^\W\d_][\w-]*|\w+(?:[./:#+-]+\w+)*(?:\+\+|#)?")
 CAMEL = re.compile(r"[a-z0-9][A-Z]|[A-Z]{2}[a-z]")
 NUMERIC = re.compile(r"[\d.,:/+#-]+")
+# A file name with an extension, the last segment of a path. A file given with a directory is labeled by its name
+# (kafka-topics.sh in bin/kafka-topics.sh), as the guidelines' identifier examples are.
+FILE_NAME = re.compile(r"[\w+-]+(?:\.[\w+-]+)*\.[A-Za-z][A-Za-z0-9]{0,11}")
+# SQL keywords used as syntax are identifiers (guideline rule 8). Only the upper-case forms count, as SQL is written in
+# documentation, and the multi-word units come first so ORDER BY is one mention, not two.
+SQL_PHRASES = ("CREATE TABLE", "CREATE INDEX", "CREATE VIEW", "CREATE DATABASE", "CREATE FUNCTION", "CREATE EXTENSION",
+               "CREATE SCHEMA", "DROP TABLE", "DROP INDEX", "DROP DATABASE", "ALTER TABLE", "INSERT INTO", "DELETE FROM",
+               "ORDER BY", "GROUP BY", "PARTITION BY", "PARTITIONED BY", "CLUSTERED BY", "SORTED BY", "DISTRIBUTE BY",
+               "UNION ALL", "IS NOT NULL", "IS NULL", "NOT NULL", "PRIMARY KEY", "FOREIGN KEY", "LEFT JOIN", "RIGHT JOIN",
+               "INNER JOIN", "FULL JOIN", "CROSS JOIN", "OUTER JOIN", "FOR UPDATE", "FOR SHARE", "ON CONFLICT",
+               "START TRANSACTION", "SET TRANSACTION", "ISOLATION LEVEL")
+SQL_WORDS = ("SELECT", "FROM", "WHERE", "JOIN", "HAVING", "LIMIT", "OFFSET", "VALUES", "INSERT", "UPDATE", "DELETE",
+             "CREATE", "DROP", "ALTER", "TRUNCATE", "TABLE", "INDEX", "VIEW", "INTO", "USING", "AS", "ON", "AND", "OR",
+             "NOT", "NULL", "IN", "EXISTS", "BETWEEN", "LIKE", "ILIKE", "DISTINCT", "UNION", "INTERSECT", "EXCEPT", "CASE",
+             "WHEN", "THEN", "ELSE", "END", "WITH", "RETURNING", "BEGIN", "COMMIT", "ROLLBACK", "SAVEPOINT", "LOCK",
+             "GRANT", "REVOKE", "ANALYZE", "BUCKETS", "ASC", "DESC", "COUNT", "SUM", "AVG", "MIN", "MAX", "DEFAULT",
+             "CHECK", "UNIQUE", "REFERENCES", "CASCADE", "SET", "OVER", "WINDOW", "LATERAL", "RECURSIVE", "MERGE", "COPY",
+             "FETCH")
+# A keyword may end a sentence ("sort with ORDER BY."), but not a dotted or hyphenated name (SET.x, SELECT-like).
+SQL_KEYWORD = re.compile(r"(?<![\w.-])(?:" + "|".join(re.escape(k).replace(r"\ ", r"\s+") for k in SQL_PHRASES + SQL_WORDS)
+                         + r")(?![\w-]|\.\w)")
+# Single keywords count only in text that also holds a statement: an upper-case statement keyword followed by more
+# text, so a stray upper-case AND or SET in prose is not SQL. Multi-word units always count.
+SQL_STATEMENT = re.compile(r"(?<![\w.-])(?:SELECT|INSERT|UPDATE|DELETE|CREATE|ALTER|DROP|EXPLAIN|VACUUM|BEGIN|COMMIT|"
+                           r"ROLLBACK|WITH|MERGE|COPY|GRANT|TRUNCATE|ANALYZE)\s+\S")
 
 
 class GazetteerEntry(StrictModel):
     name: str = Field(min_length=1, max_length=100)
-    type: Literal["TECHNOLOGY", "COMPONENT", "CONCEPT", "PROTOCOL"]
+    type: EntityType
     aliases: list[str] = Field(min_length=1, max_length=20)
     # Aliases that are also ordinary words or names; exact only with context (P9-3).
     ambiguous: list[str] = Field(default_factory=list)
@@ -129,7 +155,8 @@ class Gazetteer:
 
 def config_id(gazetteer: Gazetteer, threshold: float) -> str:
     values = {"policy": ENTITY_POLICY, "gazetteer_sha256": gazetteer.sha256, "threshold": threshold,
-              "confidence": CONFIDENCE, "protocol": PROTOCOL.pattern, "token": TOKEN.pattern}
+              "confidence": CONFIDENCE, "protocol": PROTOCOL.pattern, "token": TOKEN.pattern, "file_name": FILE_NAME.pattern,
+              "sql_keyword": SQL_KEYWORD.pattern, "sql_statement": SQL_STATEMENT.pattern}
     return "ec_" + hashlib.sha256(json.dumps(values, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
 
 
@@ -159,9 +186,21 @@ def candidates(text: str, gazetteer: Gazetteer, context: set[str]) -> list[Menti
     for match in PROTOCOL.finditer(text):
         found.append(Mention(match.group(), match.group(), "PROTOCOL", "protocol", CONFIDENCE["protocol"], match.start(), match.end()))
     for match in TOKEN.finditer(text):
-        rule = identifier_rule(match.group())
+        token, start = match.group(), match.start()
+        # A path that ends in a file name: the mention is the file name (kafka-topics.sh in bin/kafka-topics.sh).
+        if "/" in token and "://" not in token:
+            name = token.rpartition("/")[2]
+            if FILE_NAME.fullmatch(name) and not NUMERIC.fullmatch(name):
+                token, start = name, match.end() - len(name)
+        rule = identifier_rule(token)
         if rule:
-            found.append(Mention(match.group(), match.group(), "IDENTIFIER", rule, CONFIDENCE[rule], match.start(), match.end()))
+            found.append(Mention(token, token, "IDENTIFIER", rule, CONFIDENCE[rule], start, start + len(token)))
+    statement = SQL_STATEMENT.search(text) is not None
+    for match in SQL_KEYWORD.finditer(text):
+        keyword = match.group()
+        if statement or " " in keyword or "\n" in keyword or "\t" in keyword:
+            found.append(Mention(keyword, " ".join(keyword.split()), "IDENTIFIER", "sql-keyword", CONFIDENCE["sql-keyword"],
+                                 match.start(), match.end()))
     return found
 
 

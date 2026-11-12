@@ -82,6 +82,9 @@ entity_verification_threshold = 0.5
 keyphrases_per_document = 10
 keyphrases_per_chunk = false
 keyphrase_min_words = 5
+# technical-ngrams-v1 (1- and 2-word terms) since 2026-11-12; "rake" selects rake-nltk-technical-v2, which needs the
+# nlp extra and is the only policy that reads keyphrase_max_words and keyphrase_metric.
+keyphrase_policy = "ngram"
 keyphrase_max_words = 4
 # Decided by measurement on the key-term gold set (P9-5).
 keyphrases_include_code = true

@@ -159,6 +159,8 @@ def make_parser() -> argparse.ArgumentParser:
     evaluation.add_argument("--reviewer", help="who rated the answers, recorded with --record-review")
     evaluation.add_argument("--gold-dir", type=Path, default=Path("datasets/nlp"),
                             help="frozen Phase 9 gold sets and out-of-topic fixtures, read by --enrichment")
+    evaluation.add_argument("--fixtures", type=Path,
+                            help="out-of-topic fixtures for --enrichment (default: out_of_topic.jsonl in --gold-dir)")
     for command in (check, ingest, status, listing, history, processing, chunking, indexing, enriching, showing, searching, asking,
                     withdrawal, deletion, evaluation):
         command.add_argument("--config", type=Path, default=Path("config/default.toml"))
@@ -275,7 +277,7 @@ def main(argv: list[str] | None = None) -> int:
             if args.command == "eval" and args.enrichment:
                 from techdocqa.evaluation.enrichment import run_enrichment_evaluation, summary as enrichment_summary
                 from techdocqa.evaluation.enrichment import write_enrichment_report
-                report = run_enrichment_evaluation(args.manifest, args.gold_dir, settings, registry)
+                report = run_enrichment_evaluation(args.manifest, args.gold_dir, settings, registry, args.fixtures)
                 files = write_enrichment_report(report, args.report_dir or Path(settings.data_directory) / "evaluation")
                 print(json.dumps({**enrichment_summary(report), "report_files": files}, ensure_ascii=True))
                 return 1 if report["classification"].get("status") == "failed" else 0

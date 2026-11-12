@@ -132,6 +132,9 @@ class EnrichmentSettings(StrictModel):
     keyphrase_max_words: int = Field(default=4, ge=1, le=10)
     # Whether code blocks feed keyphrase extraction; decided by measurement on the key-term gold set (P9-5).
     keyphrases_include_code: bool = True
+    # The keyphrase policy: short technical n-grams (technical-ngrams-v1, the default since 2026-11-12) or RAKE
+    # (rake-nltk-technical-v2, which needs the nlp extra). keyphrase_max_words and keyphrase_metric apply to RAKE only.
+    keyphrase_policy: Literal["ngram", "rake"] = "ngram"
     # RAKE's word score: degree / frequency (its default, which favors long rare phrases), degree, or frequency. Also
     # decided by measurement: eval --enrichment scores every metric on the key-term gold set.
     keyphrase_metric: Literal["degree_to_frequency", "word_degree", "word_frequency"] = "degree_to_frequency"

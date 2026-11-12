@@ -5,7 +5,7 @@ TechDocQA is a domain-specific RAG project for answering software and data engin
 
 Phases 1-9 are implemented. You can ingest local files and approved web pages, normalize and chunk them, build a local index, search it by BM25 or vector similarity, ask questions with `ask`, withdraw or delete documents, and measure retrieval and refusal with `eval`.
 
-**Phase 9 (P1 NLP enrichment) is implemented; three measurements wait for gold labels.** `enrich` extracts entities from a gazetteer and regex rules, keyphrases with RAKE, and categories by embedding similarity, and `enrichment` shows them. Verified entities feed `--entity`, and inferred categories feed `--category` for documents without a user category. On the 20 public documents, classification puts 19 of 20 in their manifest category, and the out-of-topic cooking article is `unclassified`. `eval --enrichment` measures it all, and unfiltered retrieval is unchanged: the smoke benchmark repeats exactly after `enrich`. Sentence boundaries, entity precision and key terms (AC-06.4, AC-07.4, AC-08.3) are scored once the owner labels the gold sets. See the [Phase 9 report](docs/PHASE_9_STATUS.md).
+**Phase 9 (P1 NLP enrichment) is implemented and measured; two of its criteria are not met.** `enrich` extracts entities from a gazetteer and regex rules, keyphrases as short technical n-grams (RAKE selectable), and categories by embedding similarity, and `enrichment` shows them. Verified entities feed `--entity`, and inferred categories feed `--category` for documents without a user category. On the 20 public documents, classification puts 19 of 20 in their manifest category, and the out-of-topic cooking article is `unclassified`. `eval --enrichment` measures it all, and unfiltered retrieval is unchanged: the smoke benchmark repeats exactly after `enrich`. The gold sets were labeled by Fable 5.1, an AI annotator the owner approved, so their scores measure agreement with it, not human ground truth. On them, sentence boundaries meet AC-06.4 at the point estimate (F1 0.989), and entities (AC-07.4: precision 0.730, recall 0.491) and key terms (AC-08.3: 0 of 72) are recorded as not met. Improvements for both, entity rules v2 and the n-gram keyphrase policy, are built and await a held-out round-2 measurement. See the [Phase 9 report](docs/PHASE_9_STATUS.md).
 
 `ask` now refuses a question when no retrieved chunk meets a relevance threshold calibrated on the smoke benchmark, and it makes no model call when it does. On all 30 smoke questions in vector mode, it refused 10 of 10 out-of-domain questions and answered 19 of 20 answerable ones, against targets of 90% and 85%. **The P0 release gate passed on 2026-11-07.** 8 of 10 answers were rated supported by their citations (AC-16.6), by Claude as the reviewer the project owner designated, where the requirement asks for a person. AC-12.1 is met as amended. The owner approved both changes and Q-07, Q-12 and Q-13. See the [Phase 8 report](docs/PHASE_8_STATUS.md#gate-update-2026-11-07).
 
@@ -71,7 +71,7 @@ stateDiagram-v2
 | 6 | [Smoke benchmark and retrieval metrics](docs/PHASE_6_STATUS.md) | ✅ Done, benchmark reviewed |
 | 7 | [Answers and citations](docs/PHASE_7_STATUS.md) | ✅ Built, human answer review open |
 | 8 | [Calibrated refusal and P0 release gate](docs/PHASE_8_STATUS.md) | ✅ Built, P0 release gate passed 2026-11-07 |
-| 9 | [NLP enrichment](docs/PHASE_9_STATUS.md): entities, keyphrases, categories | ✅ Built, 3 measurements await gold labels |
+| 9 | [NLP enrichment](docs/PHASE_9_STATUS.md): entities, keyphrases, categories | 🟡 Built and measured; AC-07.4 and AC-08.3 not met |
 | 10 | Hybrid search, reranking | ⬜ Planned |
 | 11-12 | Operational verification, optional extras | ⬜ Planned |
 
@@ -309,16 +309,18 @@ Run after `index`. Entities and keyphrases need no provider; classification uses
 .\.venv\Scripts\techdocqa.exe enrichment doc_ID --chunk-id chunk_ID
 .\.venv\Scripts\techdocqa.exe search "consumer groups" --mode bm25 --entity "Apache Kafka"
 .\.venv\Scripts\techdocqa.exe eval --enrichment --report-dir reports\evaluation
+.\.venv\Scripts\techdocqa.exe eval --enrichment --gold-dir datasets\nlp\round2 --fixtures datasets\nlp\out_of_topic.jsonl --report-dir reports\evaluation
 ```
 
 The first `enrich` upgrades the registry to schema version 3, after an automatic, verified backup to `registry.sqlite3.pre-v3.bak`. Unchanged documents are skipped on later runs, and re-chunking, withdrawal and deletion leave no stale entities or categories. `enrichment` is read-only.
 
 - **Entities (FR-07)** come from [config/gazetteer.toml](config/gazetteer.toml) and regex rules for identifiers and protocols. Ambiguous names such as `Spark` or `Kafka` count as exact only in context, and only verified entities feed `--entity`.
-- **Keyphrases (FR-08)** are the top 10 per document from RAKE. They are stored and shown but do not enter BM25.
+- **Keyphrases (FR-08)** are the top 10 per document from the `technical-ngrams-v1` policy: 1- and 2-word terms ranked by frequency, with a bonus for two-word terms and gazetteer terms. `[enrichment] keyphrase_policy = "rake"` selects RAKE instead, which needs the `nlp` extra. Keyphrases are stored and shown but do not enter BM25.
+- **Entity rules v2:** gazetteer types follow the annotation guidelines' type table, a file given with a directory is extracted by its name (`kafka-topics.sh`), and upper-case SQL keywords used as syntax are identifiers.
 - **Categories (FR-09)** compare each document with the four configured category descriptions. A document whose best score is below the calibrated `unclassified_threshold` gets `unclassified`. The threshold applies only while its `similarity_config_id` matches, so a new embedding model or an edited description leaves documents `not_calibrated` until `eval --enrichment` proposes a new one. A user category always takes precedence.
-- **Sentences (FR-06)** use the P0 rules for chunking. `[chunking] segmentation = "spacy"` selects the spaCy policy, which re-chunks every document; adopt it only if `eval --enrichment` shows it beats the rules.
+- **Sentences (FR-06)** use the P0 rules for chunking. `[chunking] segmentation = "spacy"` selects the spaCy policy, which re-chunks every document. On the gold set it ties the rules (F1 0.989), so chunking stays on the rules.
 
-Unfiltered search and `ask` read no enrichment data, so the Phase 6 to 8 results stay valid. `eval --enrichment` reads the registry and changes nothing. It scores the frozen gold sets in `datasets/nlp`, classifies the [out-of-topic fixtures](datasets/nlp/out_of_topic.jsonl) in memory, proposes the `unclassified` threshold and checks the enriched corpus. A gold set that is not frozen yet is reported as awaiting data. The gold sets are prepared with `datasets/nlp_gold.py`; their state is in the [review log](datasets/nlp/review_log.md).
+Unfiltered search and `ask` read no enrichment data, so the Phase 6 to 8 results stay valid. `eval --enrichment` reads the registry and changes nothing. It scores the frozen gold sets in `datasets/nlp` (round 1, now development data) or `datasets/nlp/round2` (the held-out round 2), classifies the [out-of-topic fixtures](datasets/nlp/out_of_topic.jsonl) in memory, proposes the `unclassified` threshold and checks the enriched corpus. A gold set that is not frozen yet is reported as awaiting data. The gold sets are prepared with `datasets/nlp_gold.py`; their state is in the [review log](datasets/nlp/review_log.md).
 
 </details>
 
@@ -363,4 +365,4 @@ The source filename says v2, but its contents identify **Revision 3**; those con
 - [Local development setup](deployment/local_setup.md)
 - [Corpus preparation](datasets/README.md)
 
-The reference corpus is frozen as `techdocqa-reference-2026-10-24-v2` and the local models are selected. The smoke benchmark is reviewed, and Phases 7 and 8 answering and calibrated refusal are built. The P0 release gate passed on 2026-11-07. Phase 9 enrichment is implemented and measured on the real corpus; the owner's gold labels for three of its measurements are next. Hardware and budget remain open.
+The reference corpus is frozen as `techdocqa-reference-2026-10-24-v2` and the local models are selected. The smoke benchmark is reviewed, and Phases 7 and 8 answering and calibrated refusal are built. The P0 release gate passed on 2026-11-07. Phase 9 enrichment is implemented and measured on the real corpus and its gold sets; AC-07.4 and AC-08.3 are recorded as not met, and improving them needs a separate task with fresh evaluation samples. Hardware and budget remain open.

@@ -23,6 +23,8 @@ from techdocqa.errors import TechDocQAError
 
 GOLD_FILES = {"segmentation": "segmentation_gold.jsonl", "entities": "entities_gold.jsonl", "keyphrases": "keyphrases_gold.jsonl"}
 OUT_OF_TOPIC = "out_of_topic.jsonl"
+# Round 1 drew key-term documents of at most 30 chunks; round 2 drew every other document, so results are also split there.
+SIZE_LIMIT = 30
 TARGETS = {"AC-06.4": {"boundary_f1": 0.95, "min_sentences": 50},
            "AC-07.4": {"precision": 0.80, "recall": 0.60, "min_chunks": 20},
            "AC-08.3": {"mean_hit_rate": 0.50, "documents": 5, "top": 10},
@@ -289,48 +291,70 @@ def score_entities(gold: dict, scope: Scope, settings) -> dict:
 # AC-08.3: key terms
 
 def score_keyphrases(gold: dict, scope: Scope, settings) -> dict:
-    from techdocqa.enrichment import keyphrases
+    from techdocqa.enrichment import entities, keyphrases
     if gold["status"] != "frozen":
         return {"status": gold["status"]}
-    if keyphrases.rake_version() is None:
+    enrichment = settings.enrichment
+    if not keyphrases.available(enrichment):
         return {"status": "unavailable", "reason": "KEYPHRASES_UNAVAILABLE"}
     rows = [row for row in gold["rows"] if row["source_key"] in scope.records]
     flagged = [row["id"] for row in gold["rows"] if row not in rows]
-    enrichment = settings.enrichment
-    configured = variant_name(enrichment.keyphrase_metric, enrichment.keyphrases_include_code)
+    gazetteer = entities.Gazetteer(enrichment.gazetteer)
+    domain = keyphrases.domain_terms(gazetteer)
+    configured = variant_name(enrichment.keyphrase_policy, enrichment.keyphrase_metric, enrichment.keyphrases_include_code)
+    # P9-5: every policy and RAKE metric, with and without code, so the choices are made from data, not guessed. The
+    # verdict is always the configured variant's; the others are reported beside it.
+    options = [("ngram", enrichment.keyphrase_metric)]
+    if keyphrases.rake_version() is not None:
+        options += [("rake", metric) for metric in keyphrases.METRICS]
     variants = {}
-    # P9-5: every RAKE metric with and without code, so both choices are made from the gold set, not guessed.
-    for metric in keyphrases.METRICS:
+    for policy, metric in options:
         for include_code in (True, False):
-            options = enrichment.model_copy(update={"keyphrase_metric": metric, "keyphrases_include_code": include_code})
+            chosen = enrichment.model_copy(update={"keyphrase_policy": policy, "keyphrase_metric": metric,
+                                                   "keyphrases_include_code": include_code})
             documents = []
             for row in rows:
                 loaded = scope.load(row["source_key"])
                 sentences = keyphrases.document_sentences(loaded["documents"], loaded["data"]["sentence_spans"], include_code)
-                top = [normalized(phrase) for phrase, _ in keyphrases.ranked(sentences, options, TOP_TERMS)]
+                exclude = keyphrases.technology_names(gazetteer, loaded["record"].technology)
+                top = [normalized(phrase) for phrase, _ in keyphrases.ranked(sentences, chosen, TOP_TERMS, exclude=exclude, domain=domain)]
                 hits = [term for term in row["terms"] if term in top]
                 lenient = [term for term in row["terms"] if any(term in phrase or phrase in term for phrase in top)]
-                documents.append({"id": row["id"], "technology": row["technology"], "format": row["format"], "terms": len(row["terms"]),
+                documents.append({"id": row["id"], "technology": row["technology"], "format": row["format"], "chunks": row["chunks"],
+                                  "terms": len(row["terms"]),
                                   "hits": len(hits), "hit_rate": round(len(hits) / len(row["terms"]), DIGITS),
                                   "lenient_hits": len(lenient), "missed": [term for term in row["terms"] if term not in hits], "top": top})
-            variants[variant_name(metric, include_code)] = {
-                "metric": metric, "include_code": include_code,
+            variants[variant_name(policy, metric, include_code)] = {
+                "policy": keyphrases.POLICIES[policy], "metric": metric if policy == "rake" else None, "include_code": include_code,
                 "mean_hit_rate": round(statistics.mean(row["hit_rate"] for row in documents), DIGITS) if documents else None,
                 "pooled_terms": rate(sum(row["hits"] for row in documents), sum(row["terms"] for row in documents)),
                 "mean_lenient_hit_rate": round(statistics.mean(row["lenient_hits"] / row["terms"] for row in documents), DIGITS) if documents else None,
-                "documents": documents}
+                "by_size": by_size(documents), "documents": documents}
+    if configured not in variants:
+        return {"status": "unavailable", "reason": "KEYPHRASES_UNAVAILABLE"}
     active = variants[configured]
     # The configured variant stays unless another one does strictly better on the mean.
     best = max(variants, key=lambda name: ((variants[name]["mean_hit_rate"] or 0), name == configured))
     enough = len(rows) >= TARGETS["AC-08.3"]["documents"]
-    return {"status": "scored", "documents": len(rows), "flagged": flagged, "configured": configured,
+    # The n-gram constants were chosen on the round-1 set; a score on it is development data, not a held-out result.
+    tuned = gold.get("sha256") in keyphrases.NGRAM_DEVELOPMENT_SETS
+    return {"status": "scored", "documents": len(rows), "flagged": flagged, "configured": configured, "tuned": tuned,
             "ac_08_3": verdict(active["mean_hit_rate"], (active["pooled_terms"]["interval"] or {}).get("low"),
                                TARGETS["AC-08.3"]["mean_hit_rate"]) if enough else "too_few_documents",
             "best_variant": best, "variants": variants}
 
 
-def variant_name(metric: str, include_code: bool) -> str:
-    return f"{metric}/{'with_code' if include_code else 'without_code'}"
+def by_size(documents: list[dict]) -> dict:
+    """Mean hit rate for documents within the round-1 sampling limit of 30 chunks and for longer ones."""
+    groups = {f"{SIZE_LIMIT} chunks or fewer": [row for row in documents if row["chunks"] <= SIZE_LIMIT],
+              f"over {SIZE_LIMIT} chunks": [row for row in documents if row["chunks"] > SIZE_LIMIT]}
+    return {label: {"documents": len(rows), "mean_hit_rate": round(statistics.mean(row["hit_rate"] for row in rows), DIGITS)}
+            for label, rows in groups.items() if rows}
+
+
+def variant_name(policy: str, metric: str, include_code: bool) -> str:
+    """RAKE variants keep their metric name; the n-gram policy has no metric."""
+    return f"{'ngram' if policy == 'ngram' else metric}/{'with_code' if include_code else 'without_code'}"
 
 
 # FR-09: classification, the threshold and AC-09.2
@@ -544,7 +568,8 @@ def enrichment_times(scope: Scope, settings) -> list[dict]:
     """Per-document in-memory extraction time (P9-12): every chunk's entities and the document's keyphrases."""
     from techdocqa.enrichment import entities, keyphrases
     gazetteer = entities.Gazetteer(settings.enrichment.gazetteer)
-    available = keyphrases.rake_version() is not None
+    available = keyphrases.available(settings.enrichment)
+    domain = keyphrases.domain_terms(gazetteer)
     rows = []
     for key in scope.records:
         loaded = scope.load(key)
@@ -556,7 +581,8 @@ def enrichment_times(scope: Scope, settings) -> list[dict]:
         if available:
             keyphrases.ranked(keyphrases.document_sentences(loaded["documents"], loaded["data"]["sentence_spans"],
                                                             settings.enrichment.keyphrases_include_code),
-                              settings.enrichment, settings.enrichment.keyphrases_per_document)
+                              settings.enrichment, settings.enrichment.keyphrases_per_document,
+                              exclude=keyphrases.technology_names(gazetteer, loaded["record"].technology), domain=domain)
         rows.append({"source_key": key, "chunks": len(chunks), "characters": sum(len(chunk["text"]) for chunk in chunks),
                      "entities": found, "entities_ms": round((middle - started) * 1000, 1),
                      "keyphrases_ms": round((time.perf_counter() - middle) * 1000, 1) if available else None})
@@ -582,7 +608,8 @@ def provenance(settings, gold: dict, fixtures_path: Path, config: dict, state: d
             "out_of_topic": {"path": Path(fixtures_path).as_posix(), "sha256": sha256_file(fixtures_path)},
             "requirements_lock_sha256": sha256_file(root / "requirements.lock.txt"),
             "nlp_libraries": versions, "spacy_model": None, "segmenter_available": spacy_version() is not None,
-            "keyphrases_available": keyphrases.rake_version() is not None,
+            "keyphrases_available": keyphrases.available(settings.enrichment),
+            "keyphrase_policy": keyphrases.POLICIES[settings.enrichment.keyphrase_policy],
             "environment": environment(settings, ("bm25", "vector"))}
 
 
@@ -595,6 +622,9 @@ def notes(report: dict) -> list[str]:
                      "and freezes them (datasets/nlp/review_log.md).")
     if report["entities"].get("tuned"):
         found.append("The gazetteer changed after the entity sample was drawn, so the entity figures are tuned, not held out (P9-9).")
+    if report["keyphrases"].get("tuned"):
+        found.append("The n-gram keyphrase policy was tuned on this key-term set, so its key-term figures are tuned, not held out. "
+                     "The RAKE variants were not tuned on it.")
     classification = report["classification"]
     if classification.get("status") == "scored":
         found.append("The 20 public documents both calibrate the unclassified threshold and are assessed by AC-09.1, so that side is "
@@ -605,7 +635,7 @@ def notes(report: dict) -> list[str]:
     return found
 
 
-def run_enrichment_evaluation(manifest_path: Path, gold_directory: Path, settings, registry) -> dict:
+def run_enrichment_evaluation(manifest_path: Path, gold_directory: Path, settings, registry, fixtures_path: Path | None = None) -> dict:
     from techdocqa.enrichment.pipeline import configuration
     from techdocqa.evaluation.runner import corpus_state, load_manifest
     started_at, started = datetime.now(timezone.utc).isoformat(), time.perf_counter()
@@ -613,7 +643,8 @@ def run_enrichment_evaluation(manifest_path: Path, gold_directory: Path, setting
     config = configuration(settings)
     scope = Scope(manifest, settings, registry)
     gold = gold_sets(gold_directory)
-    fixtures = Path(gold_directory) / OUT_OF_TOPIC
+    # The round-2 gold sets have no fixtures of their own; the held-out out-of-topic fixtures stay in datasets/nlp.
+    fixtures = Path(fixtures_path) if fixtures_path else Path(gold_directory) / OUT_OF_TOPIC
     durations, report = {}, {}
     for name, step in (("segmentation", lambda: score_segmentation(gold["segmentation"], scope)),
                        ("entities", lambda: score_entities(gold["entities"], scope, settings)),
@@ -781,16 +812,18 @@ def keyphrase_lines(section: dict) -> list[str]:
     lines = ["", "## Key terms (AC-08.3, P9-5)", ""]
     if section["status"] != "scored":
         return lines + [f"Not measured: {section['status'].replace('_', ' ')}."]
-    lines += [f"Configured variant `{section['configured']}` (RAKE metric / code blocks); the best on this gold set is "
-              f"`{section['best_variant']}`.", "",
-              "| Variant | Mean hit rate | Pooled terms | Mean lenient hit rate (diagnostic) |", "|---|---|---|---|"]
-    lines += [f"| {name} | {fmt(row['mean_hit_rate'])} | {shown(row['pooled_terms'])} | {fmt(row['mean_lenient_hit_rate'])} |"
-              for name, row in section["variants"].items()]
+    lines += [f"Configured variant `{section['configured']}` (n-gram policy or RAKE metric / code blocks); the best on this gold set is "
+              f"`{section['best_variant']}`. N-gram policy tuned on this set: {'yes' if section.get('tuned') else 'no'}.", "",
+              "| Variant | Mean hit rate | Pooled terms | Mean lenient hit rate (diagnostic) | By size (mean hit rate, documents) |",
+              "|---|---|---|---|---|"]
+    lines += [f"| {name} | {fmt(row['mean_hit_rate'])} | {shown(row['pooled_terms'])} | {fmt(row['mean_lenient_hit_rate'])} | "
+              + "; ".join(f"{label}: {fmt(group['mean_hit_rate'])} ({group['documents']})" for label, group in row.get("by_size", {}).items())
+              + " |" for name, row in section["variants"].items()]
     for name in dict.fromkeys([section["configured"], section["best_variant"]]):
         row = section["variants"][name]
-        lines += ["", f"{name}:", "", "| Document | Technology | Format | Hits | Missed | Top 10 |", "|---|---|---|---|---|---|"]
-        lines += [f"| {doc['id']} | {doc['technology']} | {doc['format']} | {doc['hits']} of {doc['terms']} | {', '.join(doc['missed']) or 'none'} | "
-                  f"{', '.join(doc['top'])} |" for doc in row["documents"]]
+        lines += ["", f"{name}:", "", "| Document | Technology | Format | Chunks | Hits | Missed | Top 10 |", "|---|---|---|---|---|---|---|"]
+        lines += [f"| {doc['id']} | {doc['technology']} | {doc['format']} | {doc.get('chunks', 'n/a')} | {doc['hits']} of {doc['terms']} | "
+                  f"{', '.join(doc['missed']) or 'none'} | {', '.join(doc['top'])} |" for doc in row["documents"]]
     return lines
 
 
@@ -861,8 +894,8 @@ def write_enrichment_report(report: dict, directory: Path) -> dict:
     directory = Path(directory)
     directory.mkdir(parents=True, exist_ok=True)
     paths = {"json": directory / f"{report['run_id']}.json", "markdown": directory / f"{report['run_id']}.md"}
-    paths["json"].write_text(json.dumps(report, indent=2, ensure_ascii=True) + "\n", encoding="utf-8")
-    paths["markdown"].write_text(render_markdown(report), encoding="utf-8")
+    paths["json"].write_text(json.dumps(report, indent=2, ensure_ascii=True) + "\n", encoding="utf-8", newline="\n")
+    paths["markdown"].write_text(render_markdown(report), encoding="utf-8", newline="\n")
     return {name: path.as_posix() for name, path in paths.items()}
 
 

@@ -92,6 +92,9 @@ def test_spacy_policy_paragraphs_list_items_and_code():
     assert pieces("Items:\n- first item\n- second item") == ["Items:", "- first item", "- second item"]
     # Hard-wrapped lines are not boundaries.
     assert pieces("Line one wraps\nonto the next line. Second.") == ["Line one wraps\nonto the next line.", "Second."]
+    # A sentence that ends at a single line break is a boundary; spaCy starts the next sentence at the newline token.
+    assert pieces("A timeout is raised.\nThe sensor retries.\n  It stops, e.g.\nhere.") == [
+        "A timeout is raised.", "The sensor retries.", "It stops, e.g.\nhere."]
     text = 'First sentence. Second?\n\n```python\nprint("Ignore. Code!")\n```\nLast sentence.'
     assert any('Ignore. Code!' in piece for piece in pieces(text))
     code = 'do_work(). more_work().'
@@ -112,7 +115,7 @@ def test_the_default_policy_keeps_existing_chunking_ids_and_spacy_gets_its_own()
     rules_id, rules = effective_config(ChunkingSettings())
     assert rules["segmentation_policy"] == "technical-sentences-v4" and "segmentation" not in rules and "segmentation_library" not in rules
     spacy_id, values = effective_config(ChunkingSettings(segmentation="spacy"))
-    assert spacy_id != rules_id and values["segmentation_policy"] == "spacy-technical-sentences-v1" and values["segmentation_library"]["spacy"]
+    assert spacy_id != rules_id and values["segmentation_policy"] == "spacy-technical-sentences-v2" and values["segmentation_library"]["spacy"]
 
 
 @needs_spacy

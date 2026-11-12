@@ -15,7 +15,7 @@ from techdocqa.errors import TechDocQAError
 from techdocqa.normalization import code_spans
 
 SEGMENTATION_POLICY = "technical-sentences-v4"
-SPACY_POLICY = "spacy-technical-sentences-v1"
+SPACY_POLICY = "spacy-technical-sentences-v2"
 POLICIES = {"rules": SEGMENTATION_POLICY, "spacy": SPACY_POLICY}
 BOUNDARY = re.compile(r"\n[ \t]*\n+|[.!?][\"')\]]*(?:[ \t\r\n]+|$)")
 ABBREVIATION = re.compile(r"(?:\b(?:e\.g|i\.e|etc|vs|Mr|Mrs|Dr|Prof)|\b[A-Za-z])$", re.IGNORECASE)
@@ -87,6 +87,11 @@ def accepted(doc, index: int) -> int | None:
 
     Scans back from the proposal only, so a long paragraph costs time linear in its tokens."""
     start = index
+    # After a single line break spaCy starts the sentence at the newline token; the sentence starts at the next word.
+    while start < len(doc) and doc[start].is_space:
+        start += 1
+    if start == len(doc):
+        return None
     # Rule 4: an opening quote or bracket directly before the next word, after whitespace, belongs to that sentence.
     while (start - 1 > 0 and doc[start - 1].text in OPENING and not doc[start - 1].whitespace_
            and (doc[start - 2].whitespace_ or doc[start - 2].is_space)):

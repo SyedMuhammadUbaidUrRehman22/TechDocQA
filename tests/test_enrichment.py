@@ -286,8 +286,10 @@ def test_per_chunk_keyphrases_when_enabled(indexed, enrich_settings, registry):
     assert set(registry.version_keyphrases(version)) - {"document"} <= chunk_ids
 
 
-def test_without_the_nlp_extra_keyphrases_are_reported_unavailable(indexed, enrich_settings, registry, monkeypatch):
+def test_without_the_nlp_extra_rake_keyphrases_are_reported_unavailable(indexed, enrich_settings, registry, monkeypatch):
+    # The default n-gram policy needs no extra; RAKE does.
     monkeypatch.setattr(keyphrases, "rake_version", lambda: None)
+    enrich_settings.enrichment.keyphrase_policy = "rake"
     result = enrich_versions([], enrich_settings, registry)
     assert result.run.failed == 0 and "KEYPHRASES_UNAVAILABLE" in result.warnings and result.keyphrases == 0
     assert registry.enrichment_state(indexed["kafka.md"].version_id)["keyphrase_status"] == "unavailable"

@@ -190,25 +190,56 @@ def test_a_gazetteer_changed_after_sampling_marks_the_entity_set_tuned(eval_sett
     assert evaluation.score_entities({"status": "frozen", "rows": rows}, FakeScope({"E01": "text"}), eval_settings)["tuned"]
 
 
-def test_key_terms_score_exact_hits_in_the_top_ten_for_every_variant(eval_settings, monkeypatch):
-    def ranked(sentences, enrichment, limit):
-        with_code = any("code" in sentence for sentence in sentences)
-        found = [("Log Compaction", 3.0), ("consumer group", 2.0)] + ([("linger.ms", 1.0)] if with_code else [])
-        return found + [("retention", 0.5)] if enrichment.keyphrase_metric == "word_frequency" else found
-    monkeypatch.setattr(keyphrases, "ranked", ranked)
-    monkeypatch.setattr(keyphrases, "document_sentences", lambda documents, spans, include_code: ["code"] if include_code else ["prose"])
+def key_term_scope_and_rows():
     scope = FakeScope({})
     scope.data["documents"], scope.data["data"]["sentence_spans"] = [], []
     rows = [{"id": "K1", "source_key": "doc", "technology": "Kafka", "format": "html", "chunks": 3,
              "terms": ["log compaction", "linger.ms", "consumer", "retention"]}]
-    result = evaluation.score_keyphrases({"status": "frozen", "rows": rows}, scope, eval_settings)
-    assert set(result["variants"]) == {f"{metric}/{code}" for metric in keyphrases.METRICS for code in ("with_code", "without_code")}
+    return scope, rows
+
+
+def test_key_terms_score_exact_hits_in_the_top_ten_for_every_variant(eval_settings, monkeypatch):
+    seen = []
+    def ranked(sentences, enrichment, limit, *, exclude, domain):
+        seen.append((enrichment.keyphrase_policy, exclude, "log compaction" in domain))
+        with_code = any("code" in sentence for sentence in sentences)
+        found = [("Log Compaction", 3.0), ("consumer group", 2.0)] + ([("linger.ms", 1.0)] if with_code else [])
+        if enrichment.keyphrase_policy == "ngram":
+            return found + [("consumer", 1.5), ("retention", 1.0)]
+        return found + [("retention", 0.5)] if enrichment.keyphrase_metric == "word_frequency" else found
+    monkeypatch.setattr(keyphrases, "ranked", ranked)
+    monkeypatch.setattr(keyphrases, "rake_version", lambda: "1.0.4")
+    monkeypatch.setattr(keyphrases, "document_sentences", lambda documents, spans, include_code: ["code"] if include_code else ["prose"])
+    scope, rows = key_term_scope_and_rows()
+    rake = eval_settings.model_copy(update={"enrichment": eval_settings.enrichment.model_copy(update={"keyphrase_policy": "rake"})})
+    result = evaluation.score_keyphrases({"status": "frozen", "rows": rows}, scope, rake)
+    codes = ("with_code", "without_code")
+    assert set(result["variants"]) == {f"{name}/{code}" for name in keyphrases.METRICS + ("ngram",) for code in codes}
     configured = result["variants"]["degree_to_frequency/with_code"]
     assert result["configured"] == "degree_to_frequency/with_code" and configured["mean_hit_rate"] == 0.5
     assert result["variants"]["degree_to_frequency/without_code"]["mean_hit_rate"] == 0.25
     # "consumer" is inside "consumer group": a lenient hit, reported only as a diagnostic.
     assert configured["mean_lenient_hit_rate"] == 0.75 and configured["documents"][0]["missed"] == ["consumer", "retention"]
-    assert result["best_variant"] == "word_frequency/with_code" and result["ac_08_3"] == "too_few_documents"
+    assert result["best_variant"] == "ngram/with_code" and result["ac_08_3"] == "too_few_documents" and not result["tuned"]
+    assert configured["by_size"] == {"30 chunks or fewer": {"documents": 1, "mean_hit_rate": 0.5}}
+    ngram = result["variants"]["ngram/with_code"]
+    assert ngram["policy"] == keyphrases.NGRAM_POLICY and ngram["metric"] is None and ngram["mean_hit_rate"] == 1.0
+    # Every variant gets the document's technology names and the gazetteer's terms.
+    assert {policy for policy, _, _ in seen} == {"ngram", "rake"}
+    assert all(exclude == frozenset({"postgresql", "postgres"}) and boosted for _, exclude, boosted in seen)
+
+
+def test_key_terms_without_rake_score_the_ngram_policy_alone(eval_settings, monkeypatch):
+    monkeypatch.setattr(keyphrases, "rake_version", lambda: None)
+    monkeypatch.setattr(keyphrases, "ranked", lambda sentences, enrichment, limit, **kwargs: [("log compaction", 1.0)])
+    monkeypatch.setattr(keyphrases, "document_sentences", lambda documents, spans, include_code: ["prose"])
+    scope, rows = key_term_scope_and_rows()
+    result = evaluation.score_keyphrases({"status": "frozen", "rows": rows}, scope, eval_settings)
+    assert result["configured"] == "ngram/with_code" and set(result["variants"]) == {"ngram/with_code", "ngram/without_code"}
+    assert result["variants"]["ngram/with_code"]["mean_hit_rate"] == 0.25
+    # The round-1 key-term set is where the n-gram constants were chosen, so a score on it is reported as tuned.
+    development = {"status": "frozen", "rows": rows, "sha256": next(iter(keyphrases.NGRAM_DEVELOPMENT_SETS))}
+    assert evaluation.score_keyphrases(development, scope, eval_settings)["tuned"]
 
 
 def test_key_term_tokens_drop_clitics_and_emphasis_but_keep_names():
@@ -276,8 +307,11 @@ def test_cli_writes_both_reports_and_rejects_a_mode(setup, eval_settings, regist
     segmentation_gold(setup, eval_settings, registry)
     monkeypatch.setattr("techdocqa.cli.load_settings", lambda *_: eval_settings)
     reports = tmp_path / "reports"
+    # Round 2's gold folder has no fixtures of its own, so --fixtures names them.
+    fixtures = tmp_path / "fixtures.jsonl"
+    fixtures.write_bytes((setup["gold"] / "out_of_topic.jsonl").read_bytes())
     assert main(["eval", "--enrichment", "--manifest", str(setup["manifest"]), "--gold-dir", str(setup["gold"]),
-                 "--report-dir", str(reports)]) == 0
+                 "--fixtures", str(fixtures), "--report-dir", str(reports)]) == 0
     output = json.loads(capsys.readouterr().out)
     assert output["acceptance"]["AC-07.4"] == "awaiting_gold_data" and output["acceptance"]["AC-06.4"] == "too_few_sentences"
     markdown = Path(output["report_files"]["markdown"]).read_text(encoding="utf-8")
@@ -286,5 +320,6 @@ def test_cli_writes_both_reports_and_rejects_a_mode(setup, eval_settings, regist
     assert stored["provenance"]["gold_files"]["segmentation"]["status"] == "frozen"
     assert stored["provenance"]["gold_files"]["entities"]["status"] == "awaiting_gold_data"
     assert stored["provenance"]["out_of_topic"]["sha256"] == hashlib.sha256((setup["gold"] / "out_of_topic.jsonl").read_bytes()).hexdigest()
+    assert stored["provenance"]["out_of_topic"]["path"] == fixtures.as_posix()
     assert main(["eval", "--enrichment", "--mode", "bm25"]) == 2
     assert json.loads(capsys.readouterr().err)["error"]["code"] == "INVALID_ARGUMENT"

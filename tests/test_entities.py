@@ -113,7 +113,7 @@ def test_patterns_finish_in_bounded_time_on_adversarial_input(gazetteer, unit):
     'version = "v"\n[[entities]]\nname = "A"\ntype = "TECHNOLOGY"\naliases = ["A"]\n[[entities]]\nname = "B"\ntype = "TECHNOLOGY"\naliases = ["B", "a"]\n',
     'version = "v"\n[[entities]]\nname = "A"\ntype = "TECHNOLOGY"\naliases = ["A"]\nambiguous = ["Z"]\n',
     'version = "v"\n[[entities]]\nname = "A"\ntype = "TECHNOLOGY"\naliases = ["B"]\n',
-    'version = "v"\n[[entities]]\nname = "A"\ntype = "IDENTIFIER"\naliases = ["A"]\n',
+    'version = "v"\n[[entities]]\nname = "A"\ntype = "WIDGET"\naliases = ["A"]\n',
     'version = "v"\n[[entities]]\nname = "A"\ntype = "TECHNOLOGY"\naliases = [" A"]\n',
     'not toml [',
 ])
@@ -143,3 +143,35 @@ def test_config_id_follows_the_gazetteer_bytes_and_threshold(tmp_path, gazetteer
 def test_filter_key_resolves_aliases_case_blind(gazetteer):
     assert gazetteer.filter_key("kafka") == gazetteer.filter_key("Apache Kafka") == "apache kafka"
     assert gazetteer.filter_key("linger.ms") == "linger.ms"
+
+
+def test_a_file_given_with_a_directory_is_labeled_by_its_name(gazetteer):
+    text = "Run bin/kafka-topics.sh --create, then edit config/server.properties."
+    mentions = extract(text, gazetteer, context_keys([text], gazetteer, "Apache Kafka"))
+    assert [(m.text, m.type) for m in mentions] == [("kafka-topics.sh", "IDENTIFIER"), ("--create", "IDENTIFIER"),
+                                                    ("server.properties", "IDENTIFIER")]
+    assert all(text[m.start:m.end] == m.text for m in mentions)
+    # A URL is never cut down to its last segment.
+    assert found("See https://kafka.apache.org/docs/a.html now.", gazetteer) == []
+
+
+def test_upper_case_sql_keywords_are_identifiers_inside_a_statement(gazetteer):
+    text = "Run SELECT name FROM users WHERE id = 1 ORDER  BY name;"
+    sql = [(m.text, m.canonical, m.rule_id, m.confidence) for m in extract(text, gazetteer, set()) if m.rule_id == "sql-keyword"]
+    assert sql == [("SELECT", "SELECT", "sql-keyword", 0.8), ("FROM", "FROM", "sql-keyword", 0.8),
+                   ("WHERE", "WHERE", "sql-keyword", 0.8), ("ORDER  BY", "ORDER BY", "sql-keyword", 0.8)]
+    # A multi-word unit counts on its own, also at the end of a sentence; a stray upper-case AND or OR does not.
+    assert found("Use AND or OR carefully. Sort with ORDER BY.", gazetteer) == [("ORDER BY", "IDENTIFIER", "sql-keyword", 0.8)]
+    assert found("select the rows from the table", gazetteer) == []
+    assert [item[0] for item in found("Set SET.x and SELECT-like.", gazetteer)] == ["SET.x"]
+
+
+def test_gazetteer_types_follow_the_guidelines_type_table(gazetteer):
+    spark = found("Submit with spark-submit and a SparkConf; an RDD and a DataFrame.", gazetteer, "Apache Spark")
+    assert [(text, kind) for text, kind, _, _ in spark] == [("spark-submit", "IDENTIFIER"), ("SparkConf", "IDENTIFIER"),
+                                                            ("RDD", "CONCEPT"), ("DataFrame", "CONCEPT")]
+    postgres = found("Run VACUUM; autovacuum runs it too. EXPLAIN shows a B-tree plan.", gazetteer, "PostgreSQL")
+    assert [(text, kind) for text, kind, _, _ in postgres] == [("VACUUM", "IDENTIFIER"), ("autovacuum", "COMPONENT"),
+                                                               ("EXPLAIN", "IDENTIFIER"), ("B-tree", "CONCEPT")]
+    # A sensor is a named abstraction only where Airflow holds.
+    assert ("sensors", "CONCEPT", "gazetteer-ambiguous", 0.4) in found("Motion sensors fire.", gazetteer)

@@ -1,6 +1,6 @@
 # Phase 9 plan: P1 NLP enrichment
 
-Status: **proposed 2026-11-04, revised 2026-11-07 after the [risk assessment](#risk-assessment-2026-11-07), approved 2026-11-07; implemented 2026-11-12, with three measurements awaiting the owner's gold labels.** P9-1 to P9-12 are recorded as [Phase 9 contracts](DECISIONS.md#phase-9-contracts-2026-11-07), with YAKE replaced by RAKE at the dependency gate, and the implementation as [Phase 9 completion](DECISIONS.md#phase-9-completion-2026-11-12). See [Progress](#progress-2026-11-12) and the [Phase 9 report](PHASE_9_STATUS.md). It covers roadmap Phase 9: FR-06 full, FR-07, FR-08, FR-09 and their FR-12/FR-13 filter extensions. Sources: [Revision 3 requirements](../TechDocQA_Requirements_v2.md), [roadmap](IMPLEMENTATION_ROADMAP.md#phase-9--p1-nlp-enrichment), [decisions](DECISIONS.md) D-08, Q-11, Q-14 and Q-16, and the [Phase 8 report](PHASE_8_STATUS.md).
+Status: **proposed 2026-11-04, revised 2026-11-07 after the [risk assessment](#risk-assessment-2026-11-07), approved 2026-11-07; implemented and measured 2026-11-12; AC-07.4 and AC-08.3 are recorded as not met (owner decision 2026-11-12); their improvements are built as a separate task and await the held-out round-2 measurement.** P9-1 to P9-12 are recorded as [Phase 9 contracts](DECISIONS.md#phase-9-contracts-2026-11-07), with YAKE replaced by RAKE at the dependency gate, and the implementation as [Phase 9 completion](DECISIONS.md#phase-9-completion-2026-11-12). See [Progress](#progress-2026-11-12) and the [Phase 9 report](PHASE_9_STATUS.md). It covers roadmap Phase 9: FR-06 full, FR-07, FR-08, FR-09 and their FR-12/FR-13 filter extensions. Sources: [Revision 3 requirements](../TechDocQA_Requirements_v2.md), [roadmap](IMPLEMENTATION_ROADMAP.md#phase-9--p1-nlp-enrichment), [decisions](DECISIONS.md) D-08, Q-11, Q-14 and Q-16, and the [Phase 8 report](PHASE_8_STATUS.md).
 
 ## Entry gate
 
@@ -88,14 +88,14 @@ Step 7 is last and isolated, so a spaCy gate failure does not hold up FR-07 to F
 |---|---|
 | 0 Decisions | ✅ Approved 2026-11-07 |
 | 1 Dependency gate | ✅ Passed; spaCy 3.8.18 kept, YAKE replaced by `rake-nltk` 1.0.6 (license) |
-| 2 Gold data | 🟡 Sheets, guidelines and the 10 out-of-topic fixtures written, gazetteer frozen; awaiting the owner's labels and sentence review ([review log](../datasets/nlp/review_log.md)) |
+| 2 Gold data | ✅ Frozen 2026-11-12: labeled by Fable 5.1, the owner-approved AI annotator (a recorded deviation), sentence draft reviewed without changes; 10 out-of-topic fixtures ([review log](../datasets/nlp/review_log.md)) |
 | 3 Storage and command | ✅ Schema v3 with verified backup (migration hang fixed 2026-11-12), `enrich`, read-only `enrichment`; the real registry migrated |
-| 4 Entities | ✅ AC-07.1 to AC-07.3 met, on the real corpus too |
-| 5 Keyphrases | ✅ AC-08.1 and AC-08.2 met; policy v2 and a measured metric choice |
-| 6 Classification | ✅ Threshold 0.649099 adopted, pending approval; AC-09.1 met at the point estimate (19 of 20), AC-09.2 and AC-09.3 met |
-| 7 Segmentation | 🟡 spaCy policy built and selectable; the P9-2 measurement waits for the sentence gold set |
+| 4 Entities | 🟡 AC-07.1 to AC-07.3 met, on the real corpus too; AC-07.4 not met (precision 0.730, recall 0.491). Rules v2 and the revised gazetteer built; round 2 not yet measured |
+| 5 Keyphrases | 🟡 AC-08.1 and AC-08.2 met; AC-08.3 not met (0 of 72 key terms in the top 10 with any RAKE metric). P9-5 amended: `technical-ngrams-v1` built as the default; round 2 not yet measured |
+| 6 Classification | ✅ Threshold 0.649099 adopted and approved 2026-11-12; AC-09.1 met at the point estimate (19 of 20), AC-09.2 and AC-09.3 met; P9-6 secondary-category rule kept |
+| 7 Segmentation | ✅ spaCy policy v2 ties the rules (boundary F1 0.989, AC-06.4 met at the point estimate); P9-2 keeps chunking on the rules |
 | 8 Evaluation | ✅ `eval --enrichment` built and run; retrieval fingerprint identical before and after `enrich` |
-| 9 Report | ✅ [Phase 9 report](PHASE_9_STATUS.md); AC-06.4, AC-07.4 and AC-08.3 open until the gold sets are frozen |
+| 9 Report | ✅ [Phase 9 report](PHASE_9_STATUS.md), with the gold-set results |
 
 ## Provenance
 
