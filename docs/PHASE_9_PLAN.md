@@ -1,6 +1,6 @@
 # Phase 9 plan: P1 NLP enrichment
 
-Status: **proposed 2026-11-04, revised 2026-11-07 after the [risk assessment](#risk-assessment-2026-11-07), approved 2026-11-07; in progress.** P9-1 to P9-12 are recorded as [Phase 9 contracts](DECISIONS.md#phase-9-contracts-2026-11-07), with YAKE replaced by RAKE at the dependency gate. See [Progress](#progress-2026-11-07). It covers roadmap Phase 9: FR-06 full, FR-07, FR-08, FR-09 and their FR-12/FR-13 filter extensions. Sources: [Revision 3 requirements](../TechDocQA_Requirements_v2.md), [roadmap](IMPLEMENTATION_ROADMAP.md#phase-9--p1-nlp-enrichment), [decisions](DECISIONS.md) D-08, Q-11, Q-14 and Q-16, and the [Phase 8 report](PHASE_8_STATUS.md).
+Status: **proposed 2026-11-04, revised 2026-11-07 after the [risk assessment](#risk-assessment-2026-11-07), approved 2026-11-07; implemented 2026-11-12, with three measurements awaiting the owner's gold labels.** P9-1 to P9-12 are recorded as [Phase 9 contracts](DECISIONS.md#phase-9-contracts-2026-11-07), with YAKE replaced by RAKE at the dependency gate, and the implementation as [Phase 9 completion](DECISIONS.md#phase-9-completion-2026-11-12). See [Progress](#progress-2026-11-12) and the [Phase 9 report](PHASE_9_STATUS.md). It covers roadmap Phase 9: FR-06 full, FR-07, FR-08, FR-09 and their FR-12/FR-13 filter extensions. Sources: [Revision 3 requirements](../TechDocQA_Requirements_v2.md), [roadmap](IMPLEMENTATION_ROADMAP.md#phase-9--p1-nlp-enrichment), [decisions](DECISIONS.md) D-08, Q-11, Q-14 and Q-16, and the [Phase 8 report](PHASE_8_STATUS.md).
 
 ## Entry gate
 
@@ -82,22 +82,20 @@ Each step ends with offline tests passing. Steps 2 and 3 run in parallel; scorin
 
 Step 7 is last and isolated, so a spaCy gate failure does not hold up FR-07 to FR-09.
 
-## Progress (2026-11-07)
+## Progress (2026-11-12)
 
 | Step | State |
 |---|---|
 | 0 Decisions | ✅ Approved 2026-11-07 |
 | 1 Dependency gate | ✅ Passed; spaCy 3.8.18 kept, YAKE replaced by `rake-nltk` 1.0.6 (license) |
-| 2 Gold data | 🟡 Sheets and guidelines written, gazetteer frozen; awaiting the owner's labels and sentence review ([review log](../datasets/nlp/review_log.md)) |
-| 3 Storage and command | ✅ Schema v3 migration with verified backup, `enrich`, read-only `enrichment`; offline tests |
-| 4 Entities | ✅ Gazetteer and regex extractor; verified entities feed `--entity` in both modes |
-| 5 Keyphrases | ✅ RAKE, top 10 per document |
-| 6 Classification | 🟡 Built with user precedence and the P9-7 filter; no `unclassified` threshold yet, so documents are `not_calibrated` |
-| 7 Segmentation | ⬜ Not started |
-| 8 Evaluation | ⬜ `eval --enrichment` not built; no measurement on the real corpus |
-| 9 Report | ⬜ |
-
-The real registry is still at schema version 2: `enrich` has not been run on it yet.
+| 2 Gold data | 🟡 Sheets, guidelines and the 10 out-of-topic fixtures written, gazetteer frozen; awaiting the owner's labels and sentence review ([review log](../datasets/nlp/review_log.md)) |
+| 3 Storage and command | ✅ Schema v3 with verified backup (migration hang fixed 2026-11-12), `enrich`, read-only `enrichment`; the real registry migrated |
+| 4 Entities | ✅ AC-07.1 to AC-07.3 met, on the real corpus too |
+| 5 Keyphrases | ✅ AC-08.1 and AC-08.2 met; policy v2 and a measured metric choice |
+| 6 Classification | ✅ Threshold 0.649099 adopted, pending approval; AC-09.1 met at the point estimate (19 of 20), AC-09.2 and AC-09.3 met |
+| 7 Segmentation | 🟡 spaCy policy built and selectable; the P9-2 measurement waits for the sentence gold set |
+| 8 Evaluation | ✅ `eval --enrichment` built and run; retrieval fingerprint identical before and after `enrich` |
+| 9 Report | ✅ [Phase 9 report](PHASE_9_STATUS.md); AC-06.4, AC-07.4 and AC-08.3 open until the gold sets are frozen |
 
 ## Provenance
 
@@ -123,7 +121,7 @@ keyphrases_per_document = 10
 keyphrases_per_chunk = false
 classification_method = "embedding"
 max_categories = 3
-# unclassified_threshold and its calibration run ID are added from an evaluation run, as in Phase 8.
+# unclassified_threshold, calibration_run_id and similarity_config_id are added from an evaluation run, as in Phase 8.
 
 # One table per configured category; each description is written and frozen before the first measurement.
 [[enrichment.categories]]

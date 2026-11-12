@@ -1,5 +1,29 @@
 # TechDocQA architectural decisions
 
+## Phase 9 completion (2026-11-12)
+
+These entries record how the rest of Phase 9 was implemented under the [contracts](#phase-9-contracts-2026-11-07) below. Evidence is in the [Phase 9 report](PHASE_9_STATUS.md). The threshold adoption and the two new settings are **implemented and awaiting the owner's approval**. Each can be reverted in configuration alone.
+
+- **Migration backup (P9-8, implementation corrected).** SQLite refuses to back up from a connection in a write transaction (`SQLITE_BUSY`, which Python's `backup()` retries forever), so the v1 and v2 upgrades hung. The copy is now read through a second, read-only connection while the migrating connection holds `BEGIN IMMEDIATE` and has written nothing. The contract is unchanged: one transaction holds the write lock from before the copy until the commit, and nothing can commit in between.
+- **Similarity scale (P9-6, extended).** `unclassified_threshold` is set together with `calibration_run_id` and a new `similarity_config_id`. That ID hashes the classifier policy, the embedding profile and every category name and description. The threshold applies only while it matches the active configuration; otherwise documents are `not_calibrated` and `enrich` warns `CLASSIFICATION_CALIBRATION_STALE`. This binds the threshold to its scale the way Q-07 binds the Phase 8 thresholds. Without it, a new embedding model or an edited description would silently reuse a threshold chosen on another scale.
+- **Threshold adopted.** 0.649099 from calibration run `enrichment_eaf9c6a675d647008a9a99a0944b1bab`, by `balanced-accuracy-midpoint-v1` between the 20 public documents' top scores and the 5 calibration fixtures. The groups separate, with a margin of 0.033 and 0 leave-one-out errors. To revert, remove the three keys from `[enrichment]`.
+- **Out-of-topic fixtures.** Claude Code wrote the 10 texts on 2026-11-12, before any measurement, and fixed their split in the file (SHA-256 `e8180839...b71f`). Six are non-technical; four are technical but outside the four categories, so the threshold is not judged only on easy negatives. The cooking article is held out, for AC-09.2.
+- **spaCy segmentation policy (P9-2).** `spacy-technical-sentences-v1` uses spaCy's tokenizer and rule-based sentencizer with the five technical rules listed in the report. It needs no model wheel. `[chunking] segmentation` selects it. The default, `rules`, enters the configuration hash as before, so every existing chunk artifact keeps its ID. The rules were written from the requirement's examples and the guidelines, before any boundary was scored. Adoption waits for the gold set.
+- **Keyphrase policy v2 (P9-5).** `rake-nltk-technical-v2` fixes two tokenization defects. A contraction (`don't`, `we're`) is a function word and splits phrases, where before it left a stray `t`. A possessive keeps its noun (`Kafka's` is `Kafka`). Single underscores around a word are Markdown emphasis and are dropped; names such as `__init__` and `retry_after` are kept. A new `keyphrase_metric` setting chooses RAKE's word score: `degree_to_frequency`, RAKE's default and the value kept, or `word_degree`, or `word_frequency`. Like code blocks, it is decided by measurement on the key-term gold set.
+- **Measurement rules for `eval --enrichment` (P9-9).**
+  - **Boundary F1** compares the boundaries between sentences inside each paragraph: each is a sentence end and the next sentence's start, at exact positions after trimming whitespace. Paragraph edges are given by the fixture, so they are not counted. This is stricter than counting every start and end. AC-06.4 judges the spaCy policy, the P1 one; the P0 rules are its baseline.
+  - **Entities** are scored on verified mentions only, because only those are output that filters. Including unverified ones is a diagnostic.
+  - **AC-09.1** is judged with the threshold applied: a document below it counts as wrong.
+  - **Verdicts:** a criterion is `met` when the lower bound of its Wilson 95% interval meets the target, and `met at the point estimate only` when only the point estimate does. For F1, the bound is the F1 of the lower bounds of precision and recall.
+  - **Gazetteer drift:** frozen entity rows record the gazetteer hash at sampling. A later change makes the entity figures "tuned".
+- **Open: secondary categories.** At 0.649, 16 of 20 public documents get 3 inferred categories, because every technical document is similar to every technical description. No criterion is affected, and only DDIA uses inferred categories in filters. The owner's options:
+  1. Keep the P9-6 rule (current).
+  2. Set `max_categories = 1`, a configuration change that keeps only the top category.
+  3. Amend P9-6 so a secondary category also needs a score within a margin of the top one.
+
+  This corpus cannot calibrate that margin, because DDIA is the only document without a user category. The recommendation is option 1 until Phase 10 adds documents without user categories, then option 3 measured on them.
+- **Test runs.** `scripts/run_tests.py` runs the offline suite in four groups, one process each. An autouse fixture stops and drops Chroma's cached client systems after each test, which otherwise kept every test's index in memory for the life of the process.
+
 ## Phase 9 contracts (2026-11-07)
 
 The project owner approved decisions P9-1 to P9-12 of the [Phase 9 plan](PHASE_9_PLAN.md#decisions-to-approve-before-coding) on 2026-11-07, as revised after the [risk assessment](PHASE_9_PLAN.md#risk-assessment-2026-11-07). The plan's rows are the contracts; this section records what implementation changed.

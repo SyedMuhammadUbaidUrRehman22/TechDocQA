@@ -122,7 +122,7 @@ Implementation checkpoint 2026-11-04: FR-18 is implemented and met with the real
 
 ## Phase 9 — P1 NLP enrichment
 
-Detailed plan proposed 2026-11-04, revised after a risk assessment and approved on 2026-11-07: [Phase 9 plan](PHASE_9_PLAN.md). Its entry gate, the P0 release, passed the same day. In progress: the dependency gate passed with RAKE in place of YAKE, and `enrich`, entities, keyphrases and classification are built; gold labels, the classification threshold, segmentation and `eval --enrichment` are open ([progress](PHASE_9_PLAN.md#progress-2026-11-07)).
+Detailed plan proposed 2026-11-04, revised after a risk assessment and approved on 2026-11-07: [Phase 9 plan](PHASE_9_PLAN.md). Its entry gate, the P0 release, passed the same day. Implemented 2026-11-12 ([Phase 9 report](PHASE_9_STATUS.md)): `enrich`, entities, keyphrases, calibrated classification, the spaCy segmentation policy and `eval --enrichment`, run on the real corpus with retrieval unchanged. AC-06.4, AC-07.4 and AC-08.3 wait for the owner's gold labels ([progress](PHASE_9_PLAN.md#progress-2026-11-12)).
 
 - Objective: improve structured metadata without sacrificing technical text/provenance.
 - FRs: FR-06 full, FR-07, FR-08, FR-09; filter extensions FR-12/13.
@@ -164,4 +164,4 @@ Detailed plan proposed 2026-11-04, revised after a risk assessment and approved 
 
 ## Recommended next action
 
-The P0 release gate passed on 2026-11-07 ([approvals](DECISIONS.md#p0-approvals-2026-11-07)). Phase 9 is in progress. Next, the project owner labels the entity and key-term gold sets and reviews the sentence draft ([review log](../datasets/nlp/review_log.md)); then `eval --enrichment`, the classification threshold and the spaCy segmenter comparison follow. Cold-start timeouts are settled in [Phase 8](PHASE_8_STATUS.md#cold-start). Do not treat DDIA as part of the public reference or silently count it toward the approximate 3,000-chunk target. Performance gates, including NFR-02, are measured in Phase 11.
+The P0 release gate passed on 2026-11-07 ([approvals](DECISIONS.md#p0-approvals-2026-11-07)). Phase 9 is implemented. Next, the project owner labels the entity and key-term gold sets, reviews the sentence draft ([review log](../datasets/nlp/review_log.md)), freezes them and runs `eval --enrichment`, which settles AC-06.4, AC-07.4, AC-08.3 and the P9-2 and P9-5 choices. The owner also approves or amends the [completion decisions](DECISIONS.md#phase-9-completion-2026-11-12). Phase 10 can start in parallel. Cold-start timeouts are settled in [Phase 8](PHASE_8_STATUS.md#cold-start). Do not treat DDIA as part of the public reference or silently count it toward the approximate 3,000-chunk target. Performance gates, including NFR-02, are measured in Phase 11.
