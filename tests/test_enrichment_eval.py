@@ -242,6 +242,22 @@ def test_key_terms_without_rake_score_the_ngram_policy_alone(eval_settings, monk
     assert evaluation.score_keyphrases(development, scope, eval_settings)["tuned"]
 
 
+def test_a_verdict_on_tuned_data_is_marked_and_never_a_bare_met():
+    scored = {"status": "scored"}
+    report = {"segmentation": scored, "classification": scored, "corpus_checks": scored,
+              "entities": {"status": "scored", "ac_07_4": "met", "tuned": True, "precision": {"value": 0.9}, "recall": {"value": 0.7}},
+              "keyphrases": {"status": "scored", "ac_08_3": "not_met", "tuned": True, "configured": "ngram/with_code", "variants": {}}}
+    verdicts = {row["criterion"]: row["verdict"] for row in evaluation.acceptance(report)}
+    assert verdicts["AC-07.4"] == "met_on_tuned_data" and verdicts["AC-08.3"] == "not_met_on_tuned_data"
+    # Held-out sets keep the plain verdict; so does RAKE on the development key-term set, and a set too small to judge.
+    report["entities"] |= {"tuned": False}
+    report["keyphrases"] |= {"configured": "degree_to_frequency/with_code"}
+    verdicts = {row["criterion"]: row["verdict"] for row in evaluation.acceptance(report)}
+    assert verdicts["AC-07.4"] == "met" and verdicts["AC-08.3"] == "not_met"
+    report["entities"] |= {"tuned": True, "ac_07_4": "too_few_chunks"}
+    assert {row["criterion"]: row["verdict"] for row in evaluation.acceptance(report)}["AC-07.4"] == "too_few_chunks"
+
+
 def test_key_term_tokens_drop_clitics_and_emphasis_but_keep_names():
     assert keyphrases.tokens("Don't stop; Kafka's log isn't _really_ slow, we’re told.") == [
         ",", "stop", ",", "Kafka", "log", ",", "really", "slow", ",", ",", "told", ","]

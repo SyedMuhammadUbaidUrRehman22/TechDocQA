@@ -25,6 +25,7 @@ GOLD_FILES = {"segmentation": "segmentation_gold.jsonl", "entities": "entities_g
 OUT_OF_TOPIC = "out_of_topic.jsonl"
 # Round 1 drew key-term documents of at most 30 chunks; round 2 drew every other document, so results are also split there.
 SIZE_LIMIT = 30
+TUNED_SUFFIX = "_on_tuned_data"
 TARGETS = {"AC-06.4": {"boundary_f1": 0.95, "min_sentences": 50},
            "AC-07.4": {"precision": 0.80, "recall": 0.60, "min_chunks": 20},
            "AC-08.3": {"mean_hit_rate": 0.50, "documents": 5, "top": 10},
@@ -673,14 +674,20 @@ def acceptance(report: dict) -> list[dict]:
     def status(section, key):
         return section.get(key) or section.get("status")
 
+    def marked(found, tuned):
+        """A verdict on a set the extractor was tuned on says so, so it is never read as acceptance evidence."""
+        return f"{found}{TUNED_SUFFIX}" if tuned and found in ("met", "met_at_point_estimate_only", "not_met") else found
+
     rows = [{"criterion": "AC-06.4", "target": "boundary F1 >= 0.95 on >= 50 sentences (spaCy policy)",
              "result": spacy.get("boundary_f1"), "verdict": status(segmentation, "ac_06_4")},
             {"criterion": "AC-07.4", "target": "precision >= 0.80, recall >= 0.60 on >= 20 chunks",
              "result": [entities.get("precision", {}).get("value"), entities.get("recall", {}).get("value")],
-             "verdict": status(entities, "ac_07_4")},
+             "verdict": marked(status(entities, "ac_07_4"), entities.get("tuned"))},
             {"criterion": "AC-08.3", "target": "mean share of key terms in the top 10 >= 0.50 over 5 documents",
              "result": (phrases.get("variants", {}).get(phrases.get("configured")) or {}).get("mean_hit_rate"),
-             "verdict": status(phrases, "ac_08_3")},
+             # RAKE was not tuned on the development key-term set; only the n-gram policy was.
+             "verdict": marked(status(phrases, "ac_08_3"),
+                               phrases.get("tuned") and str(phrases.get("configured", "")).startswith("ngram/"))},
             {"criterion": "AC-09.1", "target": "accuracy >= 0.85, >= 2 documents per category",
              "result": classification.get("ac_09_1", {}).get("accuracy_with_threshold", {}).get("value"),
              "verdict": classification.get("ac_09_1", {}).get("verdict", classification.get("status"))},

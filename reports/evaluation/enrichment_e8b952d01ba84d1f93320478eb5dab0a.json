@@ -1,0 +1,4393 @@
+{
+  "run_id": "enrichment_e8b952d01ba84d1f93320478eb5dab0a",
+  "started_at": "2026-11-12T19:20:24.840202+00:00",
+  "finished_at": "2026-11-12T19:20:51.258115+00:00",
+  "duration_seconds": 26.418,
+  "stage_seconds": {
+    "segmentation": 8.333,
+    "entities": 1.098,
+    "keyphrases": 1.133,
+    "classification": 8.469,
+    "corpus_checks": 4.751,
+    "enrichment_times": 1.244
+  },
+  "scope": {
+    "documents": 20,
+    "unavailable": []
+  },
+  "targets": {
+    "AC-06.4": {
+      "boundary_f1": 0.95,
+      "min_sentences": 50
+    },
+    "AC-07.4": {
+      "precision": 0.8,
+      "recall": 0.6,
+      "min_chunks": 20
+    },
+    "AC-08.3": {
+      "mean_hit_rate": 0.5,
+      "documents": 5,
+      "top": 10
+    },
+    "AC-09.1": {
+      "accuracy": 0.85,
+      "min_documents_per_category": 2
+    }
+  },
+  "segmentation": {
+    "status": "scored",
+    "passages": 20,
+    "flagged": [],
+    "policies": {
+      "rules": {
+        "policy": "technical-sentences-v4",
+        "boundary_f1": 0.989011,
+        "boundary_f1_from_lower_bounds": 0.903617,
+        "precision": {
+          "value": 1.0,
+          "numerator": 45,
+          "denominator": 45,
+          "interval": {
+            "low": 0.9213,
+            "high": 1.0
+          }
+        },
+        "recall": {
+          "value": 0.978261,
+          "numerator": 45,
+          "denominator": 46,
+          "interval": {
+            "low": 0.8866,
+            "high": 0.9962
+          }
+        },
+        "sentences": 66,
+        "exact_sentences": {
+          "value": 0.969697,
+          "numerator": 64,
+          "denominator": 66,
+          "interval": {
+            "low": 0.8961,
+            "high": 0.9917
+          }
+        },
+        "verdict": "met_at_point_estimate_only",
+        "by_technology": {
+          "Apache Airflow": {
+            "gold": 9,
+            "predicted": 9,
+            "matched": 9,
+            "f1": 1.0
+          },
+          "Apache Kafka": {
+            "gold": 15,
+            "predicted": 15,
+            "matched": 15,
+            "f1": 1.0
+          },
+          "Apache Spark": {
+            "gold": 10,
+            "predicted": 9,
+            "matched": 9,
+            "f1": 0.947368
+          },
+          "PostgreSQL": {
+            "gold": 12,
+            "predicted": 12,
+            "matched": 12,
+            "f1": 1.0
+          }
+        },
+        "by_format": {
+          "html": {
+            "gold": 34,
+            "predicted": 33,
+            "matched": 33,
+            "f1": 0.985075
+          },
+          "md": {
+            "gold": 6,
+            "predicted": 6,
+            "matched": 6,
+            "f1": 1.0
+          },
+          "txt": {
+            "gold": 6,
+            "predicted": 6,
+            "matched": 6,
+            "f1": 1.0
+          }
+        },
+        "passages": [
+          {
+            "id": "S01",
+            "technology": "Apache Airflow",
+            "format": "html",
+            "gold": 1,
+            "predicted": 1,
+            "matched": 1
+          },
+          {
+            "id": "S02",
+            "technology": "Apache Airflow",
+            "format": "html",
+            "gold": 2,
+            "predicted": 2,
+            "matched": 2
+          },
+          {
+            "id": "S03",
+            "technology": "Apache Airflow",
+            "format": "html",
+            "gold": 2,
+            "predicted": 2,
+            "matched": 2
+          },
+          {
+            "id": "S04",
+            "technology": "Apache Airflow",
+            "format": "html",
+            "gold": 2,
+            "predicted": 2,
+            "matched": 2
+          },
+          {
+            "id": "S05",
+            "technology": "Apache Airflow",
+            "format": "html",
+            "gold": 2,
+            "predicted": 2,
+            "matched": 2
+          },
+          {
+            "id": "S06",
+            "technology": "Apache Kafka",
+            "format": "html",
+            "gold": 3,
+            "predicted": 3,
+            "matched": 3
+          },
+          {
+            "id": "S07",
+            "technology": "Apache Kafka",
+            "format": "html",
+            "gold": 4,
+            "predicted": 4,
+            "matched": 4
+          },
+          {
+            "id": "S08",
+            "technology": "Apache Kafka",
+            "format": "html",
+            "gold": 1,
+            "predicted": 1,
+            "matched": 1
+          },
+          {
+            "id": "S09",
+            "technology": "Apache Kafka",
+            "format": "html",
+            "gold": 4,
+            "predicted": 4,
+            "matched": 4
+          },
+          {
+            "id": "S10",
+            "technology": "Apache Kafka",
+            "format": "html",
+            "gold": 3,
+            "predicted": 3,
+            "matched": 3
+          },
+          {
+            "id": "S11",
+            "technology": "Apache Spark",
+            "format": "md",
+            "gold": 1,
+            "predicted": 1,
+            "matched": 1
+          },
+          {
+            "id": "S12",
+            "technology": "Apache Spark",
+            "format": "md",
+            "gold": 2,
+            "predicted": 2,
+            "matched": 2
+          },
+          {
+            "id": "S13",
+            "technology": "Apache Spark",
+            "format": "md",
+            "gold": 3,
+            "predicted": 3,
+            "matched": 3
+          },
+          {
+            "id": "S14",
+            "technology": "Apache Spark",
+            "format": "html",
+            "gold": 1,
+            "predicted": 1,
+            "matched": 1
+          },
+          {
+            "id": "S15",
+            "technology": "Apache Spark",
+            "format": "html",
+            "gold": 3,
+            "predicted": 2,
+            "matched": 2
+          },
+          {
+            "id": "S16",
+            "technology": "PostgreSQL",
+            "format": "txt",
+            "gold": 4,
+            "predicted": 4,
+            "matched": 4
+          },
+          {
+            "id": "S17",
+            "technology": "PostgreSQL",
+            "format": "html",
+            "gold": 3,
+            "predicted": 3,
+            "matched": 3
+          },
+          {
+            "id": "S18",
+            "technology": "PostgreSQL",
+            "format": "html",
+            "gold": 2,
+            "predicted": 2,
+            "matched": 2
+          },
+          {
+            "id": "S19",
+            "technology": "PostgreSQL",
+            "format": "html",
+            "gold": 1,
+            "predicted": 1,
+            "matched": 1
+          },
+          {
+            "id": "S20",
+            "technology": "PostgreSQL",
+            "format": "txt",
+            "gold": 2,
+            "predicted": 2,
+            "matched": 2
+          }
+        ],
+        "errors": [
+          {
+            "passage": "S15",
+            "kind": "missed",
+            "offset": 231,
+            "context": "from the URI as expected|local: - a URI starting"
+          }
+        ],
+        "duration_ms": 26
+      },
+      "spacy": {
+        "policy": "spacy-technical-sentences-v2",
+        "boundary_f1": 0.989011,
+        "boundary_f1_from_lower_bounds": 0.903617,
+        "precision": {
+          "value": 1.0,
+          "numerator": 45,
+          "denominator": 45,
+          "interval": {
+            "low": 0.9213,
+            "high": 1.0
+          }
+        },
+        "recall": {
+          "value": 0.978261,
+          "numerator": 45,
+          "denominator": 46,
+          "interval": {
+            "low": 0.8866,
+            "high": 0.9962
+          }
+        },
+        "sentences": 66,
+        "exact_sentences": {
+          "value": 0.969697,
+          "numerator": 64,
+          "denominator": 66,
+          "interval": {
+            "low": 0.8961,
+            "high": 0.9917
+          }
+        },
+        "verdict": "met_at_point_estimate_only",
+        "by_technology": {
+          "Apache Airflow": {
+            "gold": 9,
+            "predicted": 9,
+            "matched": 9,
+            "f1": 1.0
+          },
+          "Apache Kafka": {
+            "gold": 15,
+            "predicted": 15,
+            "matched": 15,
+            "f1": 1.0
+          },
+          "Apache Spark": {
+            "gold": 10,
+            "predicted": 9,
+            "matched": 9,
+            "f1": 0.947368
+          },
+          "PostgreSQL": {
+            "gold": 12,
+            "predicted": 12,
+            "matched": 12,
+            "f1": 1.0
+          }
+        },
+        "by_format": {
+          "html": {
+            "gold": 34,
+            "predicted": 33,
+            "matched": 33,
+            "f1": 0.985075
+          },
+          "md": {
+            "gold": 6,
+            "predicted": 6,
+            "matched": 6,
+            "f1": 1.0
+          },
+          "txt": {
+            "gold": 6,
+            "predicted": 6,
+            "matched": 6,
+            "f1": 1.0
+          }
+        },
+        "passages": [
+          {
+            "id": "S01",
+            "technology": "Apache Airflow",
+            "format": "html",
+            "gold": 1,
+            "predicted": 1,
+            "matched": 1
+          },
+          {
+            "id": "S02",
+            "technology": "Apache Airflow",
+            "format": "html",
+            "gold": 2,
+            "predicted": 2,
+            "matched": 2
+          },
+          {
+            "id": "S03",
+            "technology": "Apache Airflow",
+            "format": "html",
+            "gold": 2,
+            "predicted": 2,
+            "matched": 2
+          },
+          {
+            "id": "S04",
+            "technology": "Apache Airflow",
+            "format": "html",
+            "gold": 2,
+            "predicted": 2,
+            "matched": 2
+          },
+          {
+            "id": "S05",
+            "technology": "Apache Airflow",
+            "format": "html",
+            "gold": 2,
+            "predicted": 2,
+            "matched": 2
+          },
+          {
+            "id": "S06",
+            "technology": "Apache Kafka",
+            "format": "html",
+            "gold": 3,
+            "predicted": 3,
+            "matched": 3
+          },
+          {
+            "id": "S07",
+            "technology": "Apache Kafka",
+            "format": "html",
+            "gold": 4,
+            "predicted": 4,
+            "matched": 4
+          },
+          {
+            "id": "S08",
+            "technology": "Apache Kafka",
+            "format": "html",
+            "gold": 1,
+            "predicted": 1,
+            "matched": 1
+          },
+          {
+            "id": "S09",
+            "technology": "Apache Kafka",
+            "format": "html",
+            "gold": 4,
+            "predicted": 4,
+            "matched": 4
+          },
+          {
+            "id": "S10",
+            "technology": "Apache Kafka",
+            "format": "html",
+            "gold": 3,
+            "predicted": 3,
+            "matched": 3
+          },
+          {
+            "id": "S11",
+            "technology": "Apache Spark",
+            "format": "md",
+            "gold": 1,
+            "predicted": 1,
+            "matched": 1
+          },
+          {
+            "id": "S12",
+            "technology": "Apache Spark",
+            "format": "md",
+            "gold": 2,
+            "predicted": 2,
+            "matched": 2
+          },
+          {
+            "id": "S13",
+            "technology": "Apache Spark",
+            "format": "md",
+            "gold": 3,
+            "predicted": 3,
+            "matched": 3
+          },
+          {
+            "id": "S14",
+            "technology": "Apache Spark",
+            "format": "html",
+            "gold": 1,
+            "predicted": 1,
+            "matched": 1
+          },
+          {
+            "id": "S15",
+            "technology": "Apache Spark",
+            "format": "html",
+            "gold": 3,
+            "predicted": 2,
+            "matched": 2
+          },
+          {
+            "id": "S16",
+            "technology": "PostgreSQL",
+            "format": "txt",
+            "gold": 4,
+            "predicted": 4,
+            "matched": 4
+          },
+          {
+            "id": "S17",
+            "technology": "PostgreSQL",
+            "format": "html",
+            "gold": 3,
+            "predicted": 3,
+            "matched": 3
+          },
+          {
+            "id": "S18",
+            "technology": "PostgreSQL",
+            "format": "html",
+            "gold": 2,
+            "predicted": 2,
+            "matched": 2
+          },
+          {
+            "id": "S19",
+            "technology": "PostgreSQL",
+            "format": "html",
+            "gold": 1,
+            "predicted": 1,
+            "matched": 1
+          },
+          {
+            "id": "S20",
+            "technology": "PostgreSQL",
+            "format": "txt",
+            "gold": 2,
+            "predicted": 2,
+            "matched": 2
+          }
+        ],
+        "errors": [
+          {
+            "passage": "S15",
+            "kind": "missed",
+            "offset": 231,
+            "context": "from the URI as expected|local: - a URI starting"
+          }
+        ],
+        "duration_ms": 534
+      }
+    },
+    "ac_06_4": "met_at_point_estimate_only",
+    "spacy_beats_rules": false,
+    "definition": "Boundary F1 over the boundaries between sentences inside each paragraph: a sentence end and the next sentence's start, compared at exact positions after trimming whitespace. Paragraph edges are fixed by the fixture, so they are not counted."
+  },
+  "entities": {
+    "status": "scored",
+    "chunks": 20,
+    "flagged": [],
+    "gazetteer_sha256": "7aa9d0f725d871e49a129539ee85a72f9f50c5a69f4d5f697b764de0c52e8744",
+    "tuned": true,
+    "threshold": 0.5,
+    "precision": {
+      "value": 0.928571,
+      "numerator": 117,
+      "denominator": 126,
+      "interval": {
+        "low": 0.8698,
+        "high": 0.962
+      }
+    },
+    "recall": {
+      "value": 0.709091,
+      "numerator": 117,
+      "denominator": 165,
+      "interval": {
+        "low": 0.6357,
+        "high": 0.773
+      }
+    },
+    "f1": 0.804124,
+    "ac_07_4": "met",
+    "by_type": {
+      "TECHNOLOGY": {
+        "precision": {
+          "value": 1.0,
+          "numerator": 17,
+          "denominator": 17,
+          "interval": {
+            "low": 0.8157,
+            "high": 1.0
+          }
+        },
+        "recall": {
+          "value": 0.772727,
+          "numerator": 17,
+          "denominator": 22,
+          "interval": {
+            "low": 0.5656,
+            "high": 0.8988
+          }
+        }
+      },
+      "COMPONENT": {
+        "precision": {
+          "value": 1.0,
+          "numerator": 6,
+          "denominator": 6,
+          "interval": {
+            "low": 0.6097,
+            "high": 1.0
+          }
+        },
+        "recall": {
+          "value": 0.666667,
+          "numerator": 6,
+          "denominator": 9,
+          "interval": {
+            "low": 0.3542,
+            "high": 0.8794
+          }
+        }
+      },
+      "CONCEPT": {
+        "precision": {
+          "value": 0.870968,
+          "numerator": 27,
+          "denominator": 31,
+          "interval": {
+            "low": 0.7115,
+            "high": 0.9487
+          }
+        },
+        "recall": {
+          "value": 0.5,
+          "numerator": 27,
+          "denominator": 54,
+          "interval": {
+            "low": 0.3711,
+            "high": 0.6289
+          }
+        }
+      },
+      "PROTOCOL": {
+        "precision": {
+          "value": null,
+          "numerator": 0,
+          "denominator": 0,
+          "interval": null
+        },
+        "recall": {
+          "value": 0.0,
+          "numerator": 0,
+          "denominator": 1,
+          "interval": {
+            "low": 0.0,
+            "high": 0.7935
+          }
+        }
+      },
+      "IDENTIFIER": {
+        "precision": {
+          "value": 0.930556,
+          "numerator": 67,
+          "denominator": 72,
+          "interval": {
+            "low": 0.8475,
+            "high": 0.97
+          }
+        },
+        "recall": {
+          "value": 0.848101,
+          "numerator": 67,
+          "denominator": 79,
+          "interval": {
+            "low": 0.753,
+            "high": 0.9109
+          }
+        }
+      }
+    },
+    "by_rule": {
+      "gazetteer": {
+        "precision": {
+          "value": 0.931034,
+          "numerator": 54,
+          "denominator": 58,
+          "interval": {
+            "low": 0.8357,
+            "high": 0.9729
+          }
+        }
+      },
+      "pattern": {
+        "precision": {
+          "value": 0.926471,
+          "numerator": 63,
+          "denominator": 68,
+          "interval": {
+            "low": 0.8391,
+            "high": 0.9682
+          }
+        }
+      }
+    },
+    "by_technology": {
+      "Apache Airflow": {
+        "gold": 49,
+        "predicted": 37,
+        "matched": 32,
+        "precision": 0.864865,
+        "recall": 0.653061
+      },
+      "Apache Kafka": {
+        "gold": 19,
+        "predicted": 16,
+        "matched": 14,
+        "precision": 0.875,
+        "recall": 0.736842
+      },
+      "Apache Spark": {
+        "gold": 56,
+        "predicted": 50,
+        "matched": 49,
+        "precision": 0.98,
+        "recall": 0.875
+      },
+      "PostgreSQL": {
+        "gold": 41,
+        "predicted": 23,
+        "matched": 22,
+        "precision": 0.956522,
+        "recall": 0.536585
+      }
+    },
+    "by_format": {
+      "html": {
+        "gold": 147,
+        "predicted": 115,
+        "matched": 106,
+        "precision": 0.921739,
+        "recall": 0.721088
+      },
+      "md": {
+        "gold": 13,
+        "predicted": 9,
+        "matched": 9,
+        "precision": 1.0,
+        "recall": 0.692308
+      },
+      "pdf": {
+        "gold": 5,
+        "predicted": 2,
+        "matched": 2,
+        "precision": 1.0,
+        "recall": 0.4
+      }
+    },
+    "by_ambiguous_stratum": {
+      "False": {
+        "gold": 92,
+        "predicted": 60,
+        "matched": 55,
+        "precision": 0.916667,
+        "recall": 0.597826
+      },
+      "True": {
+        "gold": 73,
+        "predicted": 66,
+        "matched": 62,
+        "precision": 0.939394,
+        "recall": 0.849315
+      }
+    },
+    "diagnostics": {
+      "text_only": {
+        "precision": 0.928571,
+        "recall": 0.713415
+      },
+      "including_unverified": {
+        "precision": 0.901515,
+        "recall": 0.721212
+      }
+    },
+    "chunks_detail": [
+      {
+        "id": "E01",
+        "technology": "Apache Airflow",
+        "format": "html",
+        "ambiguous_stratum": true,
+        "gold": 12,
+        "predicted": 10,
+        "matched": 8
+      },
+      {
+        "id": "E02",
+        "technology": "Apache Airflow",
+        "format": "html",
+        "ambiguous_stratum": false,
+        "gold": 9,
+        "predicted": 10,
+        "matched": 7
+      },
+      {
+        "id": "E03",
+        "technology": "Apache Airflow",
+        "format": "html",
+        "ambiguous_stratum": false,
+        "gold": 10,
+        "predicted": 4,
+        "matched": 4
+      },
+      {
+        "id": "E04",
+        "technology": "Apache Airflow",
+        "format": "html",
+        "ambiguous_stratum": false,
+        "gold": 12,
+        "predicted": 8,
+        "matched": 8
+      },
+      {
+        "id": "E05",
+        "technology": "Apache Airflow",
+        "format": "html",
+        "ambiguous_stratum": false,
+        "gold": 6,
+        "predicted": 5,
+        "matched": 5
+      },
+      {
+        "id": "E06",
+        "technology": "Apache Kafka",
+        "format": "html",
+        "ambiguous_stratum": true,
+        "gold": 8,
+        "predicted": 8,
+        "matched": 7
+      },
+      {
+        "id": "E07",
+        "technology": "Apache Kafka",
+        "format": "html",
+        "ambiguous_stratum": false,
+        "gold": 3,
+        "predicted": 2,
+        "matched": 2
+      },
+      {
+        "id": "E08",
+        "technology": "Apache Kafka",
+        "format": "html",
+        "ambiguous_stratum": false,
+        "gold": 1,
+        "predicted": 1,
+        "matched": 0
+      },
+      {
+        "id": "E09",
+        "technology": "Apache Kafka",
+        "format": "html",
+        "ambiguous_stratum": false,
+        "gold": 1,
+        "predicted": 0,
+        "matched": 0
+      },
+      {
+        "id": "E10",
+        "technology": "Apache Kafka",
+        "format": "html",
+        "ambiguous_stratum": false,
+        "gold": 6,
+        "predicted": 5,
+        "matched": 5
+      },
+      {
+        "id": "E11",
+        "technology": "Apache Spark",
+        "format": "html",
+        "ambiguous_stratum": true,
+        "gold": 6,
+        "predicted": 6,
+        "matched": 6
+      },
+      {
+        "id": "E12",
+        "technology": "Apache Spark",
+        "format": "html",
+        "ambiguous_stratum": true,
+        "gold": 24,
+        "predicted": 22,
+        "matched": 22
+      },
+      {
+        "id": "E13",
+        "technology": "Apache Spark",
+        "format": "md",
+        "ambiguous_stratum": false,
+        "gold": 2,
+        "predicted": 1,
+        "matched": 1
+      },
+      {
+        "id": "E14",
+        "technology": "Apache Spark",
+        "format": "md",
+        "ambiguous_stratum": false,
+        "gold": 11,
+        "predicted": 8,
+        "matched": 8
+      },
+      {
+        "id": "E15",
+        "technology": "Apache Spark",
+        "format": "html",
+        "ambiguous_stratum": true,
+        "gold": 13,
+        "predicted": 13,
+        "matched": 12
+      },
+      {
+        "id": "E16",
+        "technology": "PostgreSQL",
+        "format": "html",
+        "ambiguous_stratum": true,
+        "gold": 10,
+        "predicted": 7,
+        "matched": 7
+      },
+      {
+        "id": "E17",
+        "technology": "PostgreSQL",
+        "format": "html",
+        "ambiguous_stratum": false,
+        "gold": 10,
+        "predicted": 7,
+        "matched": 6
+      },
+      {
+        "id": "E18",
+        "technology": "PostgreSQL",
+        "format": "html",
+        "ambiguous_stratum": false,
+        "gold": 7,
+        "predicted": 3,
+        "matched": 3
+      },
+      {
+        "id": "E19",
+        "technology": "PostgreSQL",
+        "format": "html",
+        "ambiguous_stratum": false,
+        "gold": 9,
+        "predicted": 4,
+        "matched": 4
+      },
+      {
+        "id": "E20",
+        "technology": "PostgreSQL",
+        "format": "pdf",
+        "ambiguous_stratum": false,
+        "gold": 5,
+        "predicted": 2,
+        "matched": 2
+      }
+    ],
+    "errors": [
+      {
+        "chunk": "E01",
+        "false_positives": [
+          {
+            "text": "Dag runs",
+            "type": "CONCEPT",
+            "rule": "gazetteer"
+          },
+          {
+            "text": "TaskFlow-decorated",
+            "type": "IDENTIFIER",
+            "rule": "identifier-camel"
+          }
+        ],
+        "false_negatives": [
+          {
+            "text": "@task",
+            "type": "IDENTIFIER"
+          },
+          {
+            "text": "task",
+            "type": "CONCEPT"
+          },
+          {
+            "text": "taskflow",
+            "type": "COMPONENT"
+          },
+          {
+            "text": "tasks",
+            "type": "CONCEPT"
+          }
+        ]
+      },
+      {
+        "chunk": "E02",
+        "false_positives": [
+          {
+            "text": "first_task.set_downstream",
+            "type": "IDENTIFIER",
+            "rule": "identifier"
+          },
+          {
+            "text": "operators",
+            "type": "CONCEPT",
+            "rule": "gazetteer"
+          },
+          {
+            "text": "third_task.set_upstream",
+            "type": "IDENTIFIER",
+            "rule": "identifier"
+          }
+        ],
+        "false_negatives": [
+          {
+            "text": "task",
+            "type": "CONCEPT"
+          },
+          {
+            "text": "tasks",
+            "type": "CONCEPT"
+          }
+        ]
+      },
+      {
+        "chunk": "E03",
+        "false_positives": [],
+        "false_negatives": [
+          {
+            "text": "go",
+            "type": "TECHNOLOGY"
+          },
+          {
+            "text": "jvm",
+            "type": "TECHNOLOGY"
+          },
+          {
+            "text": "task",
+            "type": "CONCEPT"
+          },
+          {
+            "text": "tasks",
+            "type": "CONCEPT"
+          },
+          {
+            "text": "worker",
+            "type": "COMPONENT"
+          },
+          {
+            "text": "workers",
+            "type": "COMPONENT"
+          }
+        ]
+      },
+      {
+        "chunk": "E04",
+        "false_positives": [],
+        "false_negatives": [
+          {
+            "text": "cron expression",
+            "type": "CONCEPT"
+          },
+          {
+            "text": "tasks",
+            "type": "CONCEPT"
+          },
+          {
+            "text": "timedelta",
+            "type": "IDENTIFIER"
+          },
+          {
+            "text": "timetables",
+            "type": "CONCEPT"
+          }
+        ]
+      },
+      {
+        "chunk": "E05",
+        "false_positives": [],
+        "false_negatives": [
+          {
+            "text": "tasks",
+            "type": "CONCEPT"
+          }
+        ]
+      },
+      {
+        "chunk": "E06",
+        "false_positives": [
+          {
+            "text": "IoT",
+            "type": "IDENTIFIER",
+            "rule": "identifier-camel"
+          }
+        ],
+        "false_negatives": [
+          {
+            "text": "event streaming",
+            "type": "CONCEPT"
+          }
+        ]
+      },
+      {
+        "chunk": "E07",
+        "false_positives": [],
+        "false_negatives": [
+          {
+            "text": "oauthbearer",
+            "type": "PROTOCOL"
+          }
+        ]
+      },
+      {
+        "chunk": "E08",
+        "false_positives": [
+          {
+            "text": "IoT",
+            "type": "IDENTIFIER",
+            "rule": "identifier-camel"
+          }
+        ],
+        "false_negatives": [
+          {
+            "text": "event streaming",
+            "type": "CONCEPT"
+          }
+        ]
+      },
+      {
+        "chunk": "E09",
+        "false_positives": [],
+        "false_negatives": [
+          {
+            "text": "read-ahead",
+            "type": "CONCEPT"
+          }
+        ]
+      },
+      {
+        "chunk": "E10",
+        "false_positives": [],
+        "false_negatives": [
+          {
+            "text": "send()",
+            "type": "IDENTIFIER"
+          }
+        ]
+      },
+      {
+        "chunk": "E12",
+        "false_positives": [],
+        "false_negatives": [
+          {
+            "text": "parquet",
+            "type": "TECHNOLOGY"
+          },
+          {
+            "text": "write",
+            "type": "IDENTIFIER"
+          }
+        ]
+      },
+      {
+        "chunk": "E13",
+        "false_positives": [],
+        "false_negatives": [
+          {
+            "text": "data locality",
+            "type": "CONCEPT"
+          }
+        ]
+      },
+      {
+        "chunk": "E14",
+        "false_positives": [],
+        "false_negatives": [
+          {
+            "text": "join",
+            "type": "IDENTIFIER"
+          },
+          {
+            "text": "jvm",
+            "type": "TECHNOLOGY"
+          },
+          {
+            "text": "reduce tasks",
+            "type": "CONCEPT"
+          }
+        ]
+      },
+      {
+        "chunk": "E15",
+        "false_positives": [
+          {
+            "text": "deploy mode",
+            "type": "CONCEPT",
+            "rule": "gazetteer"
+          }
+        ],
+        "false_negatives": [
+          {
+            "text": "yarn",
+            "type": "TECHNOLOGY"
+          }
+        ]
+      },
+      {
+        "chunk": "E16",
+        "false_positives": [],
+        "false_negatives": [
+          {
+            "text": "mytab",
+            "type": "IDENTIFIER"
+          },
+          {
+            "text": "transaction",
+            "type": "CONCEPT"
+          },
+          {
+            "text": "transactions",
+            "type": "CONCEPT"
+          }
+        ]
+      },
+      {
+        "chunk": "E17",
+        "false_positives": [
+          {
+            "text": "QUERY PLAN",
+            "type": "CONCEPT",
+            "rule": "gazetteer"
+          }
+        ],
+        "false_negatives": [
+          {
+            "text": "incremental sort",
+            "type": "CONCEPT"
+          },
+          {
+            "text": "sort",
+            "type": "CONCEPT"
+          },
+          {
+            "text": "tenk1",
+            "type": "IDENTIFIER"
+          },
+          {
+            "text": "unique1",
+            "type": "IDENTIFIER"
+          }
+        ]
+      },
+      {
+        "chunk": "E18",
+        "false_positives": [],
+        "false_negatives": [
+          {
+            "text": "limit",
+            "type": "CONCEPT"
+          },
+          {
+            "text": "limit",
+            "type": "IDENTIFIER"
+          },
+          {
+            "text": "startup cost",
+            "type": "CONCEPT"
+          },
+          {
+            "text": "total cost",
+            "type": "CONCEPT"
+          }
+        ]
+      },
+      {
+        "chunk": "E19",
+        "false_positives": [],
+        "false_negatives": [
+          {
+            "text": "gin index",
+            "type": "CONCEPT"
+          },
+          {
+            "text": "gin indexes",
+            "type": "CONCEPT"
+          },
+          {
+            "text": "gin operator class",
+            "type": "CONCEPT"
+          },
+          {
+            "text": "inverted index",
+            "type": "CONCEPT"
+          },
+          {
+            "text": "inverted indexes",
+            "type": "CONCEPT"
+          }
+        ]
+      },
+      {
+        "chunk": "E20",
+        "false_positives": [],
+        "false_negatives": [
+          {
+            "text": "createdb",
+            "type": "IDENTIFIER"
+          },
+          {
+            "text": "pguser",
+            "type": "IDENTIFIER"
+          },
+          {
+            "text": "postgres",
+            "type": "IDENTIFIER"
+          }
+        ]
+      }
+    ]
+  },
+  "keyphrases": {
+    "status": "scored",
+    "documents": 5,
+    "flagged": [],
+    "configured": "ngram/with_code",
+    "tuned": true,
+    "ac_08_3": "not_met",
+    "best_variant": "ngram/with_code",
+    "variants": {
+      "ngram/with_code": {
+        "policy": "technical-ngrams-v1",
+        "metric": null,
+        "include_code": true,
+        "mean_hit_rate": 0.432381,
+        "pooled_terms": {
+          "value": 0.430556,
+          "numerator": 31,
+          "denominator": 72,
+          "interval": {
+            "low": 0.3226,
+            "high": 0.5456
+          }
+        },
+        "mean_lenient_hit_rate": 0.613333,
+        "by_size": {
+          "30 chunks or fewer": {
+            "documents": 5,
+            "mean_hit_rate": 0.432381
+          }
+        },
+        "documents": [
+          {
+            "id": "K1",
+            "technology": "Apache Airflow",
+            "format": "html",
+            "chunks": 21,
+            "terms": 15,
+            "hits": 8,
+            "hit_rate": 0.533333,
+            "lenient_hits": 9,
+            "missed": [
+              "executor",
+              "api server",
+              "triggerer",
+              "sensors",
+              "xcoms",
+              "plugins",
+              "dag author"
+            ],
+            "top": [
+              "dag",
+              "tasks",
+              "scheduler",
+              "worker",
+              "task instance",
+              "dag bundle",
+              "run",
+              "operators",
+              "dag processor",
+              "metadata database"
+            ]
+          },
+          {
+            "id": "K2",
+            "technology": "Apache Kafka",
+            "format": "html",
+            "chunks": 18,
+            "terms": 14,
+            "hits": 9,
+            "hit_rate": 0.642857,
+            "lenient_hits": 9,
+            "missed": [
+              "kafka cluster",
+              "replication factor",
+              "producer api",
+              "consumer api",
+              "clients"
+            ],
+            "top": [
+              "topic",
+              "events",
+              "producers",
+              "partition",
+              "event streaming",
+              "streams",
+              "brokers",
+              "consumers",
+              "kafka connect",
+              "kafka streams"
+            ]
+          },
+          {
+            "id": "K3",
+            "technology": "Apache Spark",
+            "format": "md",
+            "chunks": 9,
+            "terms": 14,
+            "hits": 5,
+            "hit_rate": 0.357143,
+            "lenient_hits": 7,
+            "missed": [
+              "hardware provisioning",
+              "cpu cores",
+              "network",
+              "standalone mode",
+              "spark.local.dir",
+              "java vm",
+              "hadoop yarn",
+              "noatime",
+              "raid"
+            ],
+            "top": [
+              "hadoop",
+              "hdfs",
+              "memory",
+              "executors",
+              "application",
+              "storage system",
+              "cluster manager",
+              "local disks",
+              "nodes",
+              "java"
+            ]
+          },
+          {
+            "id": "K4",
+            "technology": "PostgreSQL",
+            "format": "html",
+            "chunks": 15,
+            "terms": 14,
+            "hits": 6,
+            "hit_rate": 0.428571,
+            "lenient_hits": 12,
+            "missed": [
+              "index types",
+              "hash index",
+              "create index",
+              "query planner",
+              "inverted indexes",
+              "nearest-neighbor",
+              "indexing strategies",
+              "block range indexes"
+            ],
+            "top": [
+              "operator",
+              "gist",
+              "index",
+              "sp-gist",
+              "operator classes",
+              "b-tree",
+              "gin",
+              "brin",
+              "b-tree index",
+              "standard distribution"
+            ]
+          },
+          {
+            "id": "K5",
+            "technology": "PostgreSQL",
+            "format": "pdf",
+            "chunks": 18,
+            "terms": 15,
+            "hits": 3,
+            "hit_rate": 0.2,
+            "lenient_hits": 7,
+            "missed": [
+              "createdb",
+              "dropdb",
+              "client/server model",
+              "server process",
+              "database server",
+              "superuser",
+              "environment variable",
+              "pghost",
+              "client applications",
+              "sql commands",
+              "getting started",
+              "installation"
+            ],
+            "top": [
+              "database",
+              "user account",
+              "operating system",
+              "name",
+              "postgresql user",
+              "server",
+              "user name",
+              "psql",
+              "site administrator",
+              "create"
+            ]
+          }
+        ]
+      },
+      "ngram/without_code": {
+        "policy": "technical-ngrams-v1",
+        "metric": null,
+        "include_code": false,
+        "mean_hit_rate": 0.432381,
+        "pooled_terms": {
+          "value": 0.430556,
+          "numerator": 31,
+          "denominator": 72,
+          "interval": {
+            "low": 0.3226,
+            "high": 0.5456
+          }
+        },
+        "mean_lenient_hit_rate": 0.613333,
+        "by_size": {
+          "30 chunks or fewer": {
+            "documents": 5,
+            "mean_hit_rate": 0.432381
+          }
+        },
+        "documents": [
+          {
+            "id": "K1",
+            "technology": "Apache Airflow",
+            "format": "html",
+            "chunks": 21,
+            "terms": 15,
+            "hits": 8,
+            "hit_rate": 0.533333,
+            "lenient_hits": 9,
+            "missed": [
+              "executor",
+              "api server",
+              "triggerer",
+              "sensors",
+              "xcoms",
+              "plugins",
+              "dag author"
+            ],
+            "top": [
+              "dag",
+              "scheduler",
+              "tasks",
+              "worker",
+              "task instance",
+              "dag bundle",
+              "run",
+              "operators",
+              "dag processor",
+              "metadata database"
+            ]
+          },
+          {
+            "id": "K2",
+            "technology": "Apache Kafka",
+            "format": "html",
+            "chunks": 18,
+            "terms": 14,
+            "hits": 9,
+            "hit_rate": 0.642857,
+            "lenient_hits": 9,
+            "missed": [
+              "kafka cluster",
+              "replication factor",
+              "producer api",
+              "consumer api",
+              "clients"
+            ],
+            "top": [
+              "topic",
+              "events",
+              "producers",
+              "partition",
+              "event streaming",
+              "streams",
+              "brokers",
+              "consumers",
+              "kafka connect",
+              "kafka streams"
+            ]
+          },
+          {
+            "id": "K3",
+            "technology": "Apache Spark",
+            "format": "md",
+            "chunks": 9,
+            "terms": 14,
+            "hits": 5,
+            "hit_rate": 0.357143,
+            "lenient_hits": 7,
+            "missed": [
+              "hardware provisioning",
+              "cpu cores",
+              "network",
+              "standalone mode",
+              "spark.local.dir",
+              "java vm",
+              "hadoop yarn",
+              "noatime",
+              "raid"
+            ],
+            "top": [
+              "hadoop",
+              "hdfs",
+              "memory",
+              "executors",
+              "application",
+              "storage system",
+              "cluster manager",
+              "local disks",
+              "nodes",
+              "java"
+            ]
+          },
+          {
+            "id": "K4",
+            "technology": "PostgreSQL",
+            "format": "html",
+            "chunks": 15,
+            "terms": 14,
+            "hits": 6,
+            "hit_rate": 0.428571,
+            "lenient_hits": 12,
+            "missed": [
+              "index types",
+              "hash index",
+              "create index",
+              "query planner",
+              "inverted indexes",
+              "nearest-neighbor",
+              "indexing strategies",
+              "block range indexes"
+            ],
+            "top": [
+              "operator",
+              "gist",
+              "index",
+              "sp-gist",
+              "operator classes",
+              "b-tree",
+              "gin",
+              "brin",
+              "b-tree index",
+              "standard distribution"
+            ]
+          },
+          {
+            "id": "K5",
+            "technology": "PostgreSQL",
+            "format": "pdf",
+            "chunks": 18,
+            "terms": 15,
+            "hits": 3,
+            "hit_rate": 0.2,
+            "lenient_hits": 7,
+            "missed": [
+              "createdb",
+              "dropdb",
+              "client/server model",
+              "server process",
+              "database server",
+              "superuser",
+              "environment variable",
+              "pghost",
+              "client applications",
+              "sql commands",
+              "getting started",
+              "installation"
+            ],
+            "top": [
+              "database",
+              "user account",
+              "operating system",
+              "name",
+              "postgresql user",
+              "server",
+              "user name",
+              "psql",
+              "site administrator",
+              "create"
+            ]
+          }
+        ]
+      },
+      "degree_to_frequency/with_code": {
+        "policy": "rake-nltk-technical-v2",
+        "metric": "degree_to_frequency",
+        "include_code": true,
+        "mean_hit_rate": 0.0,
+        "pooled_terms": {
+          "value": 0.0,
+          "numerator": 0,
+          "denominator": 72,
+          "interval": {
+            "low": 0.0,
+            "high": 0.0507
+          }
+        },
+        "mean_lenient_hit_rate": 0.209524,
+        "by_size": {
+          "30 chunks or fewer": {
+            "documents": 5,
+            "mean_hit_rate": 0.0
+          }
+        },
+        "documents": [
+          {
+            "id": "K1",
+            "technology": "Apache Airflow",
+            "format": "html",
+            "chunks": 21,
+            "terms": 15,
+            "hits": 0,
+            "hit_rate": 0.0,
+            "lenient_hits": 2,
+            "missed": [
+              "dag",
+              "tasks",
+              "scheduler",
+              "executor",
+              "dag processor",
+              "dag bundle",
+              "metadata database",
+              "api server",
+              "worker",
+              "triggerer",
+              "operators",
+              "sensors",
+              "xcoms",
+              "plugins",
+              "dag author"
+            ],
+            "top": [
+              "achieve better airflow extensibility",
+              "configure dag bundle backends",
+              "versioned dag bundle backends",
+              "concurrent task instance adds",
+              "minimal airflow installation consists",
+              "support full multi-tenant features",
+              "distributed among multiple machines",
+              "extra installed packages installed",
+              "custom python function packaged",
+              "user interface airflow comes"
+            ]
+          },
+          {
+            "id": "K2",
+            "technology": "Apache Kafka",
+            "format": "html",
+            "chunks": 18,
+            "terms": 14,
+            "hits": 0,
+            "hit_rate": 0.0,
+            "lenient_hits": 3,
+            "missed": [
+              "event streaming",
+              "events",
+              "topic",
+              "partition",
+              "producers",
+              "consumers",
+              "brokers",
+              "kafka streams",
+              "kafka connect",
+              "kafka cluster",
+              "replication factor",
+              "producer api",
+              "consumer api",
+              "clients"
+            ],
+            "top": [
+              "high-performance tcp network protocol",
+              "needed-unlike traditional messaging systems",
+              "fully managed services offered",
+              "local kafka meetup group",
+              "case things go wrong",
+              "kafka provides various guarantees",
+              "two different producer clients",
+              "higher-level kafka streams library",
+              "data from/to many brokers",
+              "make available data produced"
+            ]
+          },
+          {
+            "id": "K3",
+            "technology": "Apache Spark",
+            "format": "md",
+            "chunks": 9,
+            "terms": 14,
+            "hits": 0,
+            "hit_rate": 0.0,
+            "lenient_hits": 1,
+            "missed": [
+              "hardware provisioning",
+              "memory",
+              "local disks",
+              "hdfs",
+              "cpu cores",
+              "network",
+              "executors",
+              "standalone mode",
+              "spark.local.dir",
+              "storage system",
+              "java vm",
+              "hadoop yarn",
+              "noatime",
+              "raid"
+            ],
+            "top": [
+              "specific language governing permissions",
+              "launching multiple executors according",
+              "data spark shuffles across",
+              "launch multiple executors",
+              "common cluster manager",
+              "common question received",
+              "performs minimal sharing",
+              "preserve intermediate output",
+              "low-latency data stores",
+              "read input data"
+            ]
+          },
+          {
+            "id": "K4",
+            "technology": "PostgreSQL",
+            "format": "html",
+            "chunks": 15,
+            "terms": 14,
+            "hits": 0,
+            "hit_rate": 0.0,
+            "lenient_hits": 6,
+            "missed": [
+              "index types",
+              "b-tree",
+              "gist",
+              "gin",
+              "brin",
+              "sp-gist",
+              "hash index",
+              "operator classes",
+              "create index",
+              "query planner",
+              "inverted indexes",
+              "nearest-neighbor",
+              "indexing strategies",
+              "block range indexes"
+            ],
+            "top": [
+              "32-bit hash code derived",
+              "consecutive physical block ranges",
+              "contain multiple component values",
+              "handle simple equality comparisons",
+              "gin operator classes included",
+              "sp-gist operator classes included",
+              "gist operator classes included",
+              "brin operator classes included",
+              "two-dimensional geometric data types",
+              "many different indexing strategies"
+            ]
+          },
+          {
+            "id": "K5",
+            "technology": "PostgreSQL",
+            "format": "pdf",
+            "chunks": 18,
+            "terms": 15,
+            "hits": 0,
+            "hit_rate": 0.0,
+            "lenient_hits": 3,
+            "missed": [
+              "createdb",
+              "psql",
+              "dropdb",
+              "client/server model",
+              "server process",
+              "database server",
+              "site administrator",
+              "user account",
+              "superuser",
+              "environment variable",
+              "pghost",
+              "client applications",
+              "sql commands",
+              "getting started",
+              "installation"
+            ],
+            "top": [
+              "handle multiple concurrent connections",
+              "following two paragraphs appear",
+              "basic postgresql system architecture",
+              "encounter problems starting psql",
+              "current operating system account",
+              "postgresql interactive terminal program",
+              "operating system user accounts",
+              "existing graphical frontend tool",
+              "associated server processes come",
+              "specialized database maintenance tool"
+            ]
+          }
+        ]
+      },
+      "degree_to_frequency/without_code": {
+        "policy": "rake-nltk-technical-v2",
+        "metric": "degree_to_frequency",
+        "include_code": false,
+        "mean_hit_rate": 0.0,
+        "pooled_terms": {
+          "value": 0.0,
+          "numerator": 0,
+          "denominator": 72,
+          "interval": {
+            "low": 0.0,
+            "high": 0.0507
+          }
+        },
+        "mean_lenient_hit_rate": 0.209524,
+        "by_size": {
+          "30 chunks or fewer": {
+            "documents": 5,
+            "mean_hit_rate": 0.0
+          }
+        },
+        "documents": [
+          {
+            "id": "K1",
+            "technology": "Apache Airflow",
+            "format": "html",
+            "chunks": 21,
+            "terms": 15,
+            "hits": 0,
+            "hit_rate": 0.0,
+            "lenient_hits": 2,
+            "missed": [
+              "dag",
+              "tasks",
+              "scheduler",
+              "executor",
+              "dag processor",
+              "dag bundle",
+              "metadata database",
+              "api server",
+              "worker",
+              "triggerer",
+              "operators",
+              "sensors",
+              "xcoms",
+              "plugins",
+              "dag author"
+            ],
+            "top": [
+              "achieve better airflow extensibility",
+              "configure dag bundle backends",
+              "versioned dag bundle backends",
+              "concurrent task instance adds",
+              "minimal airflow installation consists",
+              "support full multi-tenant features",
+              "distributed among multiple machines",
+              "extra installed packages installed",
+              "custom python function packaged",
+              "user interface airflow comes"
+            ]
+          },
+          {
+            "id": "K2",
+            "technology": "Apache Kafka",
+            "format": "html",
+            "chunks": 18,
+            "terms": 14,
+            "hits": 0,
+            "hit_rate": 0.0,
+            "lenient_hits": 3,
+            "missed": [
+              "event streaming",
+              "events",
+              "topic",
+              "partition",
+              "producers",
+              "consumers",
+              "brokers",
+              "kafka streams",
+              "kafka connect",
+              "kafka cluster",
+              "replication factor",
+              "producer api",
+              "consumer api",
+              "clients"
+            ],
+            "top": [
+              "high-performance tcp network protocol",
+              "needed-unlike traditional messaging systems",
+              "fully managed services offered",
+              "local kafka meetup group",
+              "case things go wrong",
+              "kafka provides various guarantees",
+              "two different producer clients",
+              "higher-level kafka streams library",
+              "data from/to many brokers",
+              "make available data produced"
+            ]
+          },
+          {
+            "id": "K3",
+            "technology": "Apache Spark",
+            "format": "md",
+            "chunks": 9,
+            "terms": 14,
+            "hits": 0,
+            "hit_rate": 0.0,
+            "lenient_hits": 1,
+            "missed": [
+              "hardware provisioning",
+              "memory",
+              "local disks",
+              "hdfs",
+              "cpu cores",
+              "network",
+              "executors",
+              "standalone mode",
+              "spark.local.dir",
+              "storage system",
+              "java vm",
+              "hadoop yarn",
+              "noatime",
+              "raid"
+            ],
+            "top": [
+              "specific language governing permissions",
+              "launching multiple executors according",
+              "data spark shuffles across",
+              "launch multiple executors",
+              "common cluster manager",
+              "common question received",
+              "performs minimal sharing",
+              "preserve intermediate output",
+              "low-latency data stores",
+              "read input data"
+            ]
+          },
+          {
+            "id": "K4",
+            "technology": "PostgreSQL",
+            "format": "html",
+            "chunks": 15,
+            "terms": 14,
+            "hits": 0,
+            "hit_rate": 0.0,
+            "lenient_hits": 6,
+            "missed": [
+              "index types",
+              "b-tree",
+              "gist",
+              "gin",
+              "brin",
+              "sp-gist",
+              "hash index",
+              "operator classes",
+              "create index",
+              "query planner",
+              "inverted indexes",
+              "nearest-neighbor",
+              "indexing strategies",
+              "block range indexes"
+            ],
+            "top": [
+              "32-bit hash code derived",
+              "consecutive physical block ranges",
+              "contain multiple component values",
+              "handle simple equality comparisons",
+              "gin operator classes included",
+              "sp-gist operator classes included",
+              "gist operator classes included",
+              "command creates b-tree indexes",
+              "brin operator classes included",
+              "two-dimensional geometric data types"
+            ]
+          },
+          {
+            "id": "K5",
+            "technology": "PostgreSQL",
+            "format": "pdf",
+            "chunks": 18,
+            "terms": 15,
+            "hits": 0,
+            "hit_rate": 0.0,
+            "lenient_hits": 3,
+            "missed": [
+              "createdb",
+              "psql",
+              "dropdb",
+              "client/server model",
+              "server process",
+              "database server",
+              "site administrator",
+              "user account",
+              "superuser",
+              "environment variable",
+              "pghost",
+              "client applications",
+              "sql commands",
+              "getting started",
+              "installation"
+            ],
+            "top": [
+              "handle multiple concurrent connections",
+              "following two paragraphs appear",
+              "basic postgresql system architecture",
+              "encounter problems starting psql",
+              "current operating system account",
+              "postgresql interactive terminal program",
+              "operating system user accounts",
+              "existing graphical frontend tool",
+              "associated server processes come",
+              "specialized database maintenance tool"
+            ]
+          }
+        ]
+      },
+      "word_degree/with_code": {
+        "policy": "rake-nltk-technical-v2",
+        "metric": "word_degree",
+        "include_code": true,
+        "mean_hit_rate": 0.013333,
+        "pooled_terms": {
+          "value": 0.013889,
+          "numerator": 1,
+          "denominator": 72,
+          "interval": {
+            "low": 0.0025,
+            "high": 0.0746
+          }
+        },
+        "mean_lenient_hit_rate": 0.208571,
+        "by_size": {
+          "30 chunks or fewer": {
+            "documents": 5,
+            "mean_hit_rate": 0.013333
+          }
+        },
+        "documents": [
+          {
+            "id": "K1",
+            "technology": "Apache Airflow",
+            "format": "html",
+            "chunks": 21,
+            "terms": 15,
+            "hits": 1,
+            "hit_rate": 0.066667,
+            "lenient_hits": 4,
+            "missed": [
+              "dag",
+              "tasks",
+              "scheduler",
+              "executor",
+              "dag bundle",
+              "metadata database",
+              "api server",
+              "worker",
+              "triggerer",
+              "operators",
+              "sensors",
+              "xcoms",
+              "plugins",
+              "dag author"
+            ],
+            "top": [
+              "dag author provided code",
+              "separate dag processing architecture",
+              "dag processor runs",
+              "example separating dag processor",
+              "configure dag bundle backends",
+              "versioned dag bundle backends",
+              "processing dag files",
+              "basic airflow deployment",
+              "dag bundles directly",
+              "dag processor"
+            ]
+          },
+          {
+            "id": "K2",
+            "technology": "Apache Kafka",
+            "format": "html",
+            "chunks": 18,
+            "terms": 14,
+            "hits": 0,
+            "hit_rate": 0.0,
+            "lenient_hits": 4,
+            "missed": [
+              "event streaming",
+              "events",
+              "topic",
+              "partition",
+              "producers",
+              "consumers",
+              "brokers",
+              "kafka streams",
+              "kafka connect",
+              "kafka cluster",
+              "replication factor",
+              "producer api",
+              "consumer api",
+              "clients"
+            ],
+            "top": [
+              "kafka streams api",
+              "higher-level kafka streams library",
+              "different kafka brokers",
+              "servers run kafka connect",
+              "kafka connect api",
+              "process event streams",
+              "kafka provides various guarantees",
+              "event streams durably",
+              "local kafka meetup group",
+              "kafka topics"
+            ]
+          },
+          {
+            "id": "K3",
+            "technology": "Apache Spark",
+            "format": "md",
+            "chunks": 9,
+            "terms": 14,
+            "hits": 0,
+            "hit_rate": 0.0,
+            "lenient_hits": 0,
+            "missed": [
+              "hardware provisioning",
+              "memory",
+              "local disks",
+              "hdfs",
+              "cpu cores",
+              "network",
+              "executors",
+              "standalone mode",
+              "spark.local.dir",
+              "storage system",
+              "java vm",
+              "hadoop yarn",
+              "noatime",
+              "raid"
+            ],
+            "top": [
+              "data spark shuffles across",
+              "spark monitoring ui",
+              "run spark",
+              "spark applications",
+              "configure spark",
+              "spark jobs",
+              "spark developers",
+              "spark rdd",
+              "spark scales",
+              "hadoop file system"
+            ]
+          },
+          {
+            "id": "K4",
+            "technology": "PostgreSQL",
+            "format": "html",
+            "chunks": 15,
+            "terms": 14,
+            "hits": 0,
+            "hit_rate": 0.0,
+            "lenient_hits": 5,
+            "missed": [
+              "index types",
+              "b-tree",
+              "gist",
+              "gin",
+              "brin",
+              "sp-gist",
+              "hash index",
+              "operator classes",
+              "create index",
+              "query planner",
+              "inverted indexes",
+              "nearest-neighbor",
+              "indexing strategies",
+              "block range indexes"
+            ],
+            "top": [
+              "gist operator classes included",
+              "gin operator classes included",
+              "sp-gist operator classes included",
+              "brin operator classes included",
+              "gist operator classes",
+              "gin operator classes",
+              "sp-gist operator classes",
+              "gin operator class",
+              "gist index",
+              "particular operator class"
+            ]
+          },
+          {
+            "id": "K5",
+            "technology": "PostgreSQL",
+            "format": "pdf",
+            "chunks": 18,
+            "terms": 15,
+            "hits": 0,
+            "hit_rate": 0.0,
+            "lenient_hits": 2,
+            "missed": [
+              "createdb",
+              "psql",
+              "dropdb",
+              "client/server model",
+              "server process",
+              "database server",
+              "site administrator",
+              "user account",
+              "superuser",
+              "environment variable",
+              "pghost",
+              "client applications",
+              "sql commands",
+              "getting started",
+              "installation"
+            ],
+            "top": [
+              "postgresql user name",
+              "operating system user name",
+              "postgresql user account",
+              "postgresql user accounts",
+              "operating system user accounts",
+              "postgresql user names",
+              "operating system user",
+              "user account name",
+              "running postgresql server",
+              "database server machine"
+            ]
+          }
+        ]
+      },
+      "word_degree/without_code": {
+        "policy": "rake-nltk-technical-v2",
+        "metric": "word_degree",
+        "include_code": false,
+        "mean_hit_rate": 0.013333,
+        "pooled_terms": {
+          "value": 0.013889,
+          "numerator": 1,
+          "denominator": 72,
+          "interval": {
+            "low": 0.0025,
+            "high": 0.0746
+          }
+        },
+        "mean_lenient_hit_rate": 0.222857,
+        "by_size": {
+          "30 chunks or fewer": {
+            "documents": 5,
+            "mean_hit_rate": 0.013333
+          }
+        },
+        "documents": [
+          {
+            "id": "K1",
+            "technology": "Apache Airflow",
+            "format": "html",
+            "chunks": 21,
+            "terms": 15,
+            "hits": 1,
+            "hit_rate": 0.066667,
+            "lenient_hits": 4,
+            "missed": [
+              "dag",
+              "tasks",
+              "scheduler",
+              "executor",
+              "dag bundle",
+              "metadata database",
+              "api server",
+              "worker",
+              "triggerer",
+              "operators",
+              "sensors",
+              "xcoms",
+              "plugins",
+              "dag author"
+            ],
+            "top": [
+              "dag author provided code",
+              "separate dag processing architecture",
+              "dag processor runs",
+              "example separating dag processor",
+              "configure dag bundle backends",
+              "versioned dag bundle backends",
+              "processing dag files",
+              "dag bundles directly",
+              "basic airflow deployment",
+              "dag processor"
+            ]
+          },
+          {
+            "id": "K2",
+            "technology": "Apache Kafka",
+            "format": "html",
+            "chunks": 18,
+            "terms": 14,
+            "hits": 0,
+            "hit_rate": 0.0,
+            "lenient_hits": 4,
+            "missed": [
+              "event streaming",
+              "events",
+              "topic",
+              "partition",
+              "producers",
+              "consumers",
+              "brokers",
+              "kafka streams",
+              "kafka connect",
+              "kafka cluster",
+              "replication factor",
+              "producer api",
+              "consumer api",
+              "clients"
+            ],
+            "top": [
+              "kafka streams api",
+              "higher-level kafka streams library",
+              "different kafka brokers",
+              "servers run kafka connect",
+              "kafka connect api",
+              "process event streams",
+              "kafka provides various guarantees",
+              "event streams durably",
+              "local kafka meetup group",
+              "kafka topics"
+            ]
+          },
+          {
+            "id": "K3",
+            "technology": "Apache Spark",
+            "format": "md",
+            "chunks": 9,
+            "terms": 14,
+            "hits": 0,
+            "hit_rate": 0.0,
+            "lenient_hits": 0,
+            "missed": [
+              "hardware provisioning",
+              "memory",
+              "local disks",
+              "hdfs",
+              "cpu cores",
+              "network",
+              "executors",
+              "standalone mode",
+              "spark.local.dir",
+              "storage system",
+              "java vm",
+              "hadoop yarn",
+              "noatime",
+              "raid"
+            ],
+            "top": [
+              "data spark shuffles across",
+              "spark monitoring ui",
+              "run spark",
+              "spark applications",
+              "configure spark",
+              "spark jobs",
+              "spark developers",
+              "spark rdd",
+              "spark scales",
+              "hadoop file system"
+            ]
+          },
+          {
+            "id": "K4",
+            "technology": "PostgreSQL",
+            "format": "html",
+            "chunks": 15,
+            "terms": 14,
+            "hits": 0,
+            "hit_rate": 0.0,
+            "lenient_hits": 6,
+            "missed": [
+              "index types",
+              "b-tree",
+              "gist",
+              "gin",
+              "brin",
+              "sp-gist",
+              "hash index",
+              "operator classes",
+              "create index",
+              "query planner",
+              "inverted indexes",
+              "nearest-neighbor",
+              "indexing strategies",
+              "block range indexes"
+            ],
+            "top": [
+              "gist operator classes included",
+              "gin operator classes included",
+              "sp-gist operator classes included",
+              "brin operator classes included",
+              "gist operator classes",
+              "gin operator classes",
+              "sp-gist operator classes",
+              "gin operator class",
+              "b-tree index search",
+              "command creates b-tree indexes"
+            ]
+          },
+          {
+            "id": "K5",
+            "technology": "PostgreSQL",
+            "format": "pdf",
+            "chunks": 18,
+            "terms": 15,
+            "hits": 0,
+            "hit_rate": 0.0,
+            "lenient_hits": 2,
+            "missed": [
+              "createdb",
+              "psql",
+              "dropdb",
+              "client/server model",
+              "server process",
+              "database server",
+              "site administrator",
+              "user account",
+              "superuser",
+              "environment variable",
+              "pghost",
+              "client applications",
+              "sql commands",
+              "getting started",
+              "installation"
+            ],
+            "top": [
+              "postgresql user name",
+              "operating system user name",
+              "postgresql user account",
+              "postgresql user accounts",
+              "operating system user accounts",
+              "postgresql user names",
+              "operating system user",
+              "user account name",
+              "database server machine",
+              "basic postgresql system architecture"
+            ]
+          }
+        ]
+      },
+      "word_frequency/with_code": {
+        "policy": "rake-nltk-technical-v2",
+        "metric": "word_frequency",
+        "include_code": true,
+        "mean_hit_rate": 0.013333,
+        "pooled_terms": {
+          "value": 0.013889,
+          "numerator": 1,
+          "denominator": 72,
+          "interval": {
+            "low": 0.0025,
+            "high": 0.0746
+          }
+        },
+        "mean_lenient_hit_rate": 0.237143,
+        "by_size": {
+          "30 chunks or fewer": {
+            "documents": 5,
+            "mean_hit_rate": 0.013333
+          }
+        },
+        "documents": [
+          {
+            "id": "K1",
+            "technology": "Apache Airflow",
+            "format": "html",
+            "chunks": 21,
+            "terms": 15,
+            "hits": 0,
+            "hit_rate": 0.0,
+            "lenient_hits": 4,
+            "missed": [
+              "dag",
+              "tasks",
+              "scheduler",
+              "executor",
+              "dag processor",
+              "dag bundle",
+              "metadata database",
+              "api server",
+              "worker",
+              "triggerer",
+              "operators",
+              "sensors",
+              "xcoms",
+              "plugins",
+              "dag author"
+            ],
+            "top": [
+              "dag author provided code",
+              "dag processor runs",
+              "separate dag processing architecture",
+              "basic airflow deployment",
+              "example separating dag processor",
+              "deploying airflow components",
+              "secure airflow deployment",
+              "airflow components",
+              "dag bundles directly",
+              "airflow deployment"
+            ]
+          },
+          {
+            "id": "K2",
+            "technology": "Apache Kafka",
+            "format": "html",
+            "chunks": 18,
+            "terms": 14,
+            "hits": 0,
+            "hit_rate": 0.0,
+            "lenient_hits": 4,
+            "missed": [
+              "event streaming",
+              "events",
+              "topic",
+              "partition",
+              "producers",
+              "consumers",
+              "brokers",
+              "kafka streams",
+              "kafka connect",
+              "kafka cluster",
+              "replication factor",
+              "producer api",
+              "consumer api",
+              "clients"
+            ],
+            "top": [
+              "kafka streams api",
+              "higher-level kafka streams library",
+              "servers run kafka connect",
+              "different kafka brokers",
+              "kafka connect api",
+              "kafka topics",
+              "process event streams",
+              "kafka provides various guarantees",
+              "event streams durably",
+              "kafka apis"
+            ]
+          },
+          {
+            "id": "K3",
+            "technology": "Apache Spark",
+            "format": "md",
+            "chunks": 9,
+            "terms": 14,
+            "hits": 0,
+            "hit_rate": 0.0,
+            "lenient_hits": 1,
+            "missed": [
+              "hardware provisioning",
+              "memory",
+              "local disks",
+              "hdfs",
+              "cpu cores",
+              "network",
+              "executors",
+              "standalone mode",
+              "spark.local.dir",
+              "storage system",
+              "java vm",
+              "hadoop yarn",
+              "noatime",
+              "raid"
+            ],
+            "top": [
+              "data spark shuffles across",
+              "run spark",
+              "spark applications",
+              "spark monitoring ui",
+              "configure spark",
+              "spark jobs",
+              "spark developers",
+              "spark rdd",
+              "spark scales",
+              "hadoop memory"
+            ]
+          },
+          {
+            "id": "K4",
+            "technology": "PostgreSQL",
+            "format": "html",
+            "chunks": 15,
+            "terms": 14,
+            "hits": 0,
+            "hit_rate": 0.0,
+            "lenient_hits": 6,
+            "missed": [
+              "index types",
+              "b-tree",
+              "gist",
+              "gin",
+              "brin",
+              "sp-gist",
+              "hash index",
+              "operator classes",
+              "create index",
+              "query planner",
+              "inverted indexes",
+              "nearest-neighbor",
+              "indexing strategies",
+              "block range indexes"
+            ],
+            "top": [
+              "gist operator classes included",
+              "gin operator classes included",
+              "sp-gist operator classes included",
+              "gist index",
+              "gist operator classes",
+              "brin operator classes included",
+              "b-tree index search",
+              "gin index",
+              "gin operator classes",
+              "sp-gist operator classes"
+            ]
+          },
+          {
+            "id": "K5",
+            "technology": "PostgreSQL",
+            "format": "pdf",
+            "chunks": 18,
+            "terms": 15,
+            "hits": 1,
+            "hit_rate": 0.066667,
+            "lenient_hits": 2,
+            "missed": [
+              "createdb",
+              "psql",
+              "dropdb",
+              "client/server model",
+              "server process",
+              "site administrator",
+              "user account",
+              "superuser",
+              "environment variable",
+              "pghost",
+              "client applications",
+              "sql commands",
+              "getting started",
+              "installation"
+            ],
+            "top": [
+              "postgresql user name",
+              "postgresql user account",
+              "operating system user name",
+              "postgresql user accounts",
+              "database server machine",
+              "postgresql user names",
+              "database server program",
+              "database server",
+              "running postgresql server",
+              "database name"
+            ]
+          }
+        ]
+      },
+      "word_frequency/without_code": {
+        "policy": "rake-nltk-technical-v2",
+        "metric": "word_frequency",
+        "include_code": false,
+        "mean_hit_rate": 0.013333,
+        "pooled_terms": {
+          "value": 0.013889,
+          "numerator": 1,
+          "denominator": 72,
+          "interval": {
+            "low": 0.0025,
+            "high": 0.0746
+          }
+        },
+        "mean_lenient_hit_rate": 0.237143,
+        "by_size": {
+          "30 chunks or fewer": {
+            "documents": 5,
+            "mean_hit_rate": 0.013333
+          }
+        },
+        "documents": [
+          {
+            "id": "K1",
+            "technology": "Apache Airflow",
+            "format": "html",
+            "chunks": 21,
+            "terms": 15,
+            "hits": 0,
+            "hit_rate": 0.0,
+            "lenient_hits": 4,
+            "missed": [
+              "dag",
+              "tasks",
+              "scheduler",
+              "executor",
+              "dag processor",
+              "dag bundle",
+              "metadata database",
+              "api server",
+              "worker",
+              "triggerer",
+              "operators",
+              "sensors",
+              "xcoms",
+              "plugins",
+              "dag author"
+            ],
+            "top": [
+              "dag author provided code",
+              "dag processor runs",
+              "separate dag processing architecture",
+              "basic airflow deployment",
+              "example separating dag processor",
+              "deploying airflow components",
+              "secure airflow deployment",
+              "airflow components",
+              "dag bundles directly",
+              "airflow deployment"
+            ]
+          },
+          {
+            "id": "K2",
+            "technology": "Apache Kafka",
+            "format": "html",
+            "chunks": 18,
+            "terms": 14,
+            "hits": 0,
+            "hit_rate": 0.0,
+            "lenient_hits": 4,
+            "missed": [
+              "event streaming",
+              "events",
+              "topic",
+              "partition",
+              "producers",
+              "consumers",
+              "brokers",
+              "kafka streams",
+              "kafka connect",
+              "kafka cluster",
+              "replication factor",
+              "producer api",
+              "consumer api",
+              "clients"
+            ],
+            "top": [
+              "kafka streams api",
+              "higher-level kafka streams library",
+              "servers run kafka connect",
+              "different kafka brokers",
+              "kafka connect api",
+              "kafka topics",
+              "process event streams",
+              "kafka provides various guarantees",
+              "event streams durably",
+              "kafka apis"
+            ]
+          },
+          {
+            "id": "K3",
+            "technology": "Apache Spark",
+            "format": "md",
+            "chunks": 9,
+            "terms": 14,
+            "hits": 0,
+            "hit_rate": 0.0,
+            "lenient_hits": 1,
+            "missed": [
+              "hardware provisioning",
+              "memory",
+              "local disks",
+              "hdfs",
+              "cpu cores",
+              "network",
+              "executors",
+              "standalone mode",
+              "spark.local.dir",
+              "storage system",
+              "java vm",
+              "hadoop yarn",
+              "noatime",
+              "raid"
+            ],
+            "top": [
+              "data spark shuffles across",
+              "run spark",
+              "spark applications",
+              "spark monitoring ui",
+              "configure spark",
+              "spark jobs",
+              "spark developers",
+              "spark rdd",
+              "spark scales",
+              "hadoop memory"
+            ]
+          },
+          {
+            "id": "K4",
+            "technology": "PostgreSQL",
+            "format": "html",
+            "chunks": 15,
+            "terms": 14,
+            "hits": 0,
+            "hit_rate": 0.0,
+            "lenient_hits": 6,
+            "missed": [
+              "index types",
+              "b-tree",
+              "gist",
+              "gin",
+              "brin",
+              "sp-gist",
+              "hash index",
+              "operator classes",
+              "create index",
+              "query planner",
+              "inverted indexes",
+              "nearest-neighbor",
+              "indexing strategies",
+              "block range indexes"
+            ],
+            "top": [
+              "gist operator classes included",
+              "gin operator classes included",
+              "sp-gist operator classes included",
+              "gist operator classes",
+              "brin operator classes included",
+              "gist index",
+              "b-tree index search",
+              "gin operator classes",
+              "sp-gist operator classes",
+              "b-tree index"
+            ]
+          },
+          {
+            "id": "K5",
+            "technology": "PostgreSQL",
+            "format": "pdf",
+            "chunks": 18,
+            "terms": 15,
+            "hits": 1,
+            "hit_rate": 0.066667,
+            "lenient_hits": 2,
+            "missed": [
+              "createdb",
+              "psql",
+              "dropdb",
+              "client/server model",
+              "server process",
+              "site administrator",
+              "user account",
+              "superuser",
+              "environment variable",
+              "pghost",
+              "client applications",
+              "sql commands",
+              "getting started",
+              "installation"
+            ],
+            "top": [
+              "postgresql user name",
+              "postgresql user account",
+              "operating system user name",
+              "postgresql user accounts",
+              "postgresql user names",
+              "database server machine",
+              "database server program",
+              "database server",
+              "database name",
+              "running postgresql server"
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "classification": {
+    "status": "scored",
+    "similarity_policy": "centroid-cosine-v1",
+    "similarity_config_id": "cs_f138c575d3b18c6553bf96f57e55f743f6637eb359e7d24fbbd95b63451e3803",
+    "classifier_config_id": "cc_b300c609bfa2ad4d6d467c74b8e25b374fd4442a6d8f6c2dd6b3c0eb7bf4ef18",
+    "active_threshold": {
+      "status": "calibrated",
+      "unclassified_threshold": 0.649099,
+      "calibration_run_id": "enrichment_eaf9c6a675d647008a9a99a0944b1bab"
+    },
+    "documents": [
+      {
+        "source_key": "[\"postgresql-18-transaction-system.txt\",null]",
+        "format": "txt",
+        "label": "Databases",
+        "status": "scored",
+        "ranked": [
+          [
+            "Databases",
+            0.715901
+          ],
+          [
+            "Distributed streaming",
+            0.714396
+          ],
+          [
+            "Distributed computing",
+            0.674293
+          ]
+        ],
+        "predicted": "Databases",
+        "top_score": 0.715901,
+        "rule_baseline": "Databases",
+        "assigned_under_proposal": [
+          "Databases",
+          "Distributed streaming",
+          "Distributed computing"
+        ],
+        "assigned_under_active": [
+          "Databases",
+          "Distributed streaming",
+          "Distributed computing"
+        ]
+      },
+      {
+        "source_key": "[\"postgresql-18-tutorial-advanced-features.pdf\",null]",
+        "format": "pdf",
+        "label": "Databases",
+        "status": "scored",
+        "ranked": [
+          [
+            "Databases",
+            0.782043
+          ],
+          [
+            "Distributed streaming",
+            0.721048
+          ],
+          [
+            "Distributed computing",
+            0.678403
+          ]
+        ],
+        "predicted": "Databases",
+        "top_score": 0.782043,
+        "rule_baseline": "Databases",
+        "assigned_under_proposal": [
+          "Databases",
+          "Distributed streaming",
+          "Distributed computing"
+        ],
+        "assigned_under_active": [
+          "Databases",
+          "Distributed streaming",
+          "Distributed computing"
+        ]
+      },
+      {
+        "source_key": "[\"postgresql-18-tutorial-getting-started.pdf\",null]",
+        "format": "pdf",
+        "label": "Databases",
+        "status": "scored",
+        "ranked": [
+          [
+            "Databases",
+            0.755453
+          ],
+          [
+            "Distributed streaming",
+            0.637395
+          ],
+          [
+            "Distributed computing",
+            0.608526
+          ]
+        ],
+        "predicted": "Databases",
+        "top_score": 0.755453,
+        "rule_baseline": "Databases",
+        "assigned_under_proposal": [
+          "Databases"
+        ],
+        "assigned_under_active": [
+          "Databases"
+        ]
+      },
+      {
+        "source_key": "[\"postgresql-18-tutorial-sql-language.pdf\",null]",
+        "format": "pdf",
+        "label": "Databases",
+        "status": "scored",
+        "ranked": [
+          [
+            "Databases",
+            0.742587
+          ],
+          [
+            "Distributed streaming",
+            0.65772
+          ],
+          [
+            "Distributed computing",
+            0.631945
+          ]
+        ],
+        "predicted": "Databases",
+        "top_score": 0.742587,
+        "rule_baseline": "Databases",
+        "assigned_under_proposal": [
+          "Databases",
+          "Distributed streaming"
+        ],
+        "assigned_under_active": [
+          "Databases",
+          "Distributed streaming"
+        ]
+      },
+      {
+        "source_key": "[\"spark-4.0.1-cluster-overview.md\",null]",
+        "format": "md",
+        "label": "Distributed computing",
+        "status": "scored",
+        "ranked": [
+          [
+            "Distributed computing",
+            0.799406
+          ],
+          [
+            "Databases",
+            0.687094
+          ],
+          [
+            "Distributed streaming",
+            0.685683
+          ]
+        ],
+        "predicted": "Distributed computing",
+        "top_score": 0.799406,
+        "rule_baseline": "unclassified",
+        "assigned_under_proposal": [
+          "Distributed computing",
+          "Databases",
+          "Distributed streaming"
+        ],
+        "assigned_under_active": [
+          "Distributed computing",
+          "Databases",
+          "Distributed streaming"
+        ]
+      },
+      {
+        "source_key": "[\"spark-4.0.1-hardware-provisioning.md\",null]",
+        "format": "md",
+        "label": "Distributed computing",
+        "status": "scored",
+        "ranked": [
+          [
+            "Distributed computing",
+            0.74255
+          ],
+          [
+            "Distributed streaming",
+            0.674586
+          ],
+          [
+            "Databases",
+            0.666975
+          ]
+        ],
+        "predicted": "Distributed computing",
+        "top_score": 0.74255,
+        "rule_baseline": "unclassified",
+        "assigned_under_proposal": [
+          "Distributed computing",
+          "Distributed streaming",
+          "Databases"
+        ],
+        "assigned_under_active": [
+          "Distributed computing",
+          "Distributed streaming",
+          "Databases"
+        ]
+      },
+      {
+        "source_key": "[\"spark-4.0.1-tuning.md\",null]",
+        "format": "md",
+        "label": "Distributed computing",
+        "status": "scored",
+        "ranked": [
+          [
+            "Distributed computing",
+            0.753117
+          ],
+          [
+            "Databases",
+            0.713966
+          ],
+          [
+            "Distributed streaming",
+            0.705524
+          ]
+        ],
+        "predicted": "Distributed computing",
+        "top_score": 0.753117,
+        "rule_baseline": "unclassified",
+        "assigned_under_proposal": [
+          "Distributed computing",
+          "Databases",
+          "Distributed streaming"
+        ],
+        "assigned_under_active": [
+          "Distributed computing",
+          "Databases",
+          "Distributed streaming"
+        ]
+      },
+      {
+        "source_key": "https://airflow.apache.org/docs/apache-airflow/stable/core-concepts/dag-run.html",
+        "format": "html",
+        "label": "Workflow orchestration",
+        "status": "scored",
+        "ranked": [
+          [
+            "Workflow orchestration",
+            0.682148
+          ],
+          [
+            "Distributed streaming",
+            0.677213
+          ],
+          [
+            "Distributed computing",
+            0.657908
+          ]
+        ],
+        "predicted": "Workflow orchestration",
+        "top_score": 0.682148,
+        "rule_baseline": "unclassified",
+        "assigned_under_proposal": [
+          "Workflow orchestration",
+          "Distributed streaming",
+          "Distributed computing"
+        ],
+        "assigned_under_active": [
+          "Workflow orchestration",
+          "Distributed streaming",
+          "Distributed computing"
+        ]
+      },
+      {
+        "source_key": "https://airflow.apache.org/docs/apache-airflow/stable/core-concepts/dags.html",
+        "format": "html",
+        "label": "Workflow orchestration",
+        "status": "scored",
+        "ranked": [
+          [
+            "Workflow orchestration",
+            0.708304
+          ],
+          [
+            "Distributed computing",
+            0.680905
+          ],
+          [
+            "Distributed streaming",
+            0.678747
+          ]
+        ],
+        "predicted": "Workflow orchestration",
+        "top_score": 0.708304,
+        "rule_baseline": "unclassified",
+        "assigned_under_proposal": [
+          "Workflow orchestration",
+          "Distributed computing",
+          "Distributed streaming"
+        ],
+        "assigned_under_active": [
+          "Workflow orchestration",
+          "Distributed computing",
+          "Distributed streaming"
+        ]
+      },
+      {
+        "source_key": "https://airflow.apache.org/docs/apache-airflow/stable/core-concepts/overview.html",
+        "format": "html",
+        "label": "Workflow orchestration",
+        "status": "scored",
+        "ranked": [
+          [
+            "Workflow orchestration",
+            0.754568
+          ],
+          [
+            "Distributed computing",
+            0.736818
+          ],
+          [
+            "Distributed streaming",
+            0.705769
+          ]
+        ],
+        "predicted": "Workflow orchestration",
+        "top_score": 0.754568,
+        "rule_baseline": "Databases",
+        "assigned_under_proposal": [
+          "Workflow orchestration",
+          "Distributed computing",
+          "Distributed streaming"
+        ],
+        "assigned_under_active": [
+          "Workflow orchestration",
+          "Distributed computing",
+          "Distributed streaming"
+        ]
+      },
+      {
+        "source_key": "https://airflow.apache.org/docs/apache-airflow/stable/core-concepts/tasks.html",
+        "format": "html",
+        "label": "Workflow orchestration",
+        "status": "scored",
+        "ranked": [
+          [
+            "Workflow orchestration",
+            0.738988
+          ],
+          [
+            "Distributed streaming",
+            0.699684
+          ],
+          [
+            "Distributed computing",
+            0.689195
+          ]
+        ],
+        "predicted": "Workflow orchestration",
+        "top_score": 0.738988,
+        "rule_baseline": "unclassified",
+        "assigned_under_proposal": [
+          "Workflow orchestration",
+          "Distributed streaming",
+          "Distributed computing"
+        ],
+        "assigned_under_active": [
+          "Workflow orchestration",
+          "Distributed streaming",
+          "Distributed computing"
+        ]
+      },
+      {
+        "source_key": "https://kafka.apache.org/43/configuration/producer-configs/",
+        "format": "html",
+        "label": "Distributed streaming",
+        "status": "scored",
+        "ranked": [
+          [
+            "Distributed streaming",
+            0.729127
+          ],
+          [
+            "Databases",
+            0.696118
+          ],
+          [
+            "Distributed computing",
+            0.675863
+          ]
+        ],
+        "predicted": "Distributed streaming",
+        "top_score": 0.729127,
+        "rule_baseline": "Distributed streaming",
+        "assigned_under_proposal": [
+          "Distributed streaming",
+          "Databases",
+          "Distributed computing"
+        ],
+        "assigned_under_active": [
+          "Distributed streaming",
+          "Databases",
+          "Distributed computing"
+        ]
+      },
+      {
+        "source_key": "https://kafka.apache.org/43/design/design/",
+        "format": "html",
+        "label": "Distributed streaming",
+        "status": "scored",
+        "ranked": [
+          [
+            "Distributed streaming",
+            0.794091
+          ],
+          [
+            "Databases",
+            0.750608
+          ],
+          [
+            "Distributed computing",
+            0.742429
+          ]
+        ],
+        "predicted": "Distributed streaming",
+        "top_score": 0.794091,
+        "rule_baseline": "unclassified",
+        "assigned_under_proposal": [
+          "Distributed streaming",
+          "Databases",
+          "Distributed computing"
+        ],
+        "assigned_under_active": [
+          "Distributed streaming",
+          "Databases",
+          "Distributed computing"
+        ]
+      },
+      {
+        "source_key": "https://kafka.apache.org/43/getting-started/introduction/",
+        "format": "html",
+        "label": "Distributed streaming",
+        "status": "scored",
+        "ranked": [
+          [
+            "Distributed streaming",
+            0.825978
+          ],
+          [
+            "Databases",
+            0.70598
+          ],
+          [
+            "Distributed computing",
+            0.70507
+          ]
+        ],
+        "predicted": "Distributed streaming",
+        "top_score": 0.825978,
+        "rule_baseline": "Distributed streaming",
+        "assigned_under_proposal": [
+          "Distributed streaming",
+          "Databases",
+          "Distributed computing"
+        ],
+        "assigned_under_active": [
+          "Distributed streaming",
+          "Databases",
+          "Distributed computing"
+        ]
+      },
+      {
+        "source_key": "https://kafka.apache.org/43/getting-started/quickstart/",
+        "format": "html",
+        "label": "Distributed streaming",
+        "status": "scored",
+        "ranked": [
+          [
+            "Distributed streaming",
+            0.715174
+          ],
+          [
+            "Distributed computing",
+            0.652734
+          ],
+          [
+            "Databases",
+            0.642563
+          ]
+        ],
+        "predicted": "Distributed streaming",
+        "top_score": 0.715174,
+        "rule_baseline": "Distributed streaming",
+        "assigned_under_proposal": [
+          "Distributed streaming",
+          "Distributed computing"
+        ],
+        "assigned_under_active": [
+          "Distributed streaming",
+          "Distributed computing"
+        ]
+      },
+      {
+        "source_key": "https://spark.apache.org/docs/4.0.1/sql-data-sources-load-save-functions.html",
+        "format": "html",
+        "label": "Distributed computing",
+        "status": "scored",
+        "ranked": [
+          [
+            "Databases",
+            0.700564
+          ],
+          [
+            "Distributed computing",
+            0.685302
+          ],
+          [
+            "Distributed streaming",
+            0.672137
+          ]
+        ],
+        "predicted": "Databases",
+        "top_score": 0.700564,
+        "rule_baseline": "Distributed computing",
+        "assigned_under_proposal": [
+          "Databases",
+          "Distributed computing",
+          "Distributed streaming"
+        ],
+        "assigned_under_active": [
+          "Databases",
+          "Distributed computing",
+          "Distributed streaming"
+        ]
+      },
+      {
+        "source_key": "https://spark.apache.org/docs/4.0.1/submitting-applications.html",
+        "format": "html",
+        "label": "Distributed computing",
+        "status": "scored",
+        "ranked": [
+          [
+            "Distributed computing",
+            0.718267
+          ],
+          [
+            "Distributed streaming",
+            0.659648
+          ],
+          [
+            "Databases",
+            0.64007
+          ]
+        ],
+        "predicted": "Distributed computing",
+        "top_score": 0.718267,
+        "rule_baseline": "unclassified",
+        "assigned_under_proposal": [
+          "Distributed computing",
+          "Distributed streaming"
+        ],
+        "assigned_under_active": [
+          "Distributed computing",
+          "Distributed streaming"
+        ]
+      },
+      {
+        "source_key": "https://www.postgresql.org/docs/18/indexes-types.html",
+        "format": "html",
+        "label": "Databases",
+        "status": "scored",
+        "ranked": [
+          [
+            "Databases",
+            0.733152
+          ],
+          [
+            "Distributed streaming",
+            0.669445
+          ],
+          [
+            "Distributed computing",
+            0.663686
+          ]
+        ],
+        "predicted": "Databases",
+        "top_score": 0.733152,
+        "rule_baseline": "Databases",
+        "assigned_under_proposal": [
+          "Databases",
+          "Distributed streaming",
+          "Distributed computing"
+        ],
+        "assigned_under_active": [
+          "Databases",
+          "Distributed streaming",
+          "Distributed computing"
+        ]
+      },
+      {
+        "source_key": "https://www.postgresql.org/docs/18/transaction-iso.html",
+        "format": "html",
+        "label": "Databases",
+        "status": "scored",
+        "ranked": [
+          [
+            "Databases",
+            0.776167
+          ],
+          [
+            "Distributed streaming",
+            0.720254
+          ],
+          [
+            "Distributed computing",
+            0.675161
+          ]
+        ],
+        "predicted": "Databases",
+        "top_score": 0.776167,
+        "rule_baseline": "Databases",
+        "assigned_under_proposal": [
+          "Databases",
+          "Distributed streaming",
+          "Distributed computing"
+        ],
+        "assigned_under_active": [
+          "Databases",
+          "Distributed streaming",
+          "Distributed computing"
+        ]
+      },
+      {
+        "source_key": "https://www.postgresql.org/docs/18/using-explain.html",
+        "format": "html",
+        "label": "Databases",
+        "status": "scored",
+        "ranked": [
+          [
+            "Databases",
+            0.737823
+          ],
+          [
+            "Distributed computing",
+            0.702466
+          ],
+          [
+            "Distributed streaming",
+            0.655557
+          ]
+        ],
+        "predicted": "Databases",
+        "top_score": 0.737823,
+        "rule_baseline": "Databases",
+        "assigned_under_proposal": [
+          "Databases",
+          "Distributed computing",
+          "Distributed streaming"
+        ],
+        "assigned_under_active": [
+          "Databases",
+          "Distributed computing",
+          "Distributed streaming"
+        ]
+      }
+    ],
+    "fixtures": [
+      {
+        "id": "oot-01",
+        "split": "calibration",
+        "topic": "gardening",
+        "chunks": 3,
+        "ranked": [
+          [
+            "Distributed streaming",
+            0.56232
+          ],
+          [
+            "Distributed computing",
+            0.559673
+          ],
+          [
+            "Databases",
+            0.555017
+          ]
+        ],
+        "top_score": 0.56232,
+        "unclassified_under_proposal": true,
+        "unclassified_under_active": true
+      },
+      {
+        "id": "oot-02",
+        "split": "calibration",
+        "topic": "chess",
+        "chunks": 2,
+        "ranked": [
+          [
+            "Databases",
+            0.580414
+          ],
+          [
+            "Distributed computing",
+            0.535199
+          ],
+          [
+            "Distributed streaming",
+            0.520545
+          ]
+        ],
+        "top_score": 0.580414,
+        "unclassified_under_proposal": true,
+        "unclassified_under_active": true
+      },
+      {
+        "id": "oot-03",
+        "split": "calibration",
+        "topic": "personal finance",
+        "chunks": 2,
+        "ranked": [
+          [
+            "Databases",
+            0.600961
+          ],
+          [
+            "Distributed streaming",
+            0.584518
+          ],
+          [
+            "Workflow orchestration",
+            0.548421
+          ]
+        ],
+        "top_score": 0.600961,
+        "unclassified_under_proposal": true,
+        "unclassified_under_active": true
+      },
+      {
+        "id": "oot-04",
+        "split": "calibration",
+        "topic": "web page layout",
+        "chunks": 2,
+        "ranked": [
+          [
+            "Databases",
+            0.590976
+          ],
+          [
+            "Distributed streaming",
+            0.587597
+          ],
+          [
+            "Distributed computing",
+            0.576758
+          ]
+        ],
+        "top_score": 0.590976,
+        "unclassified_under_proposal": true,
+        "unclassified_under_active": true
+      },
+      {
+        "id": "oot-05",
+        "split": "calibration",
+        "topic": "version control",
+        "chunks": 3,
+        "ranked": [
+          [
+            "Databases",
+            0.616049
+          ],
+          [
+            "Distributed streaming",
+            0.615314
+          ],
+          [
+            "Distributed computing",
+            0.582313
+          ]
+        ],
+        "top_score": 0.616049,
+        "unclassified_under_proposal": true,
+        "unclassified_under_active": true
+      },
+      {
+        "id": "oot-06",
+        "split": "held_out",
+        "topic": "cooking",
+        "chunks": 2,
+        "ranked": [
+          [
+            "Distributed streaming",
+            0.507459
+          ],
+          [
+            "Distributed computing",
+            0.481241
+          ],
+          [
+            "Workflow orchestration",
+            0.428629
+          ]
+        ],
+        "top_score": 0.507459,
+        "unclassified_under_proposal": true,
+        "unclassified_under_active": true
+      },
+      {
+        "id": "oot-07",
+        "split": "held_out",
+        "topic": "birdwatching",
+        "chunks": 2,
+        "ranked": [
+          [
+            "Databases",
+            0.504954
+          ],
+          [
+            "Distributed streaming",
+            0.477973
+          ],
+          [
+            "Distributed computing",
+            0.466784
+          ]
+        ],
+        "top_score": 0.504954,
+        "unclassified_under_proposal": true,
+        "unclassified_under_active": true
+      },
+      {
+        "id": "oot-08",
+        "split": "held_out",
+        "topic": "bicycle maintenance",
+        "chunks": 2,
+        "ranked": [
+          [
+            "Distributed computing",
+            0.528236
+          ],
+          [
+            "Databases",
+            0.511137
+          ],
+          [
+            "Distributed streaming",
+            0.485848
+          ]
+        ],
+        "top_score": 0.528236,
+        "unclassified_under_proposal": true,
+        "unclassified_under_active": true
+      },
+      {
+        "id": "oot-09",
+        "split": "held_out",
+        "topic": "home networking",
+        "chunks": 3,
+        "ranked": [
+          [
+            "Databases",
+            0.594087
+          ],
+          [
+            "Distributed computing",
+            0.5874
+          ],
+          [
+            "Distributed streaming",
+            0.583889
+          ]
+        ],
+        "top_score": 0.594087,
+        "unclassified_under_proposal": true,
+        "unclassified_under_active": true
+      },
+      {
+        "id": "oot-10",
+        "split": "held_out",
+        "topic": "document typesetting",
+        "chunks": 3,
+        "ranked": [
+          [
+            "Databases",
+            0.65692
+          ],
+          [
+            "Distributed streaming",
+            0.612456
+          ],
+          [
+            "Workflow orchestration",
+            0.586857
+          ]
+        ],
+        "top_score": 0.65692,
+        "unclassified_under_proposal": false,
+        "unclassified_under_active": false
+      }
+    ],
+    "proposal": {
+      "policy": "balanced-accuracy-midpoint-v1",
+      "unclassified_threshold": 0.649099,
+      "similarity_config_id": "cs_f138c575d3b18c6553bf96f57e55f743f6637eb359e7d24fbbd95b63451e3803",
+      "margin": 0.033049,
+      "separable": true,
+      "in_topic": 20,
+      "in_topic_classified": 20,
+      "calibration_out_of_topic": 5,
+      "calibration_unclassified": 5,
+      "leave_one_out_errors": 0
+    },
+    "ac_09_1": {
+      "top1_accuracy": {
+        "value": 0.95,
+        "numerator": 19,
+        "denominator": 20,
+        "interval": {
+          "low": 0.7639,
+          "high": 0.9911
+        }
+      },
+      "accuracy_with_threshold": {
+        "value": 0.95,
+        "numerator": 19,
+        "denominator": 20,
+        "interval": {
+          "low": 0.7639,
+          "high": 0.9911
+        }
+      },
+      "threshold_used": 0.649099,
+      "threshold_source": "active",
+      "rule_baseline_accuracy": {
+        "value": 0.55,
+        "numerator": 11,
+        "denominator": 20,
+        "interval": {
+          "low": 0.3421,
+          "high": 0.7418
+        }
+      },
+      "documents_per_category": {
+        "Databases": 7,
+        "Distributed computing": 5,
+        "Distributed streaming": 4,
+        "Workflow orchestration": 4
+      },
+      "confusion_matrix": {
+        "Databases": {
+          "Databases": 7,
+          "Distributed computing": 0,
+          "Distributed streaming": 0,
+          "Workflow orchestration": 0
+        },
+        "Distributed computing": {
+          "Databases": 1,
+          "Distributed computing": 4,
+          "Distributed streaming": 0,
+          "Workflow orchestration": 0
+        },
+        "Distributed streaming": {
+          "Databases": 0,
+          "Distributed computing": 0,
+          "Distributed streaming": 4,
+          "Workflow orchestration": 0
+        },
+        "Workflow orchestration": {
+          "Databases": 0,
+          "Distributed computing": 0,
+          "Distributed streaming": 0,
+          "Workflow orchestration": 4
+        }
+      },
+      "assigned_per_document": {
+        "0": 0,
+        "1": 1,
+        "2": 3,
+        "3": 16
+      },
+      "verdict": "met_at_point_estimate_only",
+      "errors": [
+        {
+          "source_key": "https://spark.apache.org/docs/4.0.1/sql-data-sources-load-save-functions.html",
+          "label": "Distributed computing",
+          "ranked": [
+            [
+              "Databases",
+              0.700564
+            ],
+            [
+              "Distributed computing",
+              0.685302
+            ],
+            [
+              "Distributed streaming",
+              0.672137
+            ]
+          ]
+        }
+      ]
+    },
+    "ac_09_2": {
+      "threshold_source": "active",
+      "held_out_unclassified": {
+        "value": 0.8,
+        "numerator": 4,
+        "denominator": 5,
+        "interval": {
+          "low": 0.3755,
+          "high": 0.9638
+        }
+      },
+      "cooking_unclassified": true,
+      "verdict": "met"
+    }
+  },
+  "corpus_checks": {
+    "status": "checked",
+    "enrichment": {
+      "[\"postgresql-18-transaction-system.txt\",null]": "current",
+      "[\"postgresql-18-tutorial-advanced-features.pdf\",null]": "current",
+      "[\"postgresql-18-tutorial-getting-started.pdf\",null]": "current",
+      "[\"postgresql-18-tutorial-sql-language.pdf\",null]": "current",
+      "[\"spark-4.0.1-cluster-overview.md\",null]": "current",
+      "[\"spark-4.0.1-hardware-provisioning.md\",null]": "current",
+      "[\"spark-4.0.1-tuning.md\",null]": "current",
+      "https://airflow.apache.org/docs/apache-airflow/stable/core-concepts/dag-run.html": "current",
+      "https://airflow.apache.org/docs/apache-airflow/stable/core-concepts/dags.html": "current",
+      "https://airflow.apache.org/docs/apache-airflow/stable/core-concepts/overview.html": "current",
+      "https://airflow.apache.org/docs/apache-airflow/stable/core-concepts/tasks.html": "current",
+      "https://kafka.apache.org/43/configuration/producer-configs/": "current",
+      "https://kafka.apache.org/43/design/design/": "current",
+      "https://kafka.apache.org/43/getting-started/introduction/": "current",
+      "https://kafka.apache.org/43/getting-started/quickstart/": "current",
+      "https://spark.apache.org/docs/4.0.1/sql-data-sources-load-save-functions.html": "current",
+      "https://spark.apache.org/docs/4.0.1/submitting-applications.html": "current",
+      "https://www.postgresql.org/docs/18/indexes-types.html": "current",
+      "https://www.postgresql.org/docs/18/transaction-iso.html": "current",
+      "https://www.postgresql.org/docs/18/using-explain.html": "current"
+    },
+    "ac_07_2": {
+      "entities": 6386,
+      "invalid": 0,
+      "verdict": "met"
+    },
+    "ac_07_3": {
+      "filter": {
+        "entity": "PostgreSQL"
+      },
+      "modes": {
+        "bm25": {
+          "results": 20,
+          "outside": 0,
+          "verdict": "met"
+        },
+        "vector": {
+          "results": 20,
+          "outside": 0,
+          "verdict": "met"
+        }
+      },
+      "verdict": "met"
+    },
+    "ac_09_3": {
+      "filter": {
+        "category": "Databases"
+      },
+      "modes": {
+        "bm25": {
+          "results": 20,
+          "outside": 0,
+          "verdict": "met"
+        },
+        "vector": {
+          "results": 20,
+          "outside": 0,
+          "verdict": "met"
+        }
+      },
+      "verdict": "met"
+    },
+    "ac_08_1": {
+      "documents": 20,
+      "invalid": [],
+      "verdict": "met"
+    }
+  },
+  "enrichment_times": [
+    {
+      "source_key": "[\"postgresql-18-transaction-system.txt\",null]",
+      "chunks": 75,
+      "characters": 59061,
+      "entities": 537,
+      "entities_ms": 47.3,
+      "keyphrases_ms": 63.6
+    },
+    {
+      "source_key": "[\"postgresql-18-tutorial-advanced-features.pdf\",null]",
+      "chunks": 30,
+      "characters": 23482,
+      "entities": 242,
+      "entities_ms": 21.8,
+      "keyphrases_ms": 26.7
+    },
+    {
+      "source_key": "[\"postgresql-18-tutorial-getting-started.pdf\",null]",
+      "chunks": 18,
+      "characters": 13792,
+      "entities": 65,
+      "entities_ms": 12.0,
+      "keyphrases_ms": 15.2
+    },
+    {
+      "source_key": "[\"postgresql-18-tutorial-sql-language.pdf\",null]",
+      "chunks": 37,
+      "characters": 25930,
+      "entities": 337,
+      "entities_ms": 25.4,
+      "keyphrases_ms": 34.2
+    },
+    {
+      "source_key": "[\"spark-4.0.1-cluster-overview.md\",null]",
+      "chunks": 13,
+      "characters": 7800,
+      "entities": 106,
+      "entities_ms": 8.3,
+      "keyphrases_ms": 9.0
+    },
+    {
+      "source_key": "[\"spark-4.0.1-hardware-provisioning.md\",null]",
+      "chunks": 9,
+      "characters": 4971,
+      "entities": 60,
+      "entities_ms": 4.8,
+      "keyphrases_ms": 6.9
+    },
+    {
+      "source_key": "[\"spark-4.0.1-tuning.md\",null]",
+      "chunks": 38,
+      "characters": 25330,
+      "entities": 205,
+      "entities_ms": 21.8,
+      "keyphrases_ms": 29.4
+    },
+    {
+      "source_key": "https://airflow.apache.org/docs/apache-airflow/stable/core-concepts/dag-run.html",
+      "chunks": 22,
+      "characters": 12949,
+      "entities": 255,
+      "entities_ms": 15.9,
+      "keyphrases_ms": 16.3
+    },
+    {
+      "source_key": "https://airflow.apache.org/docs/apache-airflow/stable/core-concepts/dags.html",
+      "chunks": 65,
+      "characters": 42813,
+      "entities": 889,
+      "entities_ms": 50.9,
+      "keyphrases_ms": 67.8
+    },
+    {
+      "source_key": "https://airflow.apache.org/docs/apache-airflow/stable/core-concepts/overview.html",
+      "chunks": 21,
+      "characters": 14148,
+      "entities": 217,
+      "entities_ms": 15.0,
+      "keyphrases_ms": 20.2
+    },
+    {
+      "source_key": "https://airflow.apache.org/docs/apache-airflow/stable/core-concepts/tasks.html",
+      "chunks": 28,
+      "characters": 17647,
+      "entities": 294,
+      "entities_ms": 19.9,
+      "keyphrases_ms": 20.4
+    },
+    {
+      "source_key": "https://kafka.apache.org/43/configuration/producer-configs/",
+      "chunks": 123,
+      "characters": 54176,
+      "entities": 505,
+      "entities_ms": 47.7,
+      "keyphrases_ms": 62.5
+    },
+    {
+      "source_key": "https://kafka.apache.org/43/design/design/",
+      "chunks": 123,
+      "characters": 85823,
+      "entities": 734,
+      "entities_ms": 101.6,
+      "keyphrases_ms": 126.3
+    },
+    {
+      "source_key": "https://kafka.apache.org/43/getting-started/introduction/",
+      "chunks": 18,
+      "characters": 10863,
+      "entities": 122,
+      "entities_ms": 10.5,
+      "keyphrases_ms": 12.4
+    },
+    {
+      "source_key": "https://kafka.apache.org/43/getting-started/quickstart/",
+      "chunks": 20,
+      "characters": 11235,
+      "entities": 210,
+      "entities_ms": 11.7,
+      "keyphrases_ms": 18.2
+    },
+    {
+      "source_key": "https://spark.apache.org/docs/4.0.1/sql-data-sources-load-save-functions.html",
+      "chunks": 26,
+      "characters": 18852,
+      "entities": 412,
+      "entities_ms": 21.2,
+      "keyphrases_ms": 30.2
+    },
+    {
+      "source_key": "https://spark.apache.org/docs/4.0.1/submitting-applications.html",
+      "chunks": 20,
+      "characters": 12256,
+      "entities": 215,
+      "entities_ms": 14.8,
+      "keyphrases_ms": 19.2
+    },
+    {
+      "source_key": "https://www.postgresql.org/docs/18/indexes-types.html",
+      "chunks": 15,
+      "characters": 9041,
+      "entities": 116,
+      "entities_ms": 14.2,
+      "keyphrases_ms": 10.5
+    },
+    {
+      "source_key": "https://www.postgresql.org/docs/18/transaction-iso.html",
+      "chunks": 40,
+      "characters": 30102,
+      "entities": 300,
+      "entities_ms": 36.3,
+      "keyphrases_ms": 37.6
+    },
+    {
+      "source_key": "https://www.postgresql.org/docs/18/using-explain.html",
+      "chunks": 75,
+      "characters": 54446,
+      "entities": 565,
+      "entities_ms": 64.4,
+      "keyphrases_ms": 48.6
+    }
+  ],
+  "provenance": {
+    "corpus": {
+      "manifest_dataset_id": "techdocqa-reference-2026-10-24-v2",
+      "manifest_status": "frozen",
+      "manifest_fingerprint": "40229e3caebc8816d6ad98d36bddc10eb133deb7d3b1c416f8a1331b9d75591a",
+      "scope_documents": 20,
+      "searchable_documents": 20,
+      "searchable_chunks": 816,
+      "excluded_eligible_documents": 1,
+      "unavailable": {},
+      "content_drift": [],
+      "corpus_fingerprint": "e8713f0c15eeb6db2c801a319c2324507302242c6265b8fff1ae67db63a2c4b5"
+    },
+    "enrichment_config": {
+      "entity_config_id": "ec_f26323871a9c7985bcefa07de9fdc7ce6df594c687a7ce1fbee1e146437832d2",
+      "keyphrase_config_id": "kc_faec6d15ce98cb3a62163e81b4b4ae9cb5441d9d83d00bbc920133d556f5adce",
+      "classifier_config_id": "cc_b300c609bfa2ad4d6d467c74b8e25b374fd4442a6d8f6c2dd6b3c0eb7bf4ef18",
+      "enrichment_config_id": "en_b5e90c2bc4857fc2ec5251e9450f23f10db847317083c3d3978692e45feeb925"
+    },
+    "gazetteer_sha256": "7aa9d0f725d871e49a129539ee85a72f9f50c5a69f4d5f697b764de0c52e8744",
+    "category_descriptions_sha256": "67d706a84744b9cde5acad6f5e5623e136d8bcca09fd3d9477383169591a2f00",
+    "gold_files": {
+      "segmentation": {
+        "status": "frozen",
+        "path": "datasets/nlp/segmentation_gold.jsonl",
+        "sha256": "fd4aaf641fdd0648957de4c6df972f5e5160a0477263aaa890605343bb551294",
+        "rows": 20
+      },
+      "entities": {
+        "status": "frozen",
+        "path": "datasets/nlp/entities_gold.jsonl",
+        "sha256": "b82e2f094e1a86546482a82f06511b600270ee3103e5a4eda4837c5b14578bc4",
+        "rows": 20
+      },
+      "keyphrases": {
+        "status": "frozen",
+        "path": "datasets/nlp/keyphrases_gold.jsonl",
+        "sha256": "320534b487f0c12bff22f2fbe050d13016de6c5e7609e1a8df1bbebdab7ed88d",
+        "rows": 5
+      }
+    },
+    "out_of_topic": {
+      "path": "datasets/nlp/out_of_topic.jsonl",
+      "sha256": "e8180839ea52c2af552172ca773049f778f02b18f00fc2ad2e4a2b280b91a71f"
+    },
+    "requirements_lock_sha256": "0818d0d24aa770fff4da8c22f3e32d7d21c9cabf17172f2e4cf0158490428d3d",
+    "nlp_libraries": {
+      "spacy": "3.8.18",
+      "rake-nltk": "1.0.6",
+      "nltk": "3.10.4"
+    },
+    "spacy_model": null,
+    "segmenter_available": true,
+    "keyphrases_available": true,
+    "keyphrase_policy": "technical-ngrams-v1",
+    "environment": {
+      "code": {
+        "package": "0.1.0",
+        "commit": "3e48ab8be6e9b5385abb66ce75ca0ad2a4eac9e0",
+        "dirty": true
+      },
+      "python": "3.13.3",
+      "platform": "Windows-11-10.0.26300-SP0",
+      "libraries": {
+        "langchain-core": "1.6.9",
+        "langchain-community": "0.4.2",
+        "langchain-chroma": "1.1.0",
+        "langchain-ollama": "1.1.0",
+        "chromadb": "1.5.9",
+        "rank-bm25": "0.2.2",
+        "pydantic": "2.14.0",
+        "numpy": "2.5.4"
+      },
+      "provider": "ollama",
+      "bm25": {
+        "k1": 1.2,
+        "b": 0.75,
+        "tokenizer": "technical-tokens-v1"
+      },
+      "candidate_depth": 20,
+      "embedding": {
+        "model": "nomic-embed-text:latest",
+        "digest": "0a109f422b47e3a30ba2b10eca18548e944e8a23073ee3f3e947efcf3c45e59f",
+        "dimension": 768,
+        "query_prefix": "search_query: "
+      }
+    }
+  },
+  "acceptance": [
+    {
+      "criterion": "AC-06.4",
+      "target": "boundary F1 >= 0.95 on >= 50 sentences (spaCy policy)",
+      "result": 0.989011,
+      "verdict": "met_at_point_estimate_only"
+    },
+    {
+      "criterion": "AC-07.4",
+      "target": "precision >= 0.80, recall >= 0.60 on >= 20 chunks",
+      "result": [
+        0.928571,
+        0.709091
+      ],
+      "verdict": "met_on_tuned_data"
+    },
+    {
+      "criterion": "AC-08.3",
+      "target": "mean share of key terms in the top 10 >= 0.50 over 5 documents",
+      "result": 0.432381,
+      "verdict": "not_met_on_tuned_data"
+    },
+    {
+      "criterion": "AC-09.1",
+      "target": "accuracy >= 0.85, >= 2 documents per category",
+      "result": 0.95,
+      "verdict": "met_at_point_estimate_only"
+    },
+    {
+      "criterion": "AC-09.2",
+      "target": "the out-of-topic cooking article is unclassified (result: held-out fixtures unclassified)",
+      "result": 0.8,
+      "verdict": "met"
+    },
+    {
+      "criterion": "AC-07.2 (real corpus)",
+      "target": "see the corpus checks",
+      "result": null,
+      "verdict": "met"
+    },
+    {
+      "criterion": "AC-07.3 (real corpus)",
+      "target": "see the corpus checks",
+      "result": null,
+      "verdict": "met"
+    },
+    {
+      "criterion": "AC-08.1 (real corpus)",
+      "target": "see the corpus checks",
+      "result": null,
+      "verdict": "met"
+    },
+    {
+      "criterion": "AC-09.3 (real corpus)",
+      "target": "see the corpus checks",
+      "result": null,
+      "verdict": "met"
+    }
+  ],
+  "notes": [
+    "Indicative only: the gold sets are the requirement minimums (P9-9). Every rate carries its denominator and a Wilson 95% interval; a target met only at the point estimate is reported that way.",
+    "The gazetteer changed after the entity sample was drawn, so the entity figures are tuned, not held out (P9-9).",
+    "The n-gram keyphrase policy was tuned on this key-term set, so its key-term figures are tuned, not held out. The RAKE variants were not tuned on it.",
+    "The 20 public documents both calibrate the unclassified threshold and are assessed by AC-09.1, so that side is not independent. The held-out out-of-topic fixtures were not used to choose the threshold.",
+    "Category scores are cosine similarities between a document's mean chunk vector and each description vector, not probabilities.",
+    "DDIA and every other document outside the manifest's evaluation scope were not read."
+  ]
+}
