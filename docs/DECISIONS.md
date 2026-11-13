@@ -227,6 +227,10 @@ Implementation, step 7 (answer review for FR-19.3). This was fixed before any an
   - **The 20 answers.** 11 are new questions and 9 smoke. By technology: Airflow 7, Spark 6, PostgreSQL 5 and Kafka 2. 19 of 20 cite a chunk that holds a labeled passage, a hint only.
   - **Prompts and latency.** Prompts reached at most 1,822 tokens, against a bound of 6,418. The total time per question had a median of 11.8 s and a p95 of 19.6 s.
   - The ratings are the owner's. The sheet with the cited text is `data/evaluation/answers_014faa565acb49c68956490a1ed2cd55_review.md`, which is ignored.
+- **Ratings recorded (2026-11-13): faithful 17 yes, 3 partly, 0 no; relevant 20 of 20 yes.**
+  - The owner rated the 20 answers and wrote the ratings into the sheet's file, replacing the sheet with a re-aligned table that has no run heading. `--record-review` needs that heading and the exact header.
+  - So the ratings and notes were copied verbatim into `..._review_canonical.md` beside it, with only cell padding and the heading changed. The copy was checked row by row against the owner's file and the report, and recorded from there with `--reviewer "Project owner"`, because no name was given. The owner's file was left as it is.
+  - The three answers rated partly are `full-postgresql-01`, `full-spark-01` and `full-kafka-03`, with the owner's notes in the report. No pass mark applies (P10-9).
 
 ## Phase 9 completion (2026-11-12)
 

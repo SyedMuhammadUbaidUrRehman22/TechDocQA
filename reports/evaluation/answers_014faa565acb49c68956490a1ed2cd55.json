@@ -90,7 +90,26 @@
       "max_bound": 6418,
       "bound_held": true
     },
-    "human_review": "pending: FR-19.3 needs faithfulness and relevance ratings for the 20 answers"
+    "human_review": "20 answers rated by Project owner: faithful 17 yes, 3 partly, 0 no; relevant 20 yes, 0 partly, 0 no",
+    "fr_19_3": {
+      "answers": 20,
+      "rated": 20,
+      "faithfulness": {
+        "yes": 17,
+        "partly": 3,
+        "no": 0,
+        "yes_rate": 0.85
+      },
+      "relevance": {
+        "yes": 20,
+        "partly": 0,
+        "no": 0,
+        "yes_rate": 1.0
+      },
+      "complete": true,
+      "reviewer": "Project owner",
+      "recorded_at": "2026-11-13T15:29:53.075777+00:00"
+    }
   },
   "questions": [
     {
@@ -185,9 +204,9 @@
       "cites_labeled_passage": true,
       "evidence_has_labeled_passage": true,
       "review": {
-        "supported": null,
-        "relevant": null,
-        "reviewer": null,
+        "supported": "yes",
+        "relevant": "yes",
+        "reviewer": "Project owner",
         "notes": null
       },
       "rated": true
@@ -284,9 +303,9 @@
       "cites_labeled_passage": true,
       "evidence_has_labeled_passage": true,
       "review": {
-        "supported": null,
-        "relevant": null,
-        "reviewer": null,
+        "supported": "yes",
+        "relevant": "yes",
+        "reviewer": "Project owner",
         "notes": null
       },
       "rated": true
@@ -383,10 +402,10 @@
       "cites_labeled_passage": true,
       "evidence_has_labeled_passage": true,
       "review": {
-        "supported": null,
-        "relevant": null,
-        "reviewer": null,
-        "notes": null
+        "supported": "partly",
+        "relevant": "yes",
+        "reviewer": "Project owner",
+        "notes": "Answer invents states (progress/committed/aborted/sub-committed) not present in the cited chunk; chunk only describes pg_xact/pg_subtrans purpose."
       },
       "rated": true
     },
@@ -482,9 +501,9 @@
       "cites_labeled_passage": true,
       "evidence_has_labeled_passage": true,
       "review": {
-        "supported": null,
-        "relevant": null,
-        "reviewer": null,
+        "supported": "yes",
+        "relevant": "yes",
+        "reviewer": "Project owner",
         "notes": null
       },
       "rated": true
@@ -660,10 +679,10 @@
       "cites_labeled_passage": true,
       "evidence_has_labeled_passage": true,
       "review": {
-        "supported": null,
-        "relevant": null,
-        "reviewer": null,
-        "notes": null
+        "supported": "partly",
+        "relevant": "yes",
+        "reviewer": "Project owner",
+        "notes": "Correct that it sets the default data source (parquet unless configured otherwise); \u201cfalls back to system configuration and can vary\u201d is vague / not supported by the chunk."
       },
       "rated": true
     },
@@ -759,10 +778,10 @@
       "cites_labeled_passage": true,
       "evidence_has_labeled_passage": true,
       "review": {
-        "supported": null,
-        "relevant": null,
-        "reviewer": null,
-        "notes": null
+        "supported": "partly",
+        "relevant": "yes",
+        "reviewer": "Project owner",
+        "notes": "Default behaviour is mis-stated. Chunk says that *by default from 0.11* Kafka favours waiting for a consistent (ISR) replica; unclean election is the configurable alternative. Answer has the default reversed."
       },
       "rated": true
     },
@@ -937,9 +956,9 @@
       "cites_labeled_passage": true,
       "evidence_has_labeled_passage": true,
       "review": {
-        "supported": null,
-        "relevant": null,
-        "reviewer": null,
+        "supported": "yes",
+        "relevant": "yes",
+        "reviewer": "Project owner",
         "notes": null
       },
       "rated": true
@@ -1105,9 +1124,9 @@
       "cites_labeled_passage": true,
       "evidence_has_labeled_passage": true,
       "review": {
-        "supported": null,
-        "relevant": null,
-        "reviewer": null,
+        "supported": "yes",
+        "relevant": "yes",
+        "reviewer": "Project owner",
         "notes": null
       },
       "rated": true
@@ -1204,9 +1223,9 @@
       "cites_labeled_passage": true,
       "evidence_has_labeled_passage": true,
       "review": {
-        "supported": null,
-        "relevant": null,
-        "reviewer": null,
+        "supported": "yes",
+        "relevant": "yes",
+        "reviewer": "Project owner",
         "notes": null
       },
       "rated": true
@@ -1303,9 +1322,9 @@
       "cites_labeled_passage": true,
       "evidence_has_labeled_passage": true,
       "review": {
-        "supported": null,
-        "relevant": null,
-        "reviewer": null,
+        "supported": "yes",
+        "relevant": "yes",
+        "reviewer": "Project owner",
         "notes": null
       },
       "rated": true
@@ -1402,9 +1421,9 @@
       "cites_labeled_passage": false,
       "evidence_has_labeled_passage": true,
       "review": {
-        "supported": null,
-        "relevant": null,
-        "reviewer": null,
+        "supported": "yes",
+        "relevant": "yes",
+        "reviewer": "Project owner",
         "notes": null
       },
       "rated": true
@@ -1501,9 +1520,9 @@
       "cites_labeled_passage": true,
       "evidence_has_labeled_passage": true,
       "review": {
-        "supported": null,
-        "relevant": null,
-        "reviewer": null,
+        "supported": "yes",
+        "relevant": "yes",
+        "reviewer": "Project owner",
         "notes": null
       },
       "rated": true
@@ -1600,9 +1619,9 @@
       "cites_labeled_passage": true,
       "evidence_has_labeled_passage": true,
       "review": {
-        "supported": null,
-        "relevant": null,
-        "reviewer": null,
+        "supported": "yes",
+        "relevant": "yes",
+        "reviewer": "Project owner",
         "notes": null
       },
       "rated": true
@@ -1699,9 +1718,9 @@
       "cites_labeled_passage": true,
       "evidence_has_labeled_passage": true,
       "review": {
-        "supported": null,
-        "relevant": null,
-        "reviewer": null,
+        "supported": "yes",
+        "relevant": "yes",
+        "reviewer": "Project owner",
         "notes": null
       },
       "rated": true
@@ -1798,9 +1817,9 @@
       "cites_labeled_passage": true,
       "evidence_has_labeled_passage": true,
       "review": {
-        "supported": null,
-        "relevant": null,
-        "reviewer": null,
+        "supported": "yes",
+        "relevant": "yes",
+        "reviewer": "Project owner",
         "notes": null
       },
       "rated": true
@@ -1897,9 +1916,9 @@
       "cites_labeled_passage": true,
       "evidence_has_labeled_passage": true,
       "review": {
-        "supported": null,
-        "relevant": null,
-        "reviewer": null,
+        "supported": "yes",
+        "relevant": "yes",
+        "reviewer": "Project owner",
         "notes": null
       },
       "rated": true
@@ -1996,9 +2015,9 @@
       "cites_labeled_passage": true,
       "evidence_has_labeled_passage": true,
       "review": {
-        "supported": null,
-        "relevant": null,
-        "reviewer": null,
+        "supported": "yes",
+        "relevant": "yes",
+        "reviewer": "Project owner",
         "notes": null
       },
       "rated": true
@@ -2095,9 +2114,9 @@
       "cites_labeled_passage": true,
       "evidence_has_labeled_passage": true,
       "review": {
-        "supported": null,
-        "relevant": null,
-        "reviewer": null,
+        "supported": "yes",
+        "relevant": "yes",
+        "reviewer": "Project owner",
         "notes": null
       },
       "rated": true
@@ -2194,9 +2213,9 @@
       "cites_labeled_passage": true,
       "evidence_has_labeled_passage": true,
       "review": {
-        "supported": null,
-        "relevant": null,
-        "reviewer": null,
+        "supported": "yes",
+        "relevant": "yes",
+        "reviewer": "Project owner",
         "notes": null
       },
       "rated": true
@@ -2383,9 +2402,9 @@
       "cites_labeled_passage": true,
       "evidence_has_labeled_passage": true,
       "review": {
-        "supported": null,
-        "relevant": null,
-        "reviewer": null,
+        "supported": "yes",
+        "relevant": "yes",
+        "reviewer": "Project owner",
         "notes": null
       },
       "rated": true
