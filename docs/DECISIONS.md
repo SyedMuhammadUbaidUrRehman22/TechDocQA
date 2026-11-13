@@ -18,6 +18,14 @@ The project owner approved decisions P10-1 to P10-12 of the [Phase 10 plan](PHAS
   - Hybrid: gate G1, vector relevance, at 0.858223. It had 0 leave-one-out errors against 1 or 2 for the other three gates, with a margin of 0.021.
   - Reranked: 0.518618 on the cross-encoder's 0-1 scale over hybrid candidates, with 0 leave-one-out errors and a margin of 0.452.
   - On smoke, both pass 20 of 20 answerable questions and refuse 10 of 10 unanswerable ones. The smoke negatives are all other technologies, so the full benchmark's four in-domain negatives are the held-out check.
+- **Default mode: hybrid (2026-11-13).** Hybrid met the P10-6 rule over vector on the full benchmark (nDCG@5 +0.046, interval [+0.009, +0.085], p95 1.335 s), and the owner made it the default: `[retrieval] mode = "hybrid"` in `config/default.toml`.
+  - `search` and `ask` without `--mode` now use hybrid, its gate and its degraded path. If the embedder is down, they answer from BM25 and say so.
+  - `eval` still defaults to the two P0 modes, so the P0 fingerprint does not move. The code default in `settings.py` stays `vector` for configurations that set no mode.
+  - Reranking stays off.
+- **Benchmark reviewer of record: Fable 5.2 (2026-11-13).** Asked to confirm who reviewed the 20 new questions, the owner could not decide and said to use Fable 5.2 (`claude-fable-5-2`). The review log now names it as the reviewer of record, designated by the owner.
+  - This revises the Reviewers decision above for P10-8: it is an AI reviewer where FR-19 intends a person, as in Phase 8's AC-16.6.
+  - The frozen file and its hash do not change.
+  - The FR-19.3 answer ratings stay recorded as the project owner's.
 - **Git.** Work continues on a local branch, `feat/phase-10`, created from `feat/phase-9`, with local commits and nothing pushed.
 
 Implementation, step 1 (metrics and runner):

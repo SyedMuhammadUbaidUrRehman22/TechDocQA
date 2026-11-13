@@ -52,7 +52,7 @@ Benchmark: [benchmark_full.jsonl](benchmark_full.jsonl), 50 questions: the 30 sm
 
 ## Status
 
-**Reviewed and frozen 2026-11-13.** Claude Code drafted the 20 new questions from the stored chunk text of the public reference, under P10-8 (draft SHA-256 `2754e5b2a118f151893b7ae999fbddcd5ce9b2e9133342d38ed3610e46a3ca34`, commit c550a8e). The project owner reviewed them the same day, in the Claude Code session that drafted them, and accepted all 20 without changes. The reviewer's identity was not stated beyond that.
+**Reviewed and frozen 2026-11-13.** Claude Code drafted the 20 new questions from the stored chunk text of the public reference, under P10-8 (draft SHA-256 `2754e5b2a118f151893b7ae999fbddcd5ce9b2e9133342d38ed3610e46a3ca34`, commit c550a8e). The project owner reviewed them the same day, in the Claude Code session that drafted them, and accepted all 20 without changes. Asked to confirm the reviewer's identity, the owner said on 2026-11-13 to record it as Fable 5.2 (`claude-fable-5-2`), so the reviewer of record is Fable 5.2, designated by the owner. FR-19 intends a person; as with the Phase 8 answer review, the owner's designation stands in for that.
 
 The owner's stated basis: every `full-*` item was checked against the cited official documentation (the Kafka 4.3 docs, the Airflow stable core-concepts pages and the other sources). The anchors, grades and relevance hold up, and the four unanswerable questions stay correctly unlabeled. The review did not say whether the completeness and paraphrase checks below were applied; those were applied when drafting. Every `full-*` line is now `"review": "reviewed"`. No other byte changed.
 
