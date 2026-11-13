@@ -9,6 +9,25 @@ The project owner approved decisions P10-1 to P10-12 of the [Phase 10 plan](PHAS
 - **Reviewers (P10-8, P10-9).** The owner reviews the 20 new benchmark questions and rates the 20 answers, as the requirement intends. No AI reviewer is designated for Phase 10.
 - **Git.** Work continues on a local branch, `feat/phase-10`, created from `feat/phase-9`, with local commits and nothing pushed.
 
+Implementation, step 1 (metrics and runner):
+
+- **P1 metrics under Q-13 (P10-7, clarification).** The Q-13 text does not say how "count each item once" applies to precision and nDCG, or what a chunk holding two labeled items earns.
+  - The rule: a result is *credited* when it holds a relevant item that no earlier result held.
+  - **Precision@K** is credited results in the top K divided by K; missing results count as misses.
+  - **nDCG@K** gives each credited result the gain 2^grade − 1 of the highest-graded item it newly finds, discounted by log2(rank + 1). The ideal ranks the labeled relevant items by grade, one per position.
+  - Both stay between 0 and 1 for any ranking, and a repeat earns nothing, as in Recall@K.
+  - A question with n labeled items scores at most n / K on precision.
+  - In the stored baseline run, no smoke chunk holds two labeled items, so the rule changes no current number. The policy ID stays `q13-v1`.
+- **Fingerprint scope.** `results_fingerprint` hashes only the P0 part of each configuration summary: an allowlist of the P0 keys, with only Recall@K and MRR. Precision@K, nDCG@K, latency and paired differences are derived from the fingerprinted ranks and labels, so leaving them out loses nothing and keeps the P0 baseline comparable. Checked on the real index on 2026-11-13: the smoke `eval` gave `48ce89dc...a3af410` at `a6f3bc8` before the change and again after it, with every P0 metric identical in both modes.
+- **Paired differences (P10-6, parameters fixed before any hybrid result).** Policy `paired-bootstrap-percentile-v1`:
+  - Per-question differences, candidate minus baseline, over the answerable questions evaluated in both configurations, computed from the per-question values stored in the report.
+  - 10,000 resamples with replacement from Python's `random.Random(20261113)`, seeded afresh for each comparison.
+  - The 95% interval drops 250 sorted means from each end, the 251st and the 9,750th of 10,000. "Above 0" means the lower bound is strictly greater than 0.
+  - The p95 latency is nearest-rank: the ⌈0.95 n⌉-th smallest per-question search time, over every question in the run.
+  - The rule's pairs are hybrid against vector and hybrid with reranking against hybrid. nDCG@5 decides; Recall@5 and MRR, and vector against BM25, are descriptive.
+  - The rule is judged on the full benchmark only. On smoke, which also calibrates FR-18, the verdict is diagnostic.
+- **Configurations.** `eval --mode` takes `bm25`, `vector`, `hybrid` and `hybrid+rerank`; the default stays `bm25` and `vector`. Until steps 2 and 3, the hybrid rows report `failed: MODE_NOT_AVAILABLE`. `--answers` and `--refusal` take a search mode, so they refuse `hybrid+rerank`; reranking there follows the configuration (P10-9).
+
 ## Phase 9 completion (2026-11-12)
 
 These entries record how the rest of Phase 9 was implemented under the [contracts](#phase-9-contracts-2026-11-07) below. Evidence is in the [Phase 9 report](PHASE_9_STATUS.md). The owner decided the gold-set annotator, AC-07.4 and AC-08.3 on 2026-11-12, and later that day approved the adopted threshold, the similarity-scale guard and keyphrase policy v2, kept the P9-6 rule for secondary categories, and made the two proposed improvements a separate implementation task. On 2026-11-13 the owner confirmed Fable 5.2 as the round-2 annotator, and the held-out round 2 was scored once. The owner then accepted AC-07.4 as met at the point estimate and closed AC-08.3 as not met with no further work, which completes Phase 9. Each entry records its decision.

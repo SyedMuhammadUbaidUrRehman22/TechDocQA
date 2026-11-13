@@ -1,5 +1,6 @@
 """FR-19 smoke slice, AC-21.3 deletion flags and the eval CLI, offline with the counting fake embedder."""
 
+from itertools import product
 import json
 from pathlib import Path
 
@@ -8,8 +9,9 @@ import pytest
 from techdocqa.cli import main
 from techdocqa.errors import TechDocQAError
 from techdocqa.evaluation.dataset import load_dataset
-from techdocqa.evaluation.metrics import macro_average, question_metrics, recall_at_k, reciprocal_rank
-from techdocqa.evaluation.runner import render_markdown, run_evaluation
+from techdocqa.evaluation.metrics import (METRICS, P0_METRICS, macro_average, ndcg_at_k, p95, paired_bootstrap, precision_at_k,
+                                          question_metrics, recall_at_k, reciprocal_rank)
+from techdocqa.evaluation.runner import P0_SUMMARY_KEYS, fingerprinted, render_markdown, results_fingerprint, run_evaluation
 from techdocqa.indexing.lifecycle import delete_document, withdraw_document
 from techdocqa.indexing.pipeline import index_versions
 from techdocqa.ingestion.chunks import active_chunks
@@ -67,15 +69,67 @@ def run(bench, settings, registry, **kwargs):
 # Metrics (AC-19.3)
 
 def test_metrics_match_hand_computed_examples():
-    # Ranks: miss, a, miss, b, a again.
+    # Ranks: miss, a (grade 2), miss, b (grade 1), a again. Gains: a 2^2 - 1 = 3, b 2^1 - 1 = 1.
     matches = [set(), {"a"}, set(), {"b"}, {"a"}]
-    values = question_metrics(matches, {"a", "b"})
-    assert values == {"recall@1": 0.0, "recall@3": 0.5, "recall@5": 1.0, "mrr": 0.5}
+    values = question_metrics(matches, {"a": 2, "b": 1})
+    assert {name: values[name] for name in P0_METRICS} == {"recall@1": 0.0, "recall@3": 0.5, "recall@5": 1.0, "mrr": 0.5}
+    # Credited positions are 2 and 4; the repeat of a at rank 5 earns nothing. 0/1, 1/3, 2/5.
+    assert values["precision@1"] == 0.0 and values["precision@3"] == pytest.approx(1 / 3) and values["precision@5"] == 0.4
+    # Ideal: a then b, 3/log2(2) + 1/log2(3) = 3 + 0.630930 = 3.630930.
+    # @3: 3/log2(3) = 1.892789, / 3.630930 = 0.521296. @5: (1.892789 + 1/log2(5) = 0.430677) / 3.630930 = 0.639909.
+    assert values["ndcg@1"] == 0.0
+    assert values["ndcg@3"] == pytest.approx(0.521296, abs=1e-6) and values["ndcg@5"] == pytest.approx(0.639909, abs=1e-6)
     # The requirement's example: first relevant result at rank 2 gives MRR 0.5.
     assert reciprocal_rank([set(), {"x"}], {"x"}) == 0.5
     assert reciprocal_rank([{"x"}], {"x"}) == 1.0
     assert reciprocal_rank([set(), set(), {"x"}], {"x"}) == pytest.approx(1 / 3)
-    assert question_metrics([set()] * 5, {"x"}) == {"recall@1": 0.0, "recall@3": 0.0, "recall@5": 0.0, "mrr": 0.0}
+    assert question_metrics([set()] * 5, {"x": 2}) == {name: 0.0 for name in METRICS}
+
+
+def test_a_chunk_holding_two_items_is_credited_once_and_stays_within_one():
+    # One chunk at rank 1 holds a and b, both grade 2 (gain 3): one credited position, one gain.
+    values = question_metrics([{"a", "b"}, set(), set()], {"a": 2, "b": 2})
+    assert values["recall@1"] == 1.0 and values["precision@1"] == 1.0 and values["ndcg@1"] == 1.0
+    # @3: 1 credited position / 3. DCG 3/log2(2) = 3; ideal 3 + 3/log2(3) = 3 + 1.892789 = 4.892789; 3 / 4.892789 = 0.613147.
+    assert values["precision@3"] == pytest.approx(1 / 3) and values["ndcg@3"] == pytest.approx(0.613147, abs=1e-6)
+
+
+def test_missing_results_count_as_misses_and_the_ideal_uses_only_labeled_items():
+    # One result, one grade-1 item: precision keeps K as its denominator; the ideal has one item, so nDCG is 1.
+    values = question_metrics([{"a"}], {"a": 1})
+    assert values["precision@1"] == 1.0 and values["precision@3"] == pytest.approx(1 / 3) and values["precision@5"] == 0.2
+    assert values["ndcg@5"] == 1.0 and values["recall@5"] == 1.0
+    assert precision_at_k([], {"a"}, 5) == 0.0 and ndcg_at_k([], {"a": 2}, 5) == 0.0
+
+
+def test_ndcg_rewards_grade_order_and_ignores_grade_zero_items():
+    # b (grade 1, gain 1) before a (grade 2, gain 3). @1: 1 / 3 = 0.333333.
+    # @3: (1/log2(2) + 3/log2(3) = 1 + 1.892789 = 2.892789) / (3 + 1/log2(3) = 3.630930) = 0.796708.
+    values = question_metrics([{"b"}, {"a"}], {"a": 2, "b": 1})
+    assert values["ndcg@1"] == pytest.approx(1 / 3) and values["ndcg@3"] == pytest.approx(0.796708, abs=1e-6)
+    assert question_metrics([{"a"}, {"b"}], {"a": 2, "b": 1})["ndcg@3"] == 1.0
+    # A grade-0 item is labeled non-relevant: it is never credited and never enters the ideal.
+    # @3: 3/log2(3) = 1.892789, ideal 3/log2(2) = 3, 0.630930.
+    values = question_metrics([{"z"}, {"a"}], {"a": 2, "z": 0})
+    assert values["precision@1"] == 0.0 and values["mrr"] == 0.5 and values["ndcg@3"] == pytest.approx(0.630930, abs=1e-6)
+    with pytest.raises(ValueError):
+        ndcg_at_k([{"z"}], {"z": 0}, 1)
+    with pytest.raises(ValueError):
+        precision_at_k([{"a"}], set(), 1)
+
+
+def test_every_metric_stays_between_zero_and_one():
+    # Every ranking of up to four results drawn from two labeled items and a miss, under every grading.
+    subsets = [set(), {"a"}, {"b"}, {"x"}, {"a", "b"}, {"a", "x"}, {"b", "x"}, {"a", "b", "x"}]
+    gradings = [{"a": first, "b": second} for first, second in product((0, 1, 2), repeat=2) if first or second]
+    checked = 0
+    for grades in gradings:
+        for length in range(5):
+            for ranking in product(subsets, repeat=length):
+                values = question_metrics(list(ranking), grades)
+                assert all(0 <= value <= 1 + 1e-12 for value in values.values()), (ranking, grades, values)
+                checked += 1
+    assert checked == 8 * sum(8 ** length for length in range(5))
 
 
 def test_an_item_found_twice_counts_once_and_grade_zero_items_never_count():
@@ -90,8 +144,40 @@ def test_an_item_found_twice_counts_once_and_grade_zero_items_never_count():
 def test_macro_average_is_unweighted_and_empty_is_none():
     rows = [{"recall@1": 1.0, "recall@3": 1.0, "recall@5": 1.0, "mrr": 1.0},
             {"recall@1": 0.0, "recall@3": 0.5, "recall@5": 1.0, "mrr": 0.25}]
-    assert macro_average(rows) == {"recall@1": 0.5, "recall@3": 0.75, "recall@5": 1.0, "mrr": 0.625}
-    assert macro_average([]) == {"recall@1": None, "recall@3": None, "recall@5": None, "mrr": None}
+    assert macro_average(rows, P0_METRICS) == {"recall@1": 0.5, "recall@3": 0.75, "recall@5": 1.0, "mrr": 0.625}
+    assert macro_average([]) == {name: None for name in METRICS}
+
+
+# Paired differences (P10-6, P10-7)
+
+def test_bootstrap_interval_is_exact_for_constant_differences_and_zero_is_not_a_benefit():
+    assert paired_bootstrap([0.2] * 7) == {"n": 7, "mean_difference": pytest.approx(0.2), "interval": [pytest.approx(0.2)] * 2,
+                                           "better": 7, "worse": 0, "tied": 0}
+    tied = paired_bootstrap([0.0] * 7)
+    # The rule needs the lower bound strictly above 0.
+    assert tied["interval"] == [0.0, 0.0] and not tied["interval"][0] > 0 and tied["tied"] == 7
+    with pytest.raises(ValueError):
+        paired_bootstrap([])
+
+
+def test_bootstrap_interval_trims_250_means_from_each_end():
+    # Two questions: a resampled mean is 0, 0.5 or 1 with probability 1/4, 1/2, 1/4, so about 2,500 means are 0 and
+    # 2,500 are 1. Dropping 250 from each end of 10,000 leaves 0 and 1 as the bounds, whatever the seed.
+    result = paired_bootstrap([1.0, 0.0])
+    assert result["interval"] == [0.0, 1.0] and result["mean_difference"] == 0.5
+    assert (result["better"], result["tied"], result["worse"]) == (1, 1, 0)
+
+
+def test_bootstrap_is_repeatable_for_a_fixed_seed():
+    differences = [0.5, -0.25, 0.0, 1.0, 0.125, -0.5, 0.75]
+    assert paired_bootstrap(differences) == paired_bootstrap(differences)
+    assert paired_bootstrap(differences)["interval"] != paired_bootstrap(differences, seed=1)["interval"]
+
+
+def test_p95_is_the_nearest_rank_value():
+    assert p95([]) is None and p95([4.0]) == 4.0
+    # ceil(0.95 * 20) = 19th, ceil(0.95 * 30) = ceil(28.5) = 29th, ceil(0.95 * 50) = ceil(47.5) = 48th.
+    assert p95(list(range(1, 21))) == 19 and p95(list(range(30, 0, -1))) == 29 and p95(list(range(1, 51))) == 48
 
 
 # Loader (AC-19.5)
@@ -163,9 +249,11 @@ def test_run_reports_both_modes_with_dataset_corpus_and_configuration_identity(b
     for row in report["configurations"]:
         assert row["status"] == "completed" and row["retrieval_config_id"].startswith("rc_")
         assert row["evaluated_questions"] == 3 and row["excluded_questions"] == 0
-        assert set(row["metrics"]) == {"recall@1", "recall@3", "recall@5", "mrr"}
+        assert set(row["metrics"]) == set(METRICS)
         assert all(0 <= value <= 1 for value in row["metrics"].values())
         assert set(row["by_technology"]) == {"Kafka", "Redis"}
+        assert set(row["by_technology"]["Kafka"]) == {"questions", *METRICS}
+        assert 0 < row["latency_seconds"]["median"] <= row["latency_seconds"]["p95"] <= row["latency_seconds"]["max"]
     assert report["dataset"]["sha256"] == load_dataset(bench["dataset"]).sha256 and report["dataset"]["draft"] == 4
     assert report["corpus"]["searchable_documents"] == 2 and report["corpus"]["excluded_eligible_documents"] == 1
     assert len(report["corpus"]["corpus_fingerprint"]) == 64 and report["within_time_limit"]
@@ -188,8 +276,55 @@ def test_identical_inputs_give_identical_metrics(bench, model_settings, registry
     first, second = run(bench, model_settings, registry), run(bench, model_settings, registry)
     assert first["run_id"] != second["run_id"]
     assert first["results_fingerprint"] == second["results_fingerprint"]
-    strip = lambda rows: [{k: v for k, v in row.items() if k != "duration_seconds"} for row in rows]
+    # Everything but the timings repeats.
+    strip = lambda rows: [{k: v for k, v in row.items() if k not in ("duration_seconds", "latency_seconds")} for row in rows]
     assert strip(first["configurations"]) == strip(second["configurations"])
+
+
+def test_fingerprint_covers_only_the_p0_summary(bench, model_settings, registry):
+    report = run(bench, model_settings, registry)
+    for row in report["configurations"]:
+        kept = fingerprinted(row)
+        assert set(kept) <= set(P0_SUMMARY_KEYS) and "latency_seconds" not in kept and "duration_seconds" not in kept
+        assert tuple(kept["metrics"]) == P0_METRICS
+        assert all(set(values) == {"questions", *P0_METRICS} for values in kept["by_technology"].values())
+    parts = report["dataset"]["sha256"], report["corpus"]["corpus_fingerprint"]
+    assert results_fingerprint(*parts, report["configurations"], report["questions"]) == report["results_fingerprint"]
+    # P1 metrics, latency and comparisons are derived from fingerprinted ranks, so changing them moves nothing...
+    altered = json.loads(json.dumps(report["configurations"]))
+    for row in altered:
+        row["metrics"]["ndcg@5"] = row["by_technology"]["Kafka"]["precision@3"] = 0.123
+        row["latency_seconds"]["p95"] = 99.0
+    assert results_fingerprint(*parts, altered, report["questions"]) == report["results_fingerprint"]
+    # ...while any P0 metric does.
+    altered[0]["metrics"]["recall@5"] = 0.123
+    assert results_fingerprint(*parts, altered, report["questions"]) != report["results_fingerprint"]
+
+
+def test_comparisons_pair_questions_evaluated_in_both(bench, model_settings, registry):
+    report = run(bench, model_settings, registry)
+    [entry] = report["comparisons"]
+    assert (entry["candidate"], entry["baseline"], entry["questions"]) == ("vector", "bm25", 3)
+    assert set(entry["metrics"]) == {"ndcg@5", "recall@5", "mrr"} and "benefit_rule" not in entry
+    by_id = {item["id"]: item["results"] for item in report["questions"]}
+    expected = sum(by_id[name]["vector"]["metrics"]["ndcg@5"] - by_id[name]["bm25"]["metrics"]["ndcg@5"]
+                   for name in ("kafka-1", "kafka-2", "redis-1")) / 3
+    assert entry["metrics"]["ndcg@5"]["mean_difference"] == pytest.approx(expected, abs=1e-6)
+    assert entry["metrics"]["ndcg@5"]["interval"][0] <= entry["metrics"]["ndcg@5"]["interval"][1]
+    assert "## Paired differences" in render_markdown(report) and "| vector | bm25 | 3 | ndcg@5 |" in render_markdown(report)
+    assert run(bench, model_settings, registry, modes=["bm25"])["comparisons"] == []
+
+
+def test_four_configurations_run_and_hybrid_reports_its_failure_until_it_exists(bench, model_settings, registry):
+    report = run(bench, model_settings, registry, modes=["bm25", "vector", "hybrid", "hybrid+rerank"])
+    statuses = {row["mode"]: (row["status"], row.get("error", {}).get("code")) for row in report["configurations"]}
+    assert statuses == {"bm25": ("completed", None), "vector": ("completed", None),
+                        "hybrid": ("failed", "MODE_NOT_AVAILABLE"), "hybrid+rerank": ("failed", "MODE_NOT_AVAILABLE")}
+    assert [(entry["candidate"], entry["baseline"]) for entry in report["comparisons"]] == [("vector", "bm25")]
+    assert "| hybrid+rerank | failed: MODE_NOT_AVAILABLE |" in render_markdown(report)
+    with pytest.raises(TechDocQAError) as caught:
+        run(bench, model_settings, registry, modes=["reranked"])
+    assert caught.value.response.error.code == "INVALID_ARGUMENT"
 
 
 def test_unanswerable_questions_get_score_spreads_not_recall(bench, model_settings, registry):
@@ -257,7 +392,11 @@ def test_eval_cli_writes_json_and_markdown_reports(bench, model_settings, regist
     bad = write_lines(tmp_path / "bad.jsonl", [question("q", "No items?")])
     assert main(["eval", "--dataset", str(bad), "--manifest", str(bench["manifest"])]) == 1
     assert json.loads(capsys.readouterr().err)["error"]["code"] == "INVALID_BENCHMARK"
-    assert main(["eval", "--mode", "hybrid"]) == 2
+    assert main(["eval", "--mode", "reranked"]) == 2
+    capsys.readouterr()
+    # Answer runs take a search mode; reranking follows the configuration.
+    assert main(["eval", "--mode", "hybrid+rerank", "--refusal"]) == 2
+    assert json.loads(capsys.readouterr().err)["error"]["code"] == "INVALID_ARGUMENT"
 
 
 def test_help_lists_eval(capsys):

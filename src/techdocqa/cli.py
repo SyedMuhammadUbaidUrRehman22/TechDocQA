@@ -139,12 +139,13 @@ def make_parser() -> argparse.ArgumentParser:
     deletion.add_argument("document_id")
     deletion.add_argument("--reason", required=True)
     deletion.add_argument("--yes", action="store_true", help="confirm this cannot be undone")
-    evaluation = commands.add_parser("eval", help="run the smoke benchmark: Recall@1/3/5 and MRR for BM25 and vector search, "
-                                                  "with proposed refusal thresholds")
+    evaluation = commands.add_parser("eval", help="run a benchmark: Precision, Recall and nDCG at 1/3/5 and MRR per configuration, "
+                                                  "paired differences, and proposed refusal thresholds")
     evaluation.add_argument("--dataset", type=Path, default=Path("datasets/benchmark_smoke.jsonl"))
     evaluation.add_argument("--manifest", type=Path, default=Path("datasets/corpus_manifest.json"),
                             help="frozen corpus manifest; only its evaluation documents are searched")
-    evaluation.add_argument("--mode", action="append", choices=["bm25", "vector"], help="repeat to choose; default both")
+    evaluation.add_argument("--mode", action="append", choices=["bm25", "vector", "hybrid", "hybrid+rerank"],
+                            help="configuration; repeat to choose; default bm25 and vector")
     evaluation.add_argument("--report-dir", type=Path, help="where the JSON and Markdown reports go (default: <data>/evaluation)")
     answer_runs = evaluation.add_mutually_exclusive_group()
     answer_runs.add_argument("--answers", type=int, metavar="N",
@@ -181,6 +182,9 @@ def main(argv: list[str] | None = None) -> int:
             raise TechDocQAError("INVALID_ARGUMENT", "--answers needs a positive count and at most one --mode.", stage="arguments")
         if args.command == "eval" and args.refusal and len(args.mode or []) > 1:
             raise TechDocQAError("INVALID_ARGUMENT", "--refusal takes at most one --mode.", stage="arguments")
+        if args.command == "eval" and (args.answers is not None or args.refusal) and "hybrid+rerank" in (args.mode or []):
+            raise TechDocQAError("INVALID_ARGUMENT", "--answers and --refusal take a search mode; reranking follows the configuration.",
+                                 stage="arguments")
         if args.command == "eval" and args.enrichment and args.mode:
             raise TechDocQAError("INVALID_ARGUMENT", "--enrichment measures enrichment, not a retrieval mode.", stage="arguments")
         try:

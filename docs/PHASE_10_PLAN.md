@@ -70,7 +70,7 @@ Phase 10 adds modes; it must not move the existing ones.
 As in Phase 9's round 2, these are fixed before the data they judge exists:
 
 - The fusion parameters are the requirement defaults. Any sweep of `k`, depth or weights is a diagnostic only, never a selection.
-- The hybrid gate's candidates and selection rule (P10-3), the measured-benefit rule (P10-6) and the answer sample (P10-9) are fixed in this plan.
+- The hybrid gate's candidates and selection rule (P10-3), the measured-benefit rule (P10-6) and the answer sample (P10-9) are fixed in this plan. Step 1 fixed the rule's remaining parameters in code before any hybrid result existed: the seed, the interval method and the p95 definition ([decisions](DECISIONS.md#phase-10-contracts-2026-11-13)).
 - The 20 new questions are committed before any hybrid or reranker run touches them. Every proposal comes from smoke, and the full run is made once per configuration for the report.
 
 ## Work sequence

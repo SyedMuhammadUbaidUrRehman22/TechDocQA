@@ -19,12 +19,25 @@ import uuid
 from techdocqa import __version__
 from techdocqa.errors import TechDocQAError
 from techdocqa.evaluation.dataset import load_dataset
-from techdocqa.evaluation.metrics import K_VALUES, METRIC_POLICY, macro_average, question_metrics
+from techdocqa.evaluation.metrics import (BOOTSTRAP_CONFIDENCE, BOOTSTRAP_POLICY, BOOTSTRAP_RESAMPLES, BOOTSTRAP_SEED, K_VALUES,
+                                          METRIC_POLICY, METRICS, P0_METRICS, macro_average, p95, paired_bootstrap, question_metrics)
 from techdocqa.ingestion.chunks import stored_chunks
 from techdocqa.retrieval.search import search
 from techdocqa.schemas import SearchRequest
 
+# The four FR-19 configurations, each a search mode and a rerank flag. The default stays the two P0 modes.
+CONFIGURATIONS = {"bm25": ("bm25", False), "vector": ("vector", False), "hybrid": ("hybrid", False), "hybrid+rerank": ("hybrid", True)}
 MODES = ("bm25", "vector")
+# P10-6: candidate against baseline. The first pair is descriptive; the other two are the measured-benefit rule's.
+COMPARISONS = (("vector", "bm25"), ("hybrid", "vector"), ("hybrid+rerank", "hybrid"))
+BENEFIT_RULE = {("hybrid", "vector"), ("hybrid+rerank", "hybrid")}
+PAIRED_METRICS = ("ndcg@5", "recall@5", "mrr")
+BENEFIT_METRIC = "ndcg@5"
+LATENCY_LIMIT_SECONDS = 5.0
+# results_fingerprint covers exactly the P0 summary (AC-19.4): later additions are derived from fingerprinted ranks,
+# and leaving them out keeps the P0 baseline 48ce89dc...a3af410 comparable across phases.
+P0_SUMMARY_KEYS = ("mode", "status", "error", "retrieval_config_id", "evaluated_questions", "excluded_questions", "metrics",
+                   "by_technology", "answerable_top_score", "answerable_top_relevance", "unanswerable", "refusal_calibration")
 LIBRARIES = ("langchain-core", "langchain-community", "langchain-chroma", "langchain-ollama", "chromadb", "rank-bm25", "pydantic", "numpy")
 SCORE_DIGITS = 6
 TIME_LIMIT_SECONDS = 300
@@ -94,12 +107,13 @@ def resolve(item, state) -> tuple[set[str], str | None]:
 def label_questions(dataset, state) -> list[dict]:
     labeled = []
     for question in dataset.questions:
-        chunk_items, relevant, items, flags = {}, set(), [], []
+        chunk_items, relevant, grades, items, flags = {}, set(), {}, [], []
         for index, item in enumerate(question.relevant):
             item_id = f"{question.id}#{index}"
             found, reason = resolve(item, state)
             if reason:
                 flags.append({"item": item_id, "source_key": item.source_key, "reason": reason})
+            grades[item_id] = item.grade
             if item.grade > 0:
                 relevant.add(item_id)
             for chunk_id in found:
@@ -107,7 +121,8 @@ def label_questions(dataset, state) -> list[dict]:
             items.append({"item": item_id, "source_key": item.source_key, "grade": item.grade, "resolved_chunks": len(found)})
         # Grade-0 items are labeled non-relevant, so they never count as a hit.
         chunk_items = {chunk: hits & relevant for chunk, hits in chunk_items.items()}
-        labeled.append({"question": question, "relevant": relevant, "chunk_items": chunk_items, "items": items, "flags": flags})
+        labeled.append({"question": question, "relevant": relevant, "grades": grades, "chunk_items": chunk_items, "items": items,
+                        "flags": flags})
     return labeled
 
 
@@ -122,13 +137,15 @@ def rounded(values: dict) -> dict:
     return {name: (None if value is None else round(value, SCORE_DIGITS)) for name, value in values.items()}
 
 
-def run_mode(mode: str, labeled: list[dict], scope: frozenset, settings, registry) -> tuple[dict, dict]:
+def run_mode(name: str, labeled: list[dict], scope: frozenset, settings, registry) -> tuple[dict, dict]:
+    """One configuration over every question; `name` is a key of CONFIGURATIONS."""
+    mode, rerank = CONFIGURATIONS[name]
     per_question, config_id = {}, None
     started = time.perf_counter()
     try:
         for entry in labeled:
             question = entry["question"]
-            request = SearchRequest(query=question.question, mode=mode, top_k=max(K_VALUES))
+            request = SearchRequest(query=question.question, mode=mode, rerank=rerank, top_k=max(K_VALUES))
             begun = time.perf_counter()
             response = search(request, settings, registry, source_keys=scope)
             latency = time.perf_counter() - begun
@@ -141,11 +158,11 @@ def run_mode(mode: str, labeled: list[dict], scope: frozenset, settings, registr
                    "latency_seconds": round(latency, 3)}
             if not question.unanswerable and not entry["flags"]:
                 row["first_relevant_rank"] = next((rank for rank, items in enumerate(matches, 1) if items), None)
-                row["metrics"] = rounded(question_metrics(matches, entry["relevant"]))
+                row["metrics"] = rounded(question_metrics(matches, entry["grades"]))
             per_question[question.id] = row
     except TechDocQAError as error:
         detail = error.response.error
-        return {"mode": mode, "status": "failed", "error": {"code": detail.code, "message": detail.message},
+        return {"mode": name, "status": "failed", "error": {"code": detail.code, "message": detail.message},
                 "duration_seconds": round(time.perf_counter() - started, 3)}, {}
     scored = [(entry["question"], per_question[entry["question"].id]) for entry in labeled]
     answered = [(question, row) for question, row in scored if "metrics" in row]
@@ -153,9 +170,11 @@ def run_mode(mode: str, labeled: list[dict], scope: frozenset, settings, registr
     by_technology = {}
     for question, row in answered:
         by_technology.setdefault(question.technology or "unspecified", []).append(row["metrics"])
+    latencies = [row["latency_seconds"] for _, row in scored]
     summary = {
-        "mode": mode, "status": "completed", "retrieval_config_id": config_id,
+        "mode": name, "status": "completed", "retrieval_config_id": config_id,
         "duration_seconds": round(time.perf_counter() - started, 3),
+        "latency_seconds": {"median": round(statistics.median(latencies), 3), "p95": p95(latencies), "max": max(latencies)},
         "evaluated_questions": len(answered),
         "excluded_questions": sum(1 for entry in labeled if not entry["question"].unanswerable and entry["flags"]),
         "metrics": rounded(macro_average([row["metrics"] for _, row in answered])),
@@ -197,6 +216,56 @@ def refusal_calibration(mode: str, answered: list[dict], unanswerable: list[dict
             "active": active, "proposed": sufficiency.propose(top(answered), top(unanswerable))}
 
 
+def fingerprinted(summary: dict) -> dict:
+    """The P0 part of a configuration summary: P0 keys only, and only P0 metrics."""
+    kept = {key: value for key, value in summary.items() if key in P0_SUMMARY_KEYS}
+    if "metrics" in kept:
+        kept["metrics"] = {name: kept["metrics"][name] for name in P0_METRICS}
+        kept["by_technology"] = {technology: {name: values[name] for name in ("questions",) + P0_METRICS}
+                                 for technology, values in kept["by_technology"].items()}
+    return kept
+
+
+def comparisons(configurations: list[dict], questions: list[dict]) -> list[dict]:
+    """Paired per-question differences, candidate minus baseline, over questions evaluated in both (P10-6, P10-7).
+
+    Computed from the rounded per-question metrics stored in the report, so the intervals can be recomputed from it.
+    """
+    completed = {row["mode"]: row for row in configurations if row["status"] == "completed"}
+    found = []
+    for candidate, baseline in COMPARISONS:
+        if candidate not in completed or baseline not in completed:
+            continue
+        paired = [(question["results"][candidate]["metrics"], question["results"][baseline]["metrics"]) for question in questions
+                  if "metrics" in question["results"].get(candidate, {}) and "metrics" in question["results"].get(baseline, {})]
+        if not paired:
+            continue
+        entry = {"candidate": candidate, "baseline": baseline, "questions": len(paired), "metrics": {}}
+        for name in PAIRED_METRICS:
+            result = paired_bootstrap([ours[name] - theirs[name] for ours, theirs in paired])
+            entry["metrics"][name] = {**result, "mean_difference": round(result["mean_difference"], SCORE_DIGITS),
+                                      "interval": [round(value, SCORE_DIGITS) for value in result["interval"]]}
+        if (candidate, baseline) in BENEFIT_RULE:
+            lower = entry["metrics"][BENEFIT_METRIC]["interval"][0]
+            latency = completed[candidate]["latency_seconds"]["p95"]
+            entry["benefit_rule"] = {"interval_above_zero": lower > 0, "p95_latency_seconds": latency,
+                                     "latency_within_limit": latency <= LATENCY_LIMIT_SECONDS,
+                                     "measured_benefit": lower > 0 and latency <= LATENCY_LIMIT_SECONDS}
+        found.append(entry)
+    return found
+
+
+def results_fingerprint(dataset_sha256: str, corpus_fingerprint: str, configurations: list[dict], questions: list[dict]) -> str:
+    """Everything that must repeat exactly for identical inputs (AC-19.4); run ID, dates and timings are excluded."""
+    repeatable = {"dataset": dataset_sha256, "corpus": corpus_fingerprint, "policy": METRIC_POLICY,
+                  "configurations": [fingerprinted(summary) for summary in configurations],
+                  "questions": [{"id": question["id"], "flags": question["flags"],
+                                 "results": {mode: {"ranked": row["ranked"], "scores": row["scores"], "relevance": row["relevance"]}
+                                             for mode, row in question["results"].items()}}
+                                for question in questions]}
+    return hashlib.sha256(json.dumps(repeatable, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
+
+
 def code_version() -> dict:
     root = Path(__file__).resolve().parents[3]
     def git(*arguments):
@@ -233,6 +302,8 @@ def notes(dataset, corpus: dict, answerable: int, unanswerable: int) -> list[str
         found.append(f"{drafts} of {len(dataset.questions)} questions are drafts without second-person review (FR-19); results are provisional.")
     found.append("The same questions calibrate FR-18 refusal, so calibration and this assessment overlap; this is not an independent holdout.")
     found.append(f"Results are cut at rank {max(K_VALUES)}: MRR scores 0 when the first relevant item is below that rank.")
+    found.append("Precision@K credits at most one position per labeled relevant item, so a question with n labeled items "
+                 "scores at most n / K.")
     if corpus["excluded_eligible_documents"]:
         found.append(f"{corpus['excluded_eligible_documents']} searchable document(s) outside the evaluation manifest were excluded from every search.")
     if corpus["manifest_status"] != "frozen":
@@ -243,7 +314,11 @@ def notes(dataset, corpus: dict, answerable: int, unanswerable: int) -> list[str
 
 
 def run_evaluation(dataset_path: Path, manifest_path: Path, settings, registry, modes=None) -> dict:
+    """Run each named configuration (CONFIGURATIONS keys; default the two P0 modes) over the benchmark."""
     modes = tuple(dict.fromkeys(modes or MODES))
+    unknown = [name for name in modes if name not in CONFIGURATIONS]
+    if unknown:
+        raise TechDocQAError("INVALID_ARGUMENT", f"Unknown configuration: {', '.join(unknown)}.", stage="evaluation")
     started_at, started = datetime.now(timezone.utc).isoformat(), time.perf_counter()
     dataset = load_dataset(dataset_path)
     manifest = load_manifest(manifest_path)
@@ -268,13 +343,6 @@ def run_evaluation(dataset_path: Path, manifest_path: Path, settings, registry, 
                     "checks": {"ds06_30_to_50_questions": 30 <= len(dataset.questions) <= 50,
                                "smoke_at_least_10_unanswerable": unanswerable >= 10,
                                "q12_20_answerable_10_unanswerable": (answerable, unanswerable) == (20, 10)}}
-    # Everything that must repeat exactly for identical inputs (AC-19.4); run ID, dates and timings are excluded.
-    repeatable = {"dataset": dataset.sha256, "corpus": state["summary"]["corpus_fingerprint"], "policy": METRIC_POLICY,
-                  "configurations": [{key: value for key, value in summary.items() if key != "duration_seconds"} for summary in configurations],
-                  "questions": [{"id": question["id"], "flags": question["flags"],
-                                 "results": {mode: {"ranked": row["ranked"], "scores": row["scores"], "relevance": row["relevance"]}
-                                             for mode, row in question["results"].items()}}
-                                for question in questions]}
     duration = time.perf_counter() - started
     return {
         "run_id": "eval_" + uuid.uuid4().hex, "started_at": started_at, "finished_at": datetime.now(timezone.utc).isoformat(),
@@ -282,10 +350,22 @@ def run_evaluation(dataset_path: Path, manifest_path: Path, settings, registry, 
         "dataset": dataset_info, "corpus": state["summary"], "environment": environment(settings, modes),
         "metric_policy": {"id": METRIC_POLICY, "k": list(K_VALUES), "unit": "labeled item, counted once",
                           "average": "macro over evaluated answerable questions", "relevant_grades": [1, 2],
-                          "excluded": "questions with any flagged label"},
+                          "excluded": "questions with any flagged label",
+                          "credited_position": "a result holding a relevant item that no earlier result held",
+                          "precision": "credited positions in the top K / K; missing results count as misses",
+                          "ndcg": "gain 2^grade - 1 of the highest-graded item a credited position newly finds, discount log2(rank + 1), "
+                                  "ideal from the labeled relevant items ranked by grade, one per position",
+                          "fingerprint": "P0 metrics and summary only; P1 metrics are derived from the fingerprinted ranks",
+                          "paired_difference": {"policy": BOOTSTRAP_POLICY, "resamples": BOOTSTRAP_RESAMPLES, "seed": BOOTSTRAP_SEED,
+                                                "confidence": BOOTSTRAP_CONFIDENCE, "metrics": list(PAIRED_METRICS),
+                                                "unit": "evaluated answerable questions present in both configurations",
+                                                "benefit_rule": f"P10-6: {BENEFIT_METRIC} interval lower bound > 0 and the candidate's "
+                                                                f"nearest-rank p95 search latency <= {LATENCY_LIMIT_SECONDS} s; judged "
+                                                                "on the full benchmark only"}},
         "configurations": configurations,
+        "comparisons": comparisons(configurations, questions),
         "flags": [{"question": question["id"], **flag} for question in questions for flag in question["flags"]],
-        "results_fingerprint": hashlib.sha256(json.dumps(repeatable, sort_keys=True, separators=(",", ":")).encode()).hexdigest(),
+        "results_fingerprint": results_fingerprint(dataset.sha256, state["summary"]["corpus_fingerprint"], configurations, questions),
         "notes": notes(dataset, state["summary"], answerable, unanswerable),
         "questions": questions,
     }
@@ -331,10 +411,33 @@ def refusal_lines(run_id: str, completed: list[dict]) -> list[str]:
     return lines + blocks
 
 
+def comparison_lines(report: dict) -> list[str]:
+    policy = report["metric_policy"]["paired_difference"]
+    lines = ["", "## Paired differences", "",
+             f"Candidate minus baseline per question, over the answerable questions evaluated in both; mean with a "
+             f"{policy['confidence']:.0%} percentile bootstrap interval ({policy['resamples']:,} resamples, seed {policy['seed']}). "
+             f"Indicative. {policy['benefit_rule']}.", ""]
+    if not report["comparisons"]:
+        return lines + ["No pair of completed configurations to compare."]
+    lines += ["| Candidate | Baseline | Questions | Metric | Mean difference | 95% interval | Better / tied / worse | Benefit rule |",
+              "|---|---|---|---|---|---|---|---|"]
+    for entry in report["comparisons"]:
+        for name, values in entry["metrics"].items():
+            rule = ""
+            if "benefit_rule" in entry and name == BENEFIT_METRIC:
+                verdict = entry["benefit_rule"]
+                rule = (f"{'met' if verdict['measured_benefit'] else 'not met'} (interval above 0: "
+                        f"{'yes' if verdict['interval_above_zero'] else 'no'}; p95 {verdict['p95_latency_seconds']} s)")
+            lines.append(f"| {entry['candidate']} | {entry['baseline']} | {values['n']} | {name} | {values['mean_difference']:+.3f} | "
+                         f"{values['interval'][0]:+.3f} to {values['interval'][1]:+.3f} | {values['better']} / {values['tied']} / "
+                         f"{values['worse']} | {rule} |")
+    return lines
+
+
 def render_markdown(report: dict) -> str:
     dataset, corpus = report["dataset"], report["corpus"]
-    names = [f"recall@{k}" for k in K_VALUES] + ["mrr"]
-    lines = [f"# Smoke benchmark run {report['run_id']}", "",
+    names = list(METRICS)
+    lines = [f"# Benchmark run {report['run_id']}", "",
              f"- Date: {report['started_at']}, {report['duration_seconds']} s (limit {TIME_LIMIT_SECONDS} s: "
              f"{'met' if report['within_time_limit'] else 'NOT met'})",
              f"- Dataset: `{dataset['dataset_id']}` sha256 `{dataset['sha256']}`, {dataset['questions']} questions "
@@ -344,14 +447,14 @@ def render_markdown(report: dict) -> str:
              f"- Code: {report['environment']['code']['commit']} (dirty: {report['environment']['code']['dirty']}), "
              f"metric policy `{report['metric_policy']['id']}`",
              f"- Results fingerprint: `{report['results_fingerprint']}`", "",
-             "| Configuration | Config ID | Evaluated | Excluded | " + " | ".join(names) + " |",
-             "|---|---|---|---|" + "---|" * len(names)]
+             "| Configuration | Config ID | Evaluated | Excluded | " + " | ".join(names) + " | p95 latency (s) |",
+             "|---|---|---|---|" + "---|" * len(names) + "---|"]
     for row in report["configurations"]:
         if row["status"] != "completed":
-            lines.append(f"| {row['mode']} | failed: {row['error']['code']} | | |" + " |" * len(names))
+            lines.append(f"| {row['mode']} | failed: {row['error']['code']} | | |" + " |" * (len(names) + 1))
             continue
         lines.append(f"| {row['mode']} | `{row['retrieval_config_id'][:15]}` | {row['evaluated_questions']} | {row['excluded_questions']} | "
-                     + " | ".join(metric(row["metrics"][name]) for name in names) + " |")
+                     + " | ".join(metric(row["metrics"][name]) for name in names) + f" | {row['latency_seconds']['p95']} |")
     completed = [row for row in report["configurations"] if row["status"] == "completed"]
     if completed:
         lines += ["", "## By technology", "", "| Configuration | Technology | Questions | " + " | ".join(names) + " |",
@@ -359,6 +462,7 @@ def render_markdown(report: dict) -> str:
         for row in completed:
             for technology, values in row["by_technology"].items():
                 lines.append(f"| {row['mode']} | {technology} | {values['questions']} | " + " | ".join(metric(values[name]) for name in names) + " |")
+        lines += comparison_lines(report)
         lines += ["", "## Top-1 scores", "", "Raw scores in each mode's own scale. FR-18 calibration uses the 0-1 relevance below.", "",
                   "| Configuration | Answerable min / median / max | Unanswerable min / median / max | Unanswerable with results |",
                   "|---|---|---|---|"]
