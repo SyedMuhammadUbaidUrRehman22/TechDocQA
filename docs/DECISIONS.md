@@ -218,7 +218,7 @@ Implementation, step 7 (answer review for FR-19.3). This was fixed before any an
     - `full-postgresql-02`: `LOW_RELEVANCE` at the gate, as step 6 predicted, with no chat call.
     - `full-kafka-02` and `smoke-postgresql-03`: `NO_VALID_CITATIONS`.
     - `full-airflow-01`: `INSUFFICIENT_CONTEXT`. These three passed the gate, and the model then declined.
-  - **The 20 answers.** 11 are new questions and 9 smoke. By technology: Airflow 6, Spark 6, PostgreSQL 6 and Kafka 2. 19 of 20 cite a chunk that holds a labeled passage, a hint only.
+  - **The 20 answers.** 11 are new questions and 9 smoke. By technology: Airflow 7, Spark 6, PostgreSQL 5 and Kafka 2. 19 of 20 cite a chunk that holds a labeled passage, a hint only.
   - **Prompts and latency.** Prompts reached at most 1,822 tokens, against a bound of 6,418. The total time per question had a median of 11.8 s and a p95 of 19.6 s.
   - The ratings are the owner's. The sheet with the cited text is `data/evaluation/answers_014faa565acb49c68956490a1ed2cd55_review.md`, which is ignored.
 
