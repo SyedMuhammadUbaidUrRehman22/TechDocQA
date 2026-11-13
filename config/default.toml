@@ -44,7 +44,9 @@ minimum = 100
 unit = "characters"
 
 [retrieval]
-mode = "vector"
+# Default search mode for search and ask. Hybrid met the P10-6 measured-benefit rule over vector on the full benchmark
+# (nDCG@5 +0.046, interval [+0.009, +0.085]); the owner made it the default on 2026-11-13. eval keeps bm25 and vector.
+mode = "hybrid"
 candidate_depth = 20
 top_k = 5
 bm25_k1 = 1.2
