@@ -241,6 +241,24 @@ def test_repository_smoke_benchmark_has_the_required_composition():
     assert {label.source_key for item in answerable for label in item.relevant} <= public
 
 
+def test_repository_full_benchmark_keeps_smoke_and_adds_twenty():
+    """P10-8: the smoke lines byte for byte, then 4 answerable per technology and 4 in-domain negatives."""
+    smoke = (ROOT / "datasets/benchmark_smoke.jsonl").read_bytes()
+    assert (ROOT / "datasets/benchmark_full.jsonl").read_bytes().startswith(smoke)
+    dataset = load_dataset(ROOT / "datasets/benchmark_full.jsonl")
+    manifest = json.loads((ROOT / "datasets/corpus_manifest.json").read_text(encoding="utf-8"))
+    public = {item["source_key"] for item in manifest["documents"] if item["evaluation_included"]}
+    new = [item for item in dataset.questions if item.id.startswith("full-")]
+    assert len(dataset.questions) == 50 and len(new) == 20
+    assert sum(item.unanswerable for item in dataset.questions) == 14
+    for technology in TECHNOLOGIES:
+        rows = [item for item in new if item.technology == technology]
+        answerable = [item for item in rows if not item.unanswerable]
+        assert len(rows) == 5 and len(answerable) == 4
+        assert {"identifier", "how_to"} <= {item.type for item in answerable}
+    assert {label.source_key for item in new for label in item.relevant} <= public
+
+
 # Runs (AC-19.1, AC-19.4)
 
 def test_run_reports_both_modes_with_dataset_corpus_and_configuration_identity(bench, model_settings, registry):
