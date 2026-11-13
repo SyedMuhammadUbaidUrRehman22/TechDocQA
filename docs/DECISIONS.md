@@ -194,6 +194,25 @@ Implementation, step 6 (results, 2026-11-13). Nothing below changed a tunable:
     - **AC-18.2:** 17 of 20 answered (0.85, exactly the target). All three misses passed the gate with a top relevance of at least 0.996. The model returned `INSUFFICIENT_CONTEXT` for `smoke-kafka-03` and `smoke-kafka-05`, and `NO_VALID_CITATIONS` for `smoke-postgresql-03`.
   - **Limits.** Smoke calibrated both BM25's thresholds (Phase 8) and the reranked ones, so these runs check the degraded path, not refusal on new questions. For new questions, the full run gives the evidence: BM25's gate passed only 7 of its 16 held-out answerable questions, and degraded hybrid without reranking uses that gate. The reranked gate over BM25 candidates was not measured on held-out questions. Light scripts ran alongside both runs, so their latencies are not comparable with the other runs'.
 
+Implementation, step 7 (answer review for FR-19.3). This was fixed before any answer was generated:
+
+- **Sample (P10-9).** The plan's "seeded order" had no seed. It now uses the step 1 seed, `random.Random(20261113)`, which predates every result. The answerable questions of `benchmark_full.jsonl` are shuffled once, in file order. This was settled after the full run's per-question retrieval results were seen, but before any answer existed. The order begins `smoke-airflow-01`, `full-spark-02`, `full-postgresql-01`, `smoke-airflow-03`, `full-kafka-02`; the 10th question is `full-postgresql-02`, which the hybrid gate refuses (step 6).
+- **Top-up.** P10-9 fixes 20 questions, while FR-19.3 asks for 20 answers.
+  - The run asks the questions in the seeded order until 20 have an answer with a citation.
+  - A question without one stays in the report, is listed and is not rated. It is not replaced by choice: the next question in the order is simply asked.
+  - If the 36 run out first, the report says so.
+- **Ratings.** The owner rates each answer for faithfulness (every claim supported by the cited chunks) and for relevance (it answers the question), each as yes, partly or no.
+  - Faithfulness is the Phase 8 rating of the same thing and is stored as `supported`.
+  - The report gives counts for both ratings. No pass mark is set, and AC-16.6 is not judged on this run.
+- **Run.** `eval --answers 20 --seed 20261113 --mode hybrid` on `benchmark_full.jsonl`.
+  - `--mode hybrid` is passed because the default is still `vector`. Reranking follows the configuration, which is off.
+  - The chat model is the default Ollama one. Searches are scoped to the evaluation manifest, so DDIA is never searched.
+  - This run is P10-9's sanctioned search on the `full-*` questions, the only one after the full run. No trial run was made on the full benchmark; the tooling was tested on fixtures.
+- **Tooling.** Phase 8's path is unchanged.
+  - `eval --answers N` without `--seed` keeps the round-robin selection, the six-column sheet and AC-16.6.
+  - With `--seed`, the report carries `review_scheme: fr-19.3-v1`, the seed and a `sample` block. The sheet gets Faithful and Relevant columns.
+  - `--record-review` reads either sheet, and refuses a rating on a question without an answer or a sheet that does not fit its report.
+
 ## Phase 9 completion (2026-11-12)
 
 These entries record how the rest of Phase 9 was implemented under the [contracts](#phase-9-contracts-2026-11-07) below. Evidence is in the [Phase 9 report](PHASE_9_STATUS.md). The owner decided the gold-set annotator, AC-07.4 and AC-08.3 on 2026-11-12, and later that day approved the adopted threshold, the similarity-scale guard and keyphrase policy v2, kept the P9-6 rule for secondary categories, and made the two proposed improvements a separate implementation task. On 2026-11-13 the owner confirmed Fable 5.2 as the round-2 annotator, and the held-out round 2 was scored once. The owner then accepted AC-07.4 as met at the point estimate and closed AC-08.3 as not met with no further work, which completes Phase 9. Each entry records its decision.

@@ -175,6 +175,9 @@ def make_parser() -> argparse.ArgumentParser:
                              help="instead of retrieval metrics, score Phase 9 enrichment against the frozen gold sets, propose the "
                                   "unclassified threshold and check the enriched corpus (read-only)")
     evaluation.add_argument("--reviewer", help="who rated the answers, recorded with --record-review")
+    evaluation.add_argument("--seed", type=int,
+                            help="with --answers: FR-19.3 review, asking answerable questions in this seeded order until N "
+                                 "have an answer, rated for faithfulness and relevance")
     evaluation.add_argument("--gold-dir", type=Path, default=Path("datasets/nlp"),
                             help="frozen Phase 9 gold sets and out-of-topic fixtures, read by --enrichment")
     evaluation.add_argument("--fixtures", type=Path,
@@ -197,6 +200,8 @@ def main(argv: list[str] | None = None) -> int:
                 raise TechDocQAError("INVALID_ARGUMENT", "Choose local paths or one online selection mode; online identity comes from the catalog.", stage="arguments")
         if args.command == "eval" and args.answers is not None and (args.answers < 1 or len(args.mode or []) > 1):
             raise TechDocQAError("INVALID_ARGUMENT", "--answers needs a positive count and at most one --mode.", stage="arguments")
+        if args.command == "eval" and args.seed is not None and args.answers is None:
+            raise TechDocQAError("INVALID_ARGUMENT", "--seed applies only to --answers.", stage="arguments")
         if args.command == "eval" and args.refusal and len(args.mode or []) > 1:
             raise TechDocQAError("INVALID_ARGUMENT", "--refusal takes at most one --mode.", stage="arguments")
         if args.command == "eval" and args.enrichment and args.mode:
@@ -228,8 +233,8 @@ def main(argv: list[str] | None = None) -> int:
             from techdocqa.evaluation.answers import record_review
             report, files = record_review(args.record_review, args.report_dir or Path(settings.data_directory) / "evaluation",
                                           args.reviewer)
-            print(json.dumps({"run_id": report["run_id"], "ac_16_6": report["summary"]["ac_16_6"], "report_files": files},
-                             ensure_ascii=True))
+            key = "fr_19_3" if "fr_19_3" in report["summary"] else "ac_16_6"
+            print(json.dumps({"run_id": report["run_id"], key: report["summary"][key], "report_files": files}, ensure_ascii=True))
             return 0
         request = None
         if args.command == "search":
@@ -286,7 +291,7 @@ def main(argv: list[str] | None = None) -> int:
             if args.command == "eval" and args.answers is not None:
                 from techdocqa.evaluation.answers import run_answer_review, write_answer_report
                 report, texts = run_answer_review(args.dataset, args.manifest, settings, registry, count=args.answers,
-                                                  **answer_configuration(args))
+                                                  seed=args.seed, **answer_configuration(args))
                 # Cited chunk text stays in the ignored data directory, wherever the report goes.
                 files = write_answer_report(report, args.report_dir or Path(settings.data_directory) / "evaluation",
                                             Path(settings.data_directory) / "evaluation", texts)
