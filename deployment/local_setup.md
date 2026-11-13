@@ -10,7 +10,7 @@ py -3.13 -m venv .venv
 .\.venv\Scripts\techdocqa.exe config-check
 ```
 
-The committed lock records the tested foundation dependencies including test/build tools. It was resolved on Windows/Python 3.13; other platforms/interpreters require their own clean installation verification. After deliberately updating dependency constraints, resolve them in a fresh environment, run tests/import checks and regenerate the exact lock; do not casually update a single transitive pin.
+The committed lock records the tested foundation dependencies including test/build tools. It was resolved on Windows/Python 3.13, and since 2026-11-13 every pin carries the SHA-256 of its Windows CPython 3.13 wheel, so pip runs in hash-checking mode. Other platforms/interpreters require their own resolved, hashed and verified lock. After deliberately updating dependency constraints, resolve them in a fresh environment, run tests/import checks and regenerate the exact lock; do not casually update a single transitive pin.
 
 Tests use ignored `.pytest_tmp` under the repository as their disposable temporary directory. Pytest replaces that directory between runs; keep only test scratch data there. This avoids the existing access-denied system pytest temp directory on this development machine.
 

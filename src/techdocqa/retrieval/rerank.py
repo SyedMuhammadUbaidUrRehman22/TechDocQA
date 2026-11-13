@@ -25,17 +25,19 @@ def require_configured(settings) -> None:
 
 
 def build_reranker(settings) -> Reranker:
-    """The configured local reranker. None is installed until the P10-5 dependency gate passes."""
+    """The configured local cross-encoder; RERANKER_UNAVAILABLE when its pinned files are absent or altered."""
     require_configured(settings)
-    raise TechDocQAError("RERANKER_UNAVAILABLE", "The configured reranker is not installed.", stage="rerank")
+    from techdocqa.retrieval import cross_encoder
+    return cross_encoder.from_settings(settings)
 
 
 def scoring_values(settings, base_mode: str) -> dict:
     """What fixes a reranker relevance, and the candidates it was calibrated on: the base mode's, at most the maximum."""
     require_configured(settings)
     retrieval = settings.retrieval
+    from techdocqa.retrieval.cross_encoder import TRUNCATION
     return {"mode": "reranked", "policy": RERANK_POLICY, "base_mode": base_mode, "max_candidates": retrieval.rerank_max_candidates,
-            "reranker": retrieval.reranker.model_dump()}
+            "reranker": retrieval.reranker.model_dump(), "truncation": TRUNCATION}
 
 
 def sigmoid(value: float) -> float:

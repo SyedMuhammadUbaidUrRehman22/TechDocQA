@@ -87,6 +87,42 @@ Implementation, step 4 (full benchmark, reviewed and frozen):
 - **Review and freeze.** The owner reviewed all 20 the same day against the cited official documentation and accepted them without changes. The only edit is `draft` to `reviewed` on the 20 lines. **Frozen SHA-256 `15c3bcb2...e0b0162a`**.
 - **Held out.** No search in any mode had been run on the 20 before the freeze. Calibration (step 6) still uses smoke only.
 
+Implementation, step 5 (hashed lock and reranker gate):
+
+- **Hashed lock (P9-11).** Each of the 142 pins in `requirements.lock.txt` now carries the SHA-256 of its Windows CPython 3.13 wheel. The `name==version` set is unchanged, and the 24 Phase 9 nlp hashes reproduce exactly. The odd pin is `pip` itself: 141 installed packages plus pip.
+  - Evidence: the 142 wheels were downloaded once. A fresh environment installed them offline with `--no-index --require-hashes`, `pip check` was clean, and its installed set equals the lock. A deliberately wrong hash is refused.
+  - `README.md` and `deployment/local_setup.md` now say the lock is for Windows cp313 only.
+- **Reranker gate (P10-5): passed on the first option, with one licence caveat for the owner.** The model is `cross-encoder/ms-marco-MiniLM-L6-v2` at revision `233902d25c440f23af6f7d6e94d2946bac0bee0a`, as its fp32 ONNX export, on the already locked `onnxruntime` 1.31.1 and `tokenizers` 0.23.3. It adds no package and no torch.
+  - **Licences.**
+    - Weights: the model card says `apache-2.0`. The repository ships no licence file, and its README states no other terms.
+    - **Caveat:** the training data is MS MARCO, whose terms describe the data as intended for non-commercial research. Whether that binds weights published under Apache-2.0 is not settled here.
+    - `onnxruntime` ships an MIT `LICENSE` and `ThirdPartyNotices.txt`. The `tokenizers` wheel ships no licence file; its metadata says Apache, and its SBOM's 130 bundled crates are all permissive.
+  - **One download (2026-11-13).** The repository's file list was read at the resolved commit first. Six files were then fetched with no credential sent: `onnx/model.onnx`, `tokenizer.json`, `config.json`, `tokenizer_config.json`, `special_tokens_map.json` and `README.md`. They went to the ignored `data/models/`, and the model file matched the repository's SHA-256. `[retrieval.reranker]` pins the three files the runtime reads; `scripts/fetch_reranker.py` fetches them again and verifies them. Every measurement below ran with a hook refusing all non-loopback connections.
+  - **Correct and deterministic.**
+    - The model card's example scores 8.607141 and -4.320077, against the card's 8.607138 and -4.320078.
+    - Scores were identical over 3 runs and across 3 processes with different hash seeds.
+    - Scoring a pair alone equals scoring it in a padded batch of 20 exactly, and 1 and 4 threads agree exactly. The implementation scores pairs one at a time anyway, so a score depends only on its pair.
+  - **Truncation.** `longest_first` to 512 tokens, the model's position limit. The longest smoke question with every public chunk is at most 458 tokens, so no corpus pair is cut, and a 1,000-character query still scores. The rule enters the reranker's `scoring_config_id`.
+  - **Latency (NFR-02), over the 30 smoke questions with both Ollama models loaded** (0.31 and 1.78 GB, 0.2 to 0.7 GB of memory free):
+
+    | Configuration | Median | p95 | Max |
+    |---|---|---|---|
+    | hybrid | 1.99 s | 2.64 s | 8.08 s (first, cold) |
+    | hybrid+rerank, 1 thread | 3.27 s | **5.13 s (fails)** | 5.50 s |
+    | hybrid+rerank, 4 threads | 2.86 s | 3.55 s | 3.80 s |
+
+    So the session uses a fixed 4 threads. The first reranked search, including the load and hash check, took 3.45 s. Search with reranking held a working set of about 300 MB, and nothing degraded or failed.
+  - **`pip-audit` 2.10.1 over the hashed lock** found 33 records in 6 existing packages, against 20 in 4 in Phase 9. Phase 10 adds no package.
+    - New since Phase 9: `pip` 25.0.1 (6 advisories about malicious archives; hash-checking now admits only the pinned wheels) and `soupsieve` 3.0.3 (slow descendant-combinator matching; `ingestion/html.py`'s one selector has no descendant combinator). chromadb gained one more server-side advisory.
+    - All are left to the separate security chore with the Phase 9 four.
+- **Implementation.**
+  - `retrieval/cross_encoder.py` checks every pinned file's SHA-256 before opening a session. A missing or altered file is `RERANKER_UNAVAILABLE`, so search degrades to the unreranked order.
+  - It checks `max_length` against the model's position limit, uses the CPU provider, and sets truncation explicitly with no padding. It keeps one session per process.
+  - `rerank` stays false.
+- **Checked on the real index.**
+  - The smoke `eval` still gives `48ce89dc...a3af410` with the same `bm25` and `vector` IDs and calibrations, and `verify_index.py --compare` passed.
+  - The reranker tests pass, 25 of them, including the real model's. The groups affected passed: retrieval 154 (645.6 s), answering 110 with 1 skipped (311.3 s), and core 238 with 2 skipped (73.0 s, the existing symlink skips).
+
 ## Phase 9 completion (2026-11-12)
 
 These entries record how the rest of Phase 9 was implemented under the [contracts](#phase-9-contracts-2026-11-07) below. Evidence is in the [Phase 9 report](PHASE_9_STATUS.md). The owner decided the gold-set annotator, AC-07.4 and AC-08.3 on 2026-11-12, and later that day approved the adopted threshold, the similarity-scale guard and keyphrase policy v2, kept the P9-6 rule for secondary categories, and made the two proposed improvements a separate implementation task. On 2026-11-13 the owner confirmed Fable 5.2 as the round-2 annotator, and the held-out round 2 was scored once. The owner then accepted AC-07.4 as met at the point estimate and closed AC-08.3 as not met with no further work, which completes Phase 9. Each entry records its decision.

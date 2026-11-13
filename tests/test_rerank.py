@@ -1,7 +1,9 @@
 """FR-15 reranking (AC-15.1 to AC-15.5) behind one interface, with a mocked reranker and its call log (P10-4, P10-5)."""
 
+import hashlib
 import json
 import math
+from pathlib import Path
 
 import pytest
 
@@ -11,16 +13,17 @@ from techdocqa.cli import answer_configuration, main
 from techdocqa.errors import TechDocQAError
 from techdocqa.evaluation.runner import render_markdown, run_evaluation
 from techdocqa.indexing import embeddings
-from techdocqa.retrieval import rerank
+from techdocqa.retrieval import cross_encoder, rerank
 from techdocqa.retrieval.search import retrieval_config_id, search
 from techdocqa.schemas import SearchRequest
-from techdocqa.settings import HybridThresholds, SufficiencyLevels, SufficiencyThresholds
+from techdocqa.settings import HybridThresholds, SufficiencyLevels, SufficiencyThresholds, load_settings
 # Shared fixtures: inline workers, the counting embedder, a verified profile, an indexed corpus, a scripted chat model.
 from test_evaluation import bench  # noqa: F401
 from test_generation import chat, qa_settings  # noqa: F401
 from test_indexing import embedder, indexed, inline_workers, model_settings  # noqa: F401
 
 KAFKA = "How do Kafka brokers replicate partitions?"
+ROOT = Path(__file__).resolve().parents[1]
 
 
 class MockReranker:
@@ -138,7 +141,7 @@ def test_an_invalid_score_list_is_a_reranker_failure(indexed, model_settings, re
     assert response.rerank_failure == "RERANKER_FAILED" and ids(response) == ids(query(model_settings, registry))
 
 
-def test_reranking_needs_a_configured_reranker_and_none_is_installed_yet(indexed, model_settings, registry):
+def test_reranking_needs_a_configured_reranker_with_pinned_files(indexed, model_settings, registry):
     with pytest.raises(TechDocQAError) as caught:
         query(model_settings, registry, rerank=True)
     assert (caught.value.response.error.code, caught.value.response.error.stage) == ("RERANKER_NOT_CONFIGURED", "configuration")
@@ -269,3 +272,73 @@ def test_answer_runs_take_hybrid_with_reranking_as_a_configuration():
     assert answer_configuration(Args) == {"mode": "hybrid", "rerank": True}
     Args.mode = ["vector"]
     assert answer_configuration(Args) == {"mode": "vector", "rerank": None}
+
+
+# P10-5: the local cross-encoder, with its files pinned by hash
+
+def fake_model(directory, max_position=512):
+    """Stand-in files with their real hashes; only the hash and position checks read them."""
+    (directory / "onnx").mkdir(parents=True)
+    contents = {cross_encoder.MODEL_FILE: b"model", cross_encoder.TOKENIZER_FILE: b"{}",
+                cross_encoder.CONFIG_FILE: json.dumps({"max_position_embeddings": max_position}).encode()}
+    for name, data in contents.items():
+        (directory / name).write_bytes(data)
+    return {name: hashlib.sha256(data).hexdigest() for name, data in contents.items()}
+
+
+def unavailable(directory, files, max_length=512):
+    with pytest.raises(TechDocQAError) as caught:
+        cross_encoder.OnnxCrossEncoder(directory, files, max_length)
+    return caught.value.response.error.code, caught.value.response.error.stage
+
+
+def test_the_cross_encoder_refuses_unpinned_altered_or_missing_files(tmp_path):
+    files = fake_model(tmp_path / "model")
+    assert unavailable(tmp_path / "model", {**files, cross_encoder.MODEL_FILE: "0" * 64}) == ("RERANKER_UNAVAILABLE", "rerank")
+    assert unavailable(tmp_path / "model", {cross_encoder.TOKENIZER_FILE: files[cross_encoder.TOKENIZER_FILE]})[0] == "RERANKER_UNAVAILABLE"
+    assert unavailable(tmp_path / "elsewhere", files)[0] == "RERANKER_UNAVAILABLE"
+    # A pinned extra file is checked too.
+    assert unavailable(tmp_path / "model", {**files, "README.md": "0" * 64})[0] == "RERANKER_UNAVAILABLE"
+
+
+def test_max_length_cannot_exceed_the_models_position_limit(tmp_path):
+    files = fake_model(tmp_path / "model", max_position=256)
+    assert unavailable(tmp_path / "model", files, max_length=512)[0] == "RERANKER_UNAVAILABLE"
+
+
+def test_the_model_directory_comes_from_the_data_directory_model_and_revision(model_settings):
+    model_settings.retrieval.reranker.model, model_settings.retrieval.reranker.revision = "org/name", "abc"
+    assert cross_encoder.model_directory(model_settings) == Path(model_settings.data_directory) / "models" / "org--name" / "abc"
+    model_settings.retrieval.reranker.revision = None
+    with pytest.raises(TechDocQAError) as caught:
+        cross_encoder.from_settings(model_settings)
+    assert caught.value.response.error.code == "RERANKER_UNAVAILABLE"
+
+
+def test_altered_reranker_files_degrade_search_to_the_unreranked_order(indexed, model_settings, registry):
+    reranker = model_settings.retrieval.reranker
+    reranker.model, reranker.revision = "org/name", "abc"
+    reranker.files_sha256 = {name: "0" * 64 for name in cross_encoder.REQUIRED_FILES}
+    fake_model(cross_encoder.model_directory(model_settings))
+    response = query(model_settings, registry, rerank=True)
+    assert response.degraded and response.rerank_failure == "RERANKER_UNAVAILABLE" and not response.reranked
+    assert ids(response) == ids(query(model_settings, registry))
+
+
+PINNED = load_settings(ROOT / "config" / "default.toml").retrieval.reranker
+PINNED_DIRECTORY = ROOT / "data" / "models" / str(PINNED.model).replace("/", "--") / str(PINNED.revision)
+
+
+@pytest.mark.skipif(not PINNED.model or not PINNED_DIRECTORY.is_dir(), reason="the pinned reranker model is not downloaded")
+def test_the_pinned_cross_encoder_reproduces_its_model_card_and_repeats_exactly():
+    model = cross_encoder.load(str(PINNED_DIRECTORY), tuple(sorted(PINNED.files_sha256.items())), PINNED.max_length)
+    berlin = ["Berlin had a population of 3,520,031 registered inhabitants in an area of 891.82 square kilometers.",
+              "Berlin is well known for its museums."]
+    scores = model.score("How many people live in Berlin?", berlin)
+    # The model card's scores, from sentence-transformers on PyTorch.
+    assert scores[0] == pytest.approx(8.607138, abs=1e-3) and scores[1] == pytest.approx(-4.320078, abs=1e-3)
+    assert model.score("How many people live in Berlin?", berlin) == scores
+    # A pair's score does not depend on the other texts sent with it.
+    assert model.score("How many people live in Berlin?", berlin[1:]) == scores[1:]
+    # A 1,000-character query still fits within max_length with a long chunk.
+    assert len(model.score("why " * 250, [" ".join(berlin) * 10])) == 1

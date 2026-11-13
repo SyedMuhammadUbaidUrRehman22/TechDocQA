@@ -150,6 +150,8 @@ py -3.13 -m venv .venv
 .\.venv\Scripts\techdocqa.exe config-check
 ```
 
+`requirements.lock.txt` pins every package with the SHA-256 of its Windows CPython 3.13 (win_amd64) wheel, so pip installs it in hash-checking mode and refuses any other file. Another platform or Python version needs its own resolved and hashed lock.
+
 `config-check` validates settings without contacting providers. `config-check --require-models` succeeds for the selected default profile; it verifies selection, not connectivity or model quality. TOML settings are in [config/default.toml](config/default.toml). TECHDOCQA_CHAT_MODEL and TECHDOCQA_EMBEDDING_MODEL override model names. Changing embeddings requires a verified context/tokenizer/digest profile and explicit re-chunking; unsupported profiles fail safely. Relative paths resolve against the base configuration file.
 
 Keep credentials out of TOML, logs and version control. Local runtime data and virtual environments are ignored. Phase 3A uses LangChain's pinned `BSHTMLLoader`, BeautifulSoup, urllib3 and certifi. The archived loader package is a documented maintenance limitation; its network client is never used. The lock also installs spaCy and `rake-nltk`, the optional `nlp` extra used for keyphrases and the spaCy segmentation policy; without them, `enrich` reports keyphrases as unavailable. Reranking remains later work.

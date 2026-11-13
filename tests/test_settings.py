@@ -16,6 +16,10 @@ def test_default_config_records_selected_local_models_and_paths():
     assert settings.model.embedding_model == "nomic-embed-text:latest"
     assert settings.model.embedding_context_window == 2048 and settings.model.embedding_tokenizer == 'bert'
     assert Path(settings.allowed_directories[0]) == ROOT / "data/corpus"
+    # P10-5: the reranker is pinned by revision and file hashes, and stays off until FR-19 shows a benefit.
+    reranker = settings.retrieval.reranker
+    assert reranker.model == "cross-encoder/ms-marco-MiniLM-L6-v2" and len(reranker.revision) == 40
+    assert set(reranker.files_sha256) == {"onnx/model.onnx", "tokenizer.json", "config.json"} and not settings.retrieval.rerank
     settings.require_models()
     with pytest.raises(ValueError, match="must be selected"):
         Settings().require_models()

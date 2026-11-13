@@ -56,6 +56,19 @@ rrf_vector_weight = 1.0
 rerank = false
 rerank_max_candidates = 20
 
+# P10-5: the local cross-encoder chosen at the Phase 10 dependency gate (docs/DECISIONS.md). Reranking stays off until
+# FR-19 shows a measured benefit (P10-6). Fetch the pinned files once with scripts/fetch_reranker.py; they live under
+# <data_directory>/models and must match these hashes each time a process loads them.
+[retrieval.reranker]
+model = "cross-encoder/ms-marco-MiniLM-L6-v2"
+revision = "233902d25c440f23af6f7d6e94d2946bac0bee0a"
+max_length = 512
+
+[retrieval.reranker.files_sha256]
+"config.json" = "380e02c93f431831be65d99a4e7e5f67c133985bf2e77d9d4eba46847190bacc"
+"onnx/model.onnx" = "5d3e70fd0c9ff14b9b5169a51e957b7a9c74897afd0a35ce4bd318150c1d4d4a"
+"tokenizer.json" = "d241a60d5e8f04cc1b2b3e9ef7a4921b27bf526d9f6050ab90f9267a1f9e5c66"
+
 # FR-18 refusal thresholds, one set per mode on that mode's 0-1 relevance scale (Q-07), copied from the proposal in
 # reports/evaluation/eval_c4ab1f1397fa469489137f611b74cdf7.md. Each applies only while scoring_config_id names the
 # active scale: a new embedding model or BM25 setting needs a new eval run and a new section.
