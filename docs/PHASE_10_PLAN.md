@@ -1,6 +1,6 @@
 # Phase 10 plan: P1 hybrid search, reranking, full evaluation and provider demonstration
 
-Status: **proposed and approved 2026-11-13.** P10-1 to P10-12 are recorded as [Phase 10 contracts](DECISIONS.md#phase-10-contracts-2026-11-13). It covers roadmap Phase 10: FR-14 hybrid retrieval, FR-15 reranking, FR-19 full evaluation, the FR-22 and C-07 provider demonstration, and FR-18 recalibration for the new modes. Sources: [Revision 3 requirements](../TechDocQA_Requirements_v2.md), [roadmap](IMPLEMENTATION_ROADMAP.md#phase-10--p1-hybrid-reranking-full-evaluation-and-provider-demonstration), [SDD](TECHDOCQA_SDD.md) sections 10 and 13, [decisions](DECISIONS.md) D-11, D-12, D-15, Q-07, Q-08 and Q-13, and the [Phase 8](PHASE_8_STATUS.md) and [Phase 9](PHASE_9_STATUS.md) reports.
+Status: **proposed and approved 2026-11-13.** P10-1 to P10-12 are recorded as [Phase 10 contracts](DECISIONS.md#phase-10-contracts-2026-11-13). **Revised 2026-11-13: the owner decided not to use the OpenAI API, so P10-10 and step 8 are withdrawn and the project stays local-only** ([revision](DECISIONS.md#phase-10-contracts-2026-11-13)). It covers roadmap Phase 10: FR-14 hybrid retrieval, FR-15 reranking, FR-19 full evaluation, the FR-22 and C-07 provider demonstration, and FR-18 recalibration for the new modes. Sources: [Revision 3 requirements](../TechDocQA_Requirements_v2.md), [roadmap](IMPLEMENTATION_ROADMAP.md#phase-10--p1-hybrid-reranking-full-evaluation-and-provider-demonstration), [SDD](TECHDOCQA_SDD.md) sections 10 and 13, [decisions](DECISIONS.md) D-11, D-12, D-15, Q-07, Q-08 and Q-13, and the [Phase 8](PHASE_8_STATUS.md) and [Phase 9](PHASE_9_STATUS.md) reports.
 
 ## Entry gate
 
@@ -45,7 +45,7 @@ Phase 10 adds modes; it must not move the existing ones.
 | AC-19.3 | Metric functions pass hand-computed tests | Tests for the new metrics |
 | FR-19.3 | Faithfulness and answer relevance on at least 20 answers | Rated review sheet (P10-9) |
 | FR-18 for new modes | Thresholds for hybrid, hybrid with reranking and degraded hybrid, calibrated on smoke and recorded; AC-18.1 and AC-18.2 checked in each | `eval` proposals, then `eval --refusal` with the real model |
-| AC-22.4, C-07 | The same `ask` under Ollama and OpenAI by configuration only, rebuilding if the embedding model changes | Demo log (P10-10) |
+| AC-22.4, C-07 | The same `ask` under Ollama and OpenAI by configuration only, rebuilding if the embedding model changes | **Withdrawn 2026-11-13** (no OpenAI API); open by owner decision |
 | C-06 | Approximate cost or hardware for ingest plus one full benchmark | Report |
 
 ## Decisions to approve before coding
@@ -61,8 +61,8 @@ Phase 10 adds modes; it must not move the existing ones.
 | P10-7 | Metrics (FR-19 P1) | Precision@K (denominator K) and nDCG@K (gain 2^grade − 1, discount log2(rank + 1), ideal from the labeled items), K ∈ {1, 3, 5}, exactly as `q13-v1` defines them, with hand-computed tests. The report gives one row per configuration and per technology, with paired differences, their intervals and denominators, and labels the results indicative. | Already approved as policy, so the policy ID stays `q13-v1`, and the P0 fingerprint is unchanged |
 | P10-8 | Full benchmark (DS-06) | **50 questions: the 30 smoke questions plus 20 new ones.** The 20 are 16 answerable, 4 per technology, with at least one identifier lookup and one how-to each. The other 4 are unanswerable but in the domain, such as a feature the frozen pages do not cover; the smoke negatives are all other technologies. That gives 14 of 50 unanswerable (28%, against at least 15%). Claude Code drafts them from the corpus with stable anchors and graded relevance, paraphrasing rather than copying the anchor passage. A second person reviews them, and disagreements are logged. They are **frozen, hashed and committed before any hybrid or reranker result is computed on them.** Calibration uses smoke only; the new 20 are the check. | Questions written from a passage echo its words, which favours BM25. Paraphrasing reduces that, and the report names the bias. |
 | P10-9 | Answer evaluation (FR-19.3) | **20 rated answers, no LLM judge.** Fixed now: the first 20 answerable full-benchmark questions in a seeded order, answered in `hybrid` mode with reranking as configured at that point, by the default Ollama model. Each is rated for faithfulness (claims supported by the cited chunks: yes, partly, no) and answer relevance (answers the question: yes, partly, no), using the Phase 8 tools with a relevance column added. | D-15 prefers manual review first. A judge would add a model, a method and, if hosted, a cost (C-06). Who rates is the owner's decision. |
-| P10-10 | Provider demo (C-07, AC-22.4) | **A full switch: OpenAI chat and embeddings in a second configuration file**, run with the same `ask` command as under Ollama. It includes the index rebuild that C-07 requires, the vector calibration on that profile, an invalid-key run (AC-16.3) and the costs.<br>**DDIA is kept out by construction:** the OpenAI profile has its own `data_directory`, holding a copy of the registry with DDIA deleted. A fail-closed guard also refuses to embed or prompt any version outside the public manifest under a non-local provider, and a test covers it.<br>Code gaps: an OpenAI embedding branch with its profile identity, token budgeting for a tokenizer other than the verified byte-level BPE, and the profile file.<br>Model IDs and prices are looked up at the gate, not assumed. The owner creates the key, sets it only in the environment, and sets a spend cap. | Rebuilding 816 public chunks and running one smoke benchmark costs little. Alternative: switch chat only and keep Ollama embeddings, which C-03 allows as a local model. That needs no rebuild, but it splits `provider` into chat and embedding providers and does not exercise the rebuild. |
-| P10-11 | Dependencies (VULN-08, P9-11) | Every new package (reranker runtime, `langchain-openai` and what it pulls in) passes the Phase 9 gate and is pinned with hashes. **Convert the whole lock to hashes first**, as the P9-11 chore, so it is not done twice. | P9-11 put this after Phase 9. Doing it later means rehashing again after the new packages. |
+| P10-10 | Provider demo (C-07, AC-22.4) | **Withdrawn 2026-11-13: no OpenAI API, by owner decision; AC-22.4 stays open ([revision](DECISIONS.md#phase-10-contracts-2026-11-13)).** As approved: **A full switch: OpenAI chat and embeddings in a second configuration file**, run with the same `ask` command as under Ollama. It includes the index rebuild that C-07 requires, the vector calibration on that profile, an invalid-key run (AC-16.3) and the costs.<br>**DDIA is kept out by construction:** the OpenAI profile has its own `data_directory`, holding a copy of the registry with DDIA deleted. A fail-closed guard also refuses to embed or prompt any version outside the public manifest under a non-local provider, and a test covers it.<br>Code gaps: an OpenAI embedding branch with its profile identity, token budgeting for a tokenizer other than the verified byte-level BPE, and the profile file.<br>Model IDs and prices are looked up at the gate, not assumed. The owner creates the key, sets it only in the environment, and sets a spend cap. | Rebuilding 816 public chunks and running one smoke benchmark costs little. Alternative: switch chat only and keep Ollama embeddings, which C-03 allows as a local model. That needs no rebuild, but it splits `provider` into chat and embedding providers and does not exercise the rebuild. |
+| P10-11 | Dependencies (VULN-08, P9-11) | Every new package (reranker runtime, and `langchain-openai` with what it pulls in until P10-10 was withdrawn; none was added) passes the Phase 9 gate and is pinned with hashes. **Convert the whole lock to hashes first**, as the P9-11 chore, so it is not done twice. | P9-11 put this after Phase 9. Doing it later means rehashing again after the new packages. |
 | P10-12 | Deferred items | P9-6 secondary categories stay deferred: this phase adds no documents without a user category. Entity and keyphrase boosting stay out of scope (P9-10). | Nothing in Phase 10 can measure them |
 
 ## Pre-registration
@@ -87,7 +87,7 @@ Steps 1 to 3 need no download, key or spend, so they run first. Owner-blocked wo
 | 5 | P9-11 hashed lock, then the reranker dependency gate and the real reranker | Gate record; model pinned and hashed |
 | 6 | Runs: smoke in four configurations for the proposals, owner adopts thresholds; the full benchmark once per configuration; `eval --refusal` in the new modes | AC-15.5, AC-19.2, FR-18 for new modes |
 | 7 | Answer evaluation: 20 answers rated | FR-19.3 |
-| 8 | Provider demo: OpenAI gate, embedding branch, guard, public-only rebuild, calibration, the same `ask` under both, an invalid key, costs | AC-22.4, C-07, C-06 |
+| 8 | ~~Provider demo: OpenAI gate, embedding branch, guard, public-only rebuild, calibration, the same `ask` under both, an invalid key, costs~~ Withdrawn 2026-11-13 (no OpenAI API) | ~~AC-22.4, C-07~~; C-06 as local hardware and run times |
 | 9 | Phase 10 report, traceability, README and roadmap; the full offline suite in groups | `docs/PHASE_10_STATUS.md` |
 
 ## Your time
@@ -97,7 +97,7 @@ Steps 1 to 3 need no download, key or spend, so they run first. Owner-blocked wo
 | Approve or amend P10-1 to P10-12 | 30 minutes |
 | Review the 20 new questions | 30 to 45 minutes |
 | Rate 20 answers for faithfulness and relevance (unless designated) | 45 to 60 minutes |
-| Create an OpenAI key, set a spend cap, set `OPENAI_API_KEY` | 10 minutes |
+| ~~Create an OpenAI key, set a spend cap, set `OPENAI_API_KEY`~~ Not needed: P10-10 withdrawn | - |
 | Adopt the threshold proposals and decide any default change | 15 minutes |
 
 ## Risks
@@ -106,7 +106,7 @@ Steps 1 to 3 need no download, key or spend, so they run first. Owner-blocked wo
 - **Benchmark bias.** Questions drafted from passages favour lexical match. Paraphrasing and the in-domain negatives reduce this; the report states it.
 - **Reranker cost on this machine.** CPU latency and memory with Ollama loaded may rule out larger models. The gate measures both before anything depends on them.
 - **Framework churn.** `langchain-community` warns that it is being sunset. The reranker avoids depending on it if a direct path passes the gate.
-- **Private data.** DDIA is 70% of the index. The OpenAI profile excludes it by construction and by a tested guard.
+- **Private data.** DDIA is 70% of the index. The OpenAI profile would have excluded it by construction and by a tested guard. With P10-10 withdrawn, nothing leaves the machine.
 - **New score scales.** Each new mode gets its own scale ID and thresholds; none reuses another mode's thresholds silently (Q-07).
 
 ## Out of scope
