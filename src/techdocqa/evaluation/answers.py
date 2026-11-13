@@ -73,7 +73,7 @@ def latencies(responses: list[dict]) -> dict:
 
 
 def run_answer_review(dataset_path: Path, manifest_path: Path, settings, registry, *, count: int = 10,
-                      mode: str | None = None) -> tuple[dict, dict]:
+                      mode: str | None = None, rerank: bool | None = None) -> tuple[dict, dict]:
     """The report, and the text of every cited or consulted chunk for the local review sheet."""
     from techdocqa.answering.generation import answer_question, warm_up
     started_at, started = datetime.now(timezone.utc).isoformat(), time.perf_counter()
@@ -84,7 +84,7 @@ def run_answer_review(dataset_path: Path, manifest_path: Path, settings, registr
     warm = warm_up(settings)
     rows = []
     for question in select_questions(dataset, count):
-        response = answer_question(question.question, settings, registry, mode=mode, source_keys=scope)
+        response = answer_question(question.question, settings, registry, mode=mode, source_keys=scope, rerank=rerank)
         hits = labeled[question.id]["chunk_items"]
         rows.append({
             "id": question.id, "technology": question.technology, "type": question.type, "question": question.question,
@@ -271,7 +271,8 @@ def rate(part: int, whole: int) -> float | None:
     return round(part / whole, 3) if whole else None
 
 
-def run_refusal_check(dataset_path: Path, manifest_path: Path, settings, registry, *, mode: str | None = None) -> dict:
+def run_refusal_check(dataset_path: Path, manifest_path: Path, settings, registry, *, mode: str | None = None,
+                      rerank: bool | None = None) -> dict:
     """Every smoke question through answer_question(), for AC-18.1 (unanswerable refused) and AC-18.2 (answerable answered).
 
     The chat model is loaded first and that load is timed on its own, so a cold start cannot time out the first answer.
@@ -286,7 +287,7 @@ def run_refusal_check(dataset_path: Path, manifest_path: Path, settings, registr
     warm = warm_up(settings)
     rows = []
     for question in dataset.questions:
-        response = answer_question(question.question, settings, registry, mode=mode, source_keys=scope)
+        response = answer_question(question.question, settings, registry, mode=mode, source_keys=scope, rerank=rerank)
         rows.append({"id": question.id, "technology": question.technology, "type": question.type,
                      "unanswerable": question.unanswerable, "flags": flags[question.id], "response": response.model_dump()})
     responses = [row["response"] for row in rows]

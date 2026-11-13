@@ -46,9 +46,14 @@ class SearchResponse(StrictModel):
     retrieval_config_id: str
     mode: Literal["bm25", "vector", "hybrid"]
     # Hybrid with one retriever failed returns the other's candidates: degraded, that retriever and its error code.
+    # A reranker failure keeps the unreranked order: degraded, with its code in rerank_failure (FR-15.4). When both
+    # happen, degradation_reason is the retriever's code.
     degraded: bool = False
     degradation_reason: str | None = None
     failed_retriever: Literal["bm25", "vector"] | None = None
+    # True when the reranker ordered these results.
+    reranked: bool = False
+    rerank_failure: str | None = None
     results: list[SearchResult]
 
 
@@ -131,7 +136,8 @@ class SufficiencyCheck(StrictModel):
     # Hybrid: which component relevances must pass, and each judged component's check (P10-3).
     gate: str | None = None
     components: dict[str, ComponentCheck] | None = None
-    # Degraded hybrid: the surviving mode whose own thresholds judged its own relevance.
+    # The scale whose thresholds judged, when it is not the mode's own: "reranked", or the surviving mode of
+    # degraded hybrid.
     thresholds_from: str | None = None
 
 
@@ -151,8 +157,10 @@ class QAResponse(StrictModel):
     chunks_used: int = 0
     mode: Literal["bm25", "vector", "hybrid"]
     # Hybrid with one retriever failed answers from the other; the reason is that retriever's error code (FR-14.4).
+    # A reranker failure answers from the unreranked order (FR-15.4).
     degraded: bool = False
     degradation_reason: str | None = None
+    reranked: bool = False
     retrieval_config_id: str | None = None
     generation_config_id: str | None = None
     provider: str

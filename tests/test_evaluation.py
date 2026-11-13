@@ -315,15 +315,15 @@ def test_comparisons_pair_questions_evaluated_in_both(bench, model_settings, reg
     assert run(bench, model_settings, registry, modes=["bm25"])["comparisons"] == []
 
 
-def test_four_configurations_run_and_reranking_reports_its_failure_until_it_exists(bench, model_settings, registry):
+def test_four_configurations_run_and_reranking_without_a_reranker_is_reported(bench, model_settings, registry):
     report = run(bench, model_settings, registry, modes=["bm25", "vector", "hybrid", "hybrid+rerank"])
     statuses = {row["mode"]: (row["status"], row.get("error", {}).get("code")) for row in report["configurations"]}
     assert statuses == {"bm25": ("completed", None), "vector": ("completed", None),
-                        "hybrid": ("completed", None), "hybrid+rerank": ("failed", "MODE_NOT_AVAILABLE")}
+                        "hybrid": ("completed", None), "hybrid+rerank": ("failed", "RERANKER_NOT_CONFIGURED")}
     assert [(entry["candidate"], entry["baseline"]) for entry in report["comparisons"]] == [("vector", "bm25"), ("hybrid", "vector")]
     rule = report["comparisons"][1]["benefit_rule"]
     assert set(rule) == {"interval_above_zero", "p95_latency_seconds", "latency_within_limit", "measured_benefit"}
-    assert "| hybrid+rerank | failed: MODE_NOT_AVAILABLE |" in render_markdown(report)
+    assert "| hybrid+rerank | failed: RERANKER_NOT_CONFIGURED |" in render_markdown(report)
     with pytest.raises(TechDocQAError) as caught:
         run(bench, model_settings, registry, modes=["reranked"])
     assert caught.value.response.error.code == "INVALID_ARGUMENT"
@@ -395,10 +395,6 @@ def test_eval_cli_writes_json_and_markdown_reports(bench, model_settings, regist
     assert main(["eval", "--dataset", str(bad), "--manifest", str(bench["manifest"])]) == 1
     assert json.loads(capsys.readouterr().err)["error"]["code"] == "INVALID_BENCHMARK"
     assert main(["eval", "--mode", "reranked"]) == 2
-    capsys.readouterr()
-    # Answer runs take a search mode; reranking follows the configuration.
-    assert main(["eval", "--mode", "hybrid+rerank", "--refusal"]) == 2
-    assert json.loads(capsys.readouterr().err)["error"]["code"] == "INVALID_ARGUMENT"
 
 
 def test_help_lists_eval(capsys):

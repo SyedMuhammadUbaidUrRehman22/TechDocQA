@@ -55,7 +55,30 @@ Implementation, step 2 (hybrid search):
   - The smoke `eval` still gives `48ce89dc...a3af410`, with the same `bm25` and `vector` retrieval and scoring IDs, and both Phase 8 calibrations still active.
   - `verify_index.py --compare .tmp/p9-top5-before-enrich.json` passed: the top 5 is identical in both modes, and 8 of 8 identifiers are at rank 1.
   - With `--profile .tmp/dead-provider.toml`, which points the Ollama endpoint at an unreachable port, `search --mode hybrid` returned `degraded: true`, `EMBEDDING_PROVIDER_UNAVAILABLE` and `failed_retriever: vector`. Its top 5 equalled `--mode bm25`'s, with the same relevances.
-  - The unreachable endpoint stands in for stopping Ollama: it exercises the same failure path without touching the running service. Until steps 2 and 3, the hybrid rows report `failed: MODE_NOT_AVAILABLE`. `--answers` and `--refusal` take a search mode, so they refuse `hybrid+rerank`; reranking there follows the configuration (P10-9).
+  - The unreachable endpoint stands in for stopping Ollama: it exercises the same failure path without touching the running service.
+
+Implementation, step 3 (reranking interface, with no model yet):
+
+- **Interface (FR-15, P10-5).** `retrieval/rerank.py` sends the query and the first `rerank_max_candidates` candidate texts to a `Reranker`.
+  - Results follow descending reranker score, with ties keeping the input order, cut to `top_k`.
+  - Candidates beyond the maximum are dropped from reranking, so a request for more than the maximum gets at most the maximum. The configuration now requires `top_k <= rerank_max_candidates`.
+  - Reranking works on any mode, since FR-15 depends on FR-12 or FR-13. It is off by default and switched by `[retrieval] rerank` or per request: `--rerank` / `--no-rerank` on `search` and `ask`, and `eval --mode hybrid+rerank` for metrics, `--answers` and `--refusal`.
+  - Tests mock the reranker. Until the dependency gate (step 5) installs a model, `build_reranker` reports `RERANKER_UNAVAILABLE`.
+- **Results (FR-15.5).** Each reranked result keeps its source metadata, its earlier ranks, scores and relevances, and adds `rerank` to `scores` (raw), `ranks` and `relevances`. Its `relevance` becomes the reranker's 0-1 value under `cross-encoder-sigmoid-v1`, 1 / (1 + e^-score).
+- **Failures (FR-15.4).**
+  - Any exception while reranking keeps the unreranked order, cut to `top_k`, with `degraded = true` and its code in `rerank_failure`. A runtime exception's detail never reaches the response. Wrong-length or non-finite scores count as failures.
+  - A missing reranker configuration is `RERANKER_NOT_CONFIGURED`, a configuration error, not a degradation.
+  - `degradation_reason` is the retriever's code when a retriever also failed.
+- **Scale and IDs (P10-4).**
+  - `[retrieval.sufficiency.reranked]` holds the reranker's thresholds. Its `scoring_config_id` hashes the policy, the reranker identity (`[retrieval.reranker]`: model, revision, file hashes, truncation length), the candidate maximum and the base mode.
+  - So thresholds calibrated on hybrid candidates go stale, with a warning, for a reranked `bm25` or `vector` request rather than judging it.
+  - Only a reranked request's `retrieval_config_id` carries this identity, so the unreranked IDs do not move.
+- **Which gate applies.** The reranker's thresholds when it ordered the results, including after a retriever failure, because a cross-encoder score depends only on the query and the chunk. When it failed, the gate below it applies: the hybrid gate, or the surviving mode's if a retriever also failed. The response names the scale in `thresholds_from`.
+- **Evaluation.** `hybrid+rerank` records the reranker's raw scores and proposes a `[retrieval.sufficiency.reranked]` section from its own relevances. A reranker failure on any question fails the configuration with `SEARCH_DEGRADED`.
+- **Checked on the real index (2026-11-13).**
+  - The smoke `eval` still gives `48ce89dc...a3af410` with the same `bm25` and `vector` IDs and calibrations. `verify_index.py --compare` passed in both modes.
+  - The stored-vector lookup was checked on two real queries. Over the 40 chunks vector search ranked, it matched Chroma's relevance to within 2.2e-7.
+  - The 8 and 9 chunks in each query's hybrid top 20 that only BM25 ranked got lookup relevances below the lowest vector-ranked score, as an exact search implies. Until steps 2 and 3, the hybrid rows report `failed: MODE_NOT_AVAILABLE`. `--answers` and `--refusal` take a search mode, so they refuse `hybrid+rerank`; reranking there follows the configuration (P10-9).
 
 ## Phase 9 completion (2026-11-12)
 

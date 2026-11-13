@@ -60,6 +60,12 @@ def retrieval_config_id(request: SearchRequest, settings, profile: dict | None) 
         # Degraded hybrid is gated by the surviving mode's own thresholds, so they are part of this configuration.
         fallback = {name: active_thresholds(name, settings, profile if name == "vector" else None)[0] for name in COMPONENTS}
         values["fallback_sufficiency"] = {name: found.model_dump() if found else None for name, found in fallback.items()}
+    if request.rerank:
+        # Only a reranked request carries the reranker's identity, so the unreranked IDs never move with it.
+        from techdocqa.answering.sufficiency import active_rerank_thresholds
+        from techdocqa.retrieval import rerank
+        reranked, _ = active_rerank_thresholds(request.mode, settings)
+        values["rerank"] = {**rerank.scoring_values(settings, request.mode), "sufficiency": reranked.model_dump() if reranked else None}
     return "rc_" + digest(values)
 
 
@@ -275,9 +281,13 @@ def hybrid_results(request, settings, eligible, records, entity_chunks, profile)
 
 
 def search(request: SearchRequest, settings, registry, *, source_keys: frozenset[str] | None = None) -> SearchResponse:
-    """source_keys limits the corpus itself, so BM25 statistics also come only from those sources (evaluation scope)."""
+    """source_keys limits the corpus itself, so BM25 statistics also come only from those sources (evaluation scope).
+
+    With rerank, the mode's first rerank_max_candidates results are reranked and cut to top_k (FR-15).
+    """
+    from techdocqa.retrieval import rerank
     if request.rerank:
-        raise TechDocQAError("MODE_NOT_AVAILABLE", "Reranking is not implemented yet; search without --rerank.", stage="search")
+        rerank.require_configured(settings)
     profile = None
     if request.mode in ("vector", "hybrid"):
         from techdocqa.indexing.embeddings import embedding_profile
@@ -290,14 +300,19 @@ def search(request: SearchRequest, settings, registry, *, source_keys: frozenset
     # A filter matches only verified entities (FR-07.3), so none means no results.
     entity_chunks = (entity_filter_chunks(settings, registry, request.filters.entity)
                      if request.filters.entity is not None else None)
-    failed, reason = None, None
+    base = request.model_copy(update={"top_k": max(request.top_k, settings.retrieval.rerank_max_candidates)}) if request.rerank else request
+    failed, reason, rerank_failure = None, None, None
     if not records or entity_chunks == set():
         results = []
     elif request.mode == "bm25":
-        results = bm25_results(request, settings, eligible, records, entity_chunks)
+        results = bm25_results(base, settings, eligible, records, entity_chunks)
     elif request.mode == "vector":
-        results = vector_results(request, settings, records, entity_chunks, profile)
+        results = vector_results(base, settings, records, entity_chunks, profile)
     else:
-        results, failed, reason = hybrid_results(request, settings, eligible, records, entity_chunks, profile)
+        results, failed, reason = hybrid_results(base, settings, eligible, records, entity_chunks, profile)
+    if request.rerank and results:
+        results, rerank_failure = rerank.rerank(request.query, results, request.top_k, settings)
     return SearchResponse(retrieval_config_id=retrieval_config_id(request, settings, profile), mode=request.mode,
-                          degraded=failed is not None, degradation_reason=reason, failed_retriever=failed, results=results)
+                          degraded=failed is not None or rerank_failure is not None, degradation_reason=reason or rerank_failure,
+                          failed_retriever=failed, reranked=request.rerank and bool(results) and rerank_failure is None,
+                          rerank_failure=rerank_failure, results=results)

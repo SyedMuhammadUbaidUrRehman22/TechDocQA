@@ -151,6 +151,8 @@ def component_tops(row: dict, top_k: int) -> dict[str, float | None]:
 def run_mode(name: str, labeled: list[dict], scope: frozenset, settings, registry) -> tuple[dict, dict]:
     """One configuration over every question; `name` is a key of CONFIGURATIONS."""
     mode, rerank = CONFIGURATIONS[name]
+    # A reranked run keeps the reranker's raw score; its relevance is the reranker's 0-1 scale.
+    score_key = "rerank" if rerank else mode
     per_question, config_id, degraded = {}, None, []
     started = time.perf_counter()
     try:
@@ -162,10 +164,12 @@ def run_mode(name: str, labeled: list[dict], scope: frozenset, settings, registr
             latency = time.perf_counter() - begun
             config_id = response.retrieval_config_id
             if response.degraded:
-                degraded.append(f"{response.failed_retriever} {response.degradation_reason}")
+                # The configuration fails below; a degraded row is not this configuration's result.
+                degraded.append(f"{response.failed_retriever or 'reranker'} {response.degradation_reason}")
+                continue
             matches = [entry["chunk_items"].get(result.chunk_id, set()) for result in response.results]
             row = {"ranked": [result.chunk_id for result in response.results],
-                   "scores": [round(result.scores[mode], SCORE_DIGITS) for result in response.results],
+                   "scores": [round(result.scores[score_key], SCORE_DIGITS) for result in response.results],
                    "relevance": [maybe(result.relevance) for result in response.results],
                    "matched_items": [sorted(items) for items in matches],
                    "latency_seconds": round(latency, 3)}
@@ -208,7 +212,7 @@ def run_mode(name: str, labeled: list[dict], scope: frozenset, settings, registr
         "unanswerable": {"questions": len(unanswerable), "with_results": sum(1 for row in unanswerable if row["ranked"]),
                          "top_score": spread([row["scores"][0] for row in unanswerable if row["scores"]]),
                          "top_relevance": spread([row["relevance"][0] for row in unanswerable if row["relevance"] and row["relevance"][0] is not None])},
-        "refusal_calibration": refusal_calibration(mode, [row for _, row in answered], unanswerable, settings),
+        "refusal_calibration": refusal_calibration(mode, [row for _, row in answered], unanswerable, settings, rerank=rerank),
     }
     if mode == "hybrid":
         top_k = settings.retrieval.top_k
@@ -218,7 +222,7 @@ def run_mode(name: str, labeled: list[dict], scope: frozenset, settings, registr
     return summary, per_question
 
 
-def refusal_calibration(mode: str, answered: list[dict], unanswerable: list[dict], settings) -> dict:
+def refusal_calibration(mode: str, answered: list[dict], unanswerable: list[dict], settings, *, rerank: bool = False) -> dict:
     """FR-18 on this run's scores: thresholds proposed from them, and how the active thresholds judge them.
 
     Both judge the top results as retrieved, before any context trimming. A proposal changes nothing until a person
@@ -231,6 +235,8 @@ def refusal_calibration(mode: str, answered: list[dict], unanswerable: list[dict
         from techdocqa.indexing.embeddings import embedding_profile
         profile = embedding_profile(settings.model)
     top_k = settings.retrieval.top_k
+    if rerank:
+        return rerank_refusal_calibration(mode, answered, unanswerable, settings)
     if mode == "hybrid":
         return hybrid_refusal_calibration(answered, unanswerable, settings, profile)
     def top(rows):
@@ -243,6 +249,23 @@ def refusal_calibration(mode: str, answered: list[dict], unanswerable: list[dict
                       unanswerable=len(unanswerable), unanswerable_refused=len(unanswerable) - sum(verdicts[1]))
     return {"relevance_policy": sufficiency.relevance_policy(mode), "scoring_config_id": scoring_config_id(mode, settings, profile),
             "active": active, "proposed": sufficiency.propose(top(answered), top(unanswerable))}
+
+
+def rerank_refusal_calibration(mode: str, answered: list[dict], unanswerable: list[dict], settings) -> dict:
+    """P10-4: the reranker's own scale and thresholds, bound to this reranker and this base mode's candidates."""
+    from techdocqa.answering import sufficiency
+    top_k = settings.retrieval.top_k
+    def top(rows):
+        return [row["relevance"][0] if row["relevance"] else None for row in rows]
+    thresholds, warning = sufficiency.active_rerank_thresholds(mode, settings)
+    active = {"status": "calibrated" if thresholds else ("stale" if warning == sufficiency.STALE else "not_calibrated")}
+    if thresholds:
+        verdicts = [[sufficiency.judge(row["relevance"][:top_k], thresholds)[1] for row in rows] for rows in (answered, unanswerable)]
+        active.update(thresholds.model_dump(exclude={"scoring_config_id"}), answerable=len(answered), answerable_passed=sum(verdicts[0]),
+                      unanswerable=len(unanswerable), unanswerable_refused=len(unanswerable) - sum(verdicts[1]))
+    return {"relevance_policy": sufficiency.relevance_policy("reranked"), "section": "reranked",
+            "scoring_config_id": sufficiency.rerank_scoring_config_id(mode, settings), "active": active,
+            "proposed": sufficiency.propose(top(answered), top(unanswerable))}
 
 
 def hybrid_refusal_calibration(answered: list[dict], unanswerable: list[dict], settings, profile: dict) -> dict:
@@ -497,7 +520,7 @@ def refusal_lines(run_id: str, completed: list[dict]) -> list[str]:
         lines.append(f"| {row['mode']} | {triple(row['answerable_top_relevance'])} | {triple(row['unanswerable']['top_relevance'])} | "
                      f"{proposed['min_top_score']} | {proposed['margin']} | {proposed['answerable_passed']} of {proposed['answerable']} | "
                      f"{proposed['unanswerable_refused']} of {proposed['unanswerable']} | {proposed['leave_one_out_errors']} | {current} |")
-        blocks += ["", "```toml", toml_block(row["mode"], proposed, run_id, calibration["scoring_config_id"]), "```"]
+        blocks += ["", "```toml", toml_block(calibration.get("section", row["mode"]), proposed, run_id, calibration["scoring_config_id"]), "```"]
     return lines + gated + blocks
 
 

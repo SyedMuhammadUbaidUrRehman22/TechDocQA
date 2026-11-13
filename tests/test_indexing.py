@@ -450,11 +450,11 @@ def test_reopen_and_rebuild_restore_identical_top_five_without_model_calls(index
         index_versions(['ver_x'], model_settings, registry, rebuild=True)
 
 
-def test_rerank_is_refused_until_its_phase(indexed, model_settings, registry):
+def test_rerank_needs_a_configured_reranker(indexed, model_settings, registry):
     for request in (SearchRequest(query='x', mode='hybrid', rerank=True), SearchRequest(query='x', mode='bm25', rerank=True)):
         with pytest.raises(TechDocQAError) as error:
             search(request, model_settings, registry)
-        assert error.value.response.error.code == 'MODE_NOT_AVAILABLE'
+        assert error.value.response.error.code == 'RERANKER_NOT_CONFIGURED'
 
 
 def test_retrieval_config_id_is_stable_and_reflects_configuration(indexed, model_settings, registry):

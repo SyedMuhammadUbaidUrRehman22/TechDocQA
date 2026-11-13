@@ -22,8 +22,36 @@ HYBRID_SELECTION_POLICY = "fewest-loo-errors-then-margin-then-order-v1"
 def relevance_policy(mode: str) -> str:
     from techdocqa.indexing.embeddings import SCORE_POLICY
     from techdocqa.retrieval.lexical import RELEVANCE_POLICY
+    from techdocqa.retrieval.rerank import RERANK_POLICY
     from techdocqa.retrieval.search import HYBRID_RELEVANCE_POLICY
-    return {"bm25": RELEVANCE_POLICY, "vector": SCORE_POLICY, "hybrid": HYBRID_RELEVANCE_POLICY}[mode]
+    return {"bm25": RELEVANCE_POLICY, "vector": SCORE_POLICY, "hybrid": HYBRID_RELEVANCE_POLICY, "reranked": RERANK_POLICY}[mode]
+
+
+def rerank_scoring_config_id(base_mode: str, settings) -> str:
+    from techdocqa.retrieval import rerank
+    from techdocqa.retrieval.search import digest
+    return "sc_" + digest(rerank.scoring_values(settings, base_mode))
+
+
+def active_rerank_thresholds(base_mode: str, settings) -> tuple[SufficiencyThresholds | None, str | None]:
+    """The reranker's thresholds when calibrated on this reranker and this base mode's candidates (P10-4)."""
+    configured = settings.retrieval.sufficiency.reranked
+    if configured is None:
+        return None, NOT_CALIBRATED
+    if configured.scoring_config_id != rerank_scoring_config_id(base_mode, settings):
+        return None, STALE
+    return configured, None
+
+
+def applicable(mode: str, reranked: bool, failed_retriever: str | None, settings, profile: dict | None):
+    """(scale name, thresholds, warning) for a search's results: the reranker's when it ordered them, else the surviving
+    mode's when hybrid lost a retriever, else the mode's own. A reranker failure falls back to the gate below it."""
+    if reranked:
+        return ("reranked", *active_rerank_thresholds(mode, settings))
+    if failed_retriever is not None:
+        surviving = next(name for name in ("bm25", "vector") if name != failed_retriever)
+        return (surviving, *active_thresholds(surviving, settings, profile if surviving == "vector" else None))
+    return (mode, *active_thresholds(mode, settings, profile))
 
 
 def active_thresholds(mode: str, settings, profile: dict | None) -> tuple[SufficiencyThresholds | HybridThresholds | None, str | None]:

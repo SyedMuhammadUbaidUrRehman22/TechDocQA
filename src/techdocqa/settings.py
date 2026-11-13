@@ -116,6 +116,18 @@ class SufficiencySettings(StrictModel):
     bm25: SufficiencyThresholds | None = None
     vector: SufficiencyThresholds | None = None
     hybrid: HybridThresholds | None = None
+    # The reranker's 0-1 relevance, calibrated on one base mode's candidates, which its scoring_config_id names (P10-4).
+    reranked: SufficiencyThresholds | None = None
+
+
+class RerankerSettings(StrictModel):
+    """The local reranker's identity (P10-5). The dependency gate fills it; until then no reranker is configured."""
+    model: str | None = None
+    # A pinned revision and the SHA-256 of every model file, so the scale it scores on is fixed.
+    revision: str | None = None
+    files_sha256: dict[str, str] = Field(default_factory=dict)
+    # Query and chunk are truncated together to this many tokens (an explicit rule for 1,000-character chunks).
+    max_length: int = Field(default=512, gt=0)
 
 
 class RetrievalSettings(StrictModel):
@@ -130,14 +142,18 @@ class RetrievalSettings(StrictModel):
     rrf_vector_weight: float = Field(default=1.0, gt=0)
     rerank: bool = False
     rerank_max_candidates: int = Field(default=20, gt=0)
+    reranker: RerankerSettings = Field(default_factory=RerankerSettings)
     sufficiency: SufficiencySettings = Field(default_factory=SufficiencySettings)
 
     @model_validator(mode="after")
     def check_depth(self) -> "RetrievalSettings":
         if self.top_k > self.candidate_depth:
             raise ValueError("top_k cannot exceed candidate_depth")
+        if self.top_k > self.rerank_max_candidates:
+            raise ValueError("top_k cannot exceed rerank_max_candidates")
         hybrid = self.sufficiency.hybrid
-        levels = [self.sufficiency.bm25, self.sufficiency.vector, *(hybrid.components().values() if hybrid else [])]
+        levels = [self.sufficiency.bm25, self.sufficiency.vector, self.sufficiency.reranked,
+                  *(hybrid.components().values() if hybrid else [])]
         for thresholds in levels:
             if thresholds is not None and thresholds.min_supporting_chunks > self.top_k:
                 raise ValueError("min_supporting_chunks cannot exceed top_k")
