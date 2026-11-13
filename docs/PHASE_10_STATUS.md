@@ -24,7 +24,7 @@ The owner gave Fable 5.2 as the full benchmark's reviewer of record. No owner it
 | Reranking (FR-15) | Optional and off by default, switched in `[retrieval] rerank` or per request: `--rerank` / `--no-rerank` on `search` and `ask`, and `eval --mode hybrid+rerank`. At most `rerank_max_candidates` candidates are sent. A failure keeps the unreranked order, marked `degraded`. The reranker has its own 0-1 scale (`cross-encoder-sigmoid-v1`) and thresholds. | [rerank.py](../src/techdocqa/retrieval/rerank.py) |
 | Cross-encoder (P10-5) | `cross-encoder/ms-marco-MiniLM-L6-v2`, pinned by revision and by the SHA-256 of each file it reads, run as fp32 ONNX on the locked `onnxruntime` with no torch. It uses 4 threads, scores each pair alone and truncates at 512 tokens. A missing or altered file degrades search to the unreranked order. `scripts/fetch_reranker.py` downloads and verifies the files once. | [cross_encoder.py](../src/techdocqa/retrieval/cross_encoder.py), [fetch_reranker.py](../scripts/fetch_reranker.py) |
 | Hashed lock (P9-11) | All 142 pins in `requirements.lock.txt` carry their Windows cp313 wheel's SHA-256, so pip runs in hash-checking mode. Phase 10 adds no package. | [requirements.lock.txt](../requirements.lock.txt) |
-| Full benchmark (P10-8) | `datasets/benchmark_full.jsonl`: the 30 smoke lines byte for byte, plus 20 new questions (16 answerable, 4 in-domain unanswerable). The owner reviewed it, and it is frozen at SHA-256 `15c3bcb2...e0b0162a`. Of the 50 questions, 14 are unanswerable (28%). | [review log](../datasets/review_log.md#full-benchmark-review-log-phase-10) |
+| Full benchmark (P10-8) | `datasets/benchmark_full.jsonl`: the 30 smoke lines byte for byte, plus 20 new questions (16 answerable, 4 in-domain unanswerable). The review was reported by the owner with no changes; the reviewer of record is Fable 5.2, as the owner directed. It is frozen at SHA-256 `15c3bcb2...e0b0162a`. Of the 50 questions, 14 are unanswerable (28%). | [review log](../datasets/review_log.md#full-benchmark-review-log-phase-10) |
 | Answer review (FR-19.3, P10-9) | `eval --answers N --seed S` shuffles the answerable questions once and asks them in order until N have an answer with a citation. Its sheet has Faithful and Relevant columns, and `--record-review` counts both ratings with no pass mark. Phase 8's review is unchanged. | [answers.py](../src/techdocqa/evaluation/answers.py) |
 
 ## Runs on the real corpus
@@ -43,7 +43,7 @@ All reports are committed under [reports/evaluation](../reports/evaluation). Eac
 
 ### Full benchmark (AC-19.2)
 
-36 answerable questions, top 5. Search p95 is the nearest-rank 95th percentile of per-question search time over all 50 questions.
+36 answerable questions, top 5. Search p95 is the nearest-rank 95th percentile of per-question search time over all 50 questions. The per-technology results for all four configurations are in the report's "By technology" table, [eval_b8b8c7db...](../reports/evaluation/eval_b8b8c7dbd9684b848d28ad710cd40d8b.md).
 
 | Configuration | Recall@5 | MRR | nDCG@5 | Precision@5 | Search p95 |
 |---|---|---|---|---|---|
