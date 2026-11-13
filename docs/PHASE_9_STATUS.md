@@ -51,7 +51,7 @@ Spans keep the P0 contract: half-open offsets that cover every character, so AC-
 - **Gold file line endings.** `freeze` wrote the gold files with CRLF on Windows and logged the hashes of those bytes, which a checkout with LF would not reproduce. It now writes LF, and so does the enrichment report writer.
 - **Test memory.** Chroma keeps every client it creates in a process-wide cache. Each test's temporary index stayed in memory, so `test_indexing.py` alone grew to 677 MB with 46 cached clients, and a single-process run of the whole suite exhausted a 12 GB machine. Releasing the clients after each test bounds this, and the runner returns memory between groups.
 
-## Real-corpus run (2026-11-12)
+## Real-corpus run (2026-11-12 and 2026-11-13)
 
 | Step | Result |
 |---|---|
@@ -142,7 +142,7 @@ Report [enrichment_5d0f6cdc](../reports/evaluation/enrichment_5d0f6cdcc0bd41ddaa
 - Four Fable 5.2 sessions labeled it blind.
 - It was frozen before any score was computed, then scored once.
 
-Nothing was changed after the score was seen. The owner confirmed Fable 5.2 as annotator on 2026-11-13. It is a different model from round 1's annotator, so the two rounds are not strictly comparable. Every figure below measures agreement with an AI annotator and is indicative (VULN-04).
+Nothing was changed after the score was seen. The owner confirmed Fable 5.2 as annotator on 2026-11-13. Each session also consulted its built-in advisor, which sees only that session's transcript. Its replies are stored encrypted, so what it advised cannot be checked ([caveat](../datasets/nlp/review_log.md#round-2-how-the-labels-were-made-2026-11-13)). It is a different model from round 1's annotator, so the two rounds are not strictly comparable. Every figure below measures agreement with an AI annotator and is indicative (VULN-04).
 
 ### Entities (AC-07.4)
 
@@ -170,7 +170,7 @@ The 20 false positives and 102 misses have three causes:
 | Extracted but not labeled: attribute chains on local variables (`self.url`, `exception.response.status_code`), link fragments (`configuration.html#spark-properties`), `URLs`, `NOT` and `EXISTS` split out of `IF NOT EXISTS`. Also gazetteer terms the annotator did not label in that chunk, such as `WAL` beside the labeled `WAL record`. | 14 | 0 |
 | No rule finds them. 60 concepts outside the gazetteer: `tasks`, `messages`, `events`, `transaction`, `heartbeat`, `event loop`. 22 identifiers: imported modules such as `httpx` and `datetime`, the commands `psql`, `cd` and `make`, and the single keywords `STRING` and `OPTIONS`. 8 components (`worker`, `triggerer`) and 6 technologies (`Kryo`, `asyncio`, `parquet`, `Twitter chill`). | 0 | 96 |
 
-Precision holds on unseen data. Recall is limited by concepts: the gazetteer finds 28 of the 93 labeled.
+Precision holds on unseen data. Recall is limited by concepts: the gazetteer finds 28 of the 93 labeled. The annotator dropped two labels that span a line break (`worker nodes`, `sync commit`), and the extractor did not find either. Keeping them would give a recall of 166 of 270 (0.615, 95% from 0.556): the same verdict.
 
 ### Key terms (AC-08.3)
 
@@ -192,7 +192,7 @@ Precision holds on unseen data. Recall is limited by concepts: the gazetteer fin
 Why 165 terms are missed. This is descriptive only; nothing was changed.
 
 - **Ceiling.** With 13 to 15 terms and 10 slots, even a perfect top 10 would average 0.696.
-- **Typed identifiers.** 34 of the misses are configuration keys, flags or function names. K10's 15 terms are mostly producer keys such as `linger.ms`. Its top 10 are words repeated in every row of the configuration table (`valid`, `importance`, `null valid`, `low`, `medium`), so it scores 0.
+- **Typed identifiers.** The gold set holds 42 terms with dots, underscores, internal capitals or a leading `--`, and 40 of them are missed. Another 14 misses are upper-case SQL keywords and abbreviations (`GROUP BY`, `ISR`), so together they are 54 of the 165. K10's 15 terms are mostly producer keys such as `linger.ms`. Its top 10 are words repeated in every row of the configuration table (`valid`, `importance`, `null valid`, `low`, `medium`), so it scores 0.
 - **Example data and markup.** These take top-10 places: `san francisco`, `weather`, `city` and `temp_lo` (K17), `cities` and `salary` (K16), `find full` and `spark repo` (K14), and the HTML table tags `td` and `tr` in K12's Markdown.
 - **Length and form.** 8 terms have 3 or 4 words, which the policy cannot produce. 5 have the other singular or plural form in the top 10, such as `window function` for `window functions`.
 
