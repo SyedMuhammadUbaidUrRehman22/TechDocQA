@@ -128,3 +128,7 @@ Scored once (`enrichment_5d0f6cdcc0bd41ddaa2a05dc5bf0f029`, not tuned):
 - **AC-08.3 is not met:** a mean of 0.239 of the key terms are in the top 10, against 0.50, and RAKE's former default scores 0.005 on the same set. About a third of the misses are typed identifiers and upper-case SQL keywords (54 of 165), and words from tables, example data and markup also take top-10 places.
 
 Nothing was changed after the score was seen. Only data and documentation changed; no code. Evidence is in [Phase 9 status](docs/PHASE_9_STATUS.md#round-2-held-out-2026-11-13).
+
+## 2026-11-13 - Phase 9 closed by the owner
+
+The owner accepted AC-07.4 as met at the point estimate only (precision 0.892, recall 0.619 on the held-out round 2). They closed AC-08.3 as not met (0.239) with no further work, and moved the project to Phase 10. `technical-ngrams-v1` stays the default keyphrase policy. Only documentation changed: [decisions](docs/DECISIONS.md#phase-9-completion-2026-11-12), [Phase 9 status](docs/PHASE_9_STATUS.md#what-remains) and the roadmap.

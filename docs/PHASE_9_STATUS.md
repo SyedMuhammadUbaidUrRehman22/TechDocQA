@@ -83,10 +83,10 @@ Spans keep the P0 contract: half-open offsets that cover every character, so AC-
 | AC-07.1 | `test_entities.py` fixture | ✅ Met |
 | AC-07.2 | Tests; real corpus: 5,598 entity rows on the 20 public documents, every chunk ID, document ID and both offsets valid | ✅ Met |
 | AC-07.3 | Tests with `entity=Redis`; real corpus with `entity=PostgreSQL`: 20 of 20 results in each mode carry a verified PostgreSQL entity | ✅ Met |
-| AC-07.4 | Held-out round 2, 32 labeled chunks, 268 mentions: precision 0.892 (166 of 186, 95% 0.840 to 0.929), recall 0.619 (166 of 268, 95% 0.560 to 0.675). Round 1 before the improvement: 0.730 and 0.491, not met | 🟡 Met at the point estimate only |
+| AC-07.4 | Held-out round 2, 32 labeled chunks, 268 mentions: precision 0.892 (166 of 186, 95% 0.840 to 0.929), recall 0.619 (166 of 268, 95% 0.560 to 0.675). Round 1 before the improvement: 0.730 and 0.491, not met | 🟡 Met at the point estimate only (accepted by the owner 2026-11-13) |
 | AC-08.1 | Tests; real corpus: all 20 documents have 10 phrases in rank order with non-increasing scores | ✅ Met |
 | AC-08.2 | `test_keyphrases.py` | ✅ Met |
-| AC-08.3 | Held-out round 2, 15 documents, 216 key terms: mean 0.239 in the configured top 10 (pooled 51 of 216, 95% 0.184 to 0.297). Round 1 before the improvement: 0 of 72 | ❌ Not met |
+| AC-08.3 | Held-out round 2, 15 documents, 216 key terms: mean 0.239 in the configured top 10 (pooled 51 of 216, 95% 0.184 to 0.297). Round 1 before the improvement: 0 of 72 | ❌ Not met (closed by the owner 2026-11-13, no further work) |
 | AC-09.1 | 19 of 20 = 0.95 (95% 0.764 to 0.991), at least 4 documents per category, with the active threshold | 🟡 Met at the point estimate only |
 | AC-09.2 | The held-out cooking article scores 0.507 against a threshold of 0.649 | ✅ Met |
 | AC-09.3 | Tests with `category=Caching`; real corpus with `category=Databases`: 20 of 20 results in each mode from Databases documents | ✅ Met |
@@ -242,10 +242,13 @@ Run alone before the Chroma fix, a module's process used up to about 680 MB, gro
 
 The measurement steps are done. `enrich` was re-run with the new rules and policy, and the smoke fingerprint is unchanged. Round 2 was drawn, labeled blind, frozen and scored once.
 
-Nothing blocks Phase 10. Four points stay open, and none changes a Phase 9 result:
+On 2026-11-13 the owner accepted AC-07.4 as met at the point estimate only, closed AC-08.3 as not met with no further work, and moved the project to Phase 10.
 
-- **AC-07.4 at the point estimate.** It is recorded the way AC-06.4 and AC-09.1 are. Recall's lower bound, 0.560, is below 0.60, and concepts are the weak type (recall 0.301). The requirement calls these thresholds provisional (Q-14); any amendment is the owner's.
-- **AC-08.3 not met.** Further keyphrase work would be a new task. Round 2 has now been seen, so it would need another held-out key-term set. Round 2's [misses](#key-terms-ac-083) point to typed identifiers, words from tables and example data, and markup. With 13 to 15 terms and 10 slots, even a perfect top 10 would average 0.696. Appendix C asks for AC-08.3's target to be confirmed (Q-14).
+- **AC-07.4 at the point estimate (accepted).** It is recorded the way AC-06.4 and AC-09.1 are. Recall's lower bound, 0.560, is below 0.60, and concepts are the weak type (recall 0.301). The thresholds stay as written.
+- **AC-08.3 not met (closed).** No further keyphrase work is planned. `technical-ngrams-v1` stays the default. Round 2's [misses](#key-terms-ac-083) point to typed identifiers, words from tables and example data, and markup. With 13 to 15 terms and 10 slots, even a perfect top 10 would average 0.696.
+
+Two points carry into later work and change no Phase 9 result:
+
 - **Secondary categories (P9-6).** They stay as they are until Phase 10 adds documents without a user category.
 - **Hashed lock (P9-11).** Converting the whole `requirements.lock.txt` to a hashed lock is the separate chore planned for after Phase 9.
 
