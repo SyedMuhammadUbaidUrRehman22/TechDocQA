@@ -128,6 +128,21 @@ Implementation, step 5 (hashed lock and reranker gate):
   - The smoke `eval` still gives `48ce89dc...a3af410` with the same `bm25` and `vector` IDs and calibrations, and `verify_index.py --compare` passed.
   - The reranker tests pass, 25 of them, including the real model's. The groups affected passed: retrieval 154 (645.6 s), answering 110 with 1 skipped (311.3 s), and core 238 with 2 skipped (73.0 s, the existing symlink skips).
 
+Implementation, step 6 (runs). The protocol below was fixed before the full benchmark was first run:
+
+- **Smoke proposals.** `eval_a4d00103eb5645a89f93cf78065aecf0` ran smoke in all four configurations, and the owner adopted both new sections (see the owner decisions above).
+- **One full run.**
+  - All four configurations run in one invocation on `benchmark_full.jsonl` (SHA-256 `15c3bcb2...e0b0162a`), with no trial run of any mode on that file first. A completed configuration is never rerun.
+  - If a configuration fails (it then has no rows), all four are rerun together once, and both reports are kept.
+  - Both Ollama models are loaded first, `/api/ps` and free memory are recorded before and after, and nothing else runs alongside.
+- **Frozen tunables.** The thresholds, the hybrid gate, the RRF weights and `k`, the candidate count, `top_k`, the truncation rule and the 4 reranker threads do not change after the full results are seen. An in-domain negative passing a gate is a finding to report, not a reason to recalibrate.
+- **Held-out view.** The runner now compares any dataset with `benchmark_smoke.jsonl` beside the manifest.
+  - It records how many questions are held out, and says so in the notes.
+  - On a dataset with held-out questions, it prints no configuration section: proposals computed there are descriptive, not for adoption.
+  - From the full run's stored JSON, the write-up reports metrics over the 16 new answerable questions per configuration, and each gate's pass or refusal for the 4 in-domain negatives. The P10-6 rule is judged on all 36 answerable questions, as fixed.
+- **Refusal with the model.** `eval --refusal` asks the smoke questions, as in Phase 8, in `hybrid` and `hybrid+rerank`. The in-domain negatives are judged at the gate from the full run's relevances; they are not sent to the chat model.
+- **Degraded hybrid.** One `base_url` serves chat and embeddings, so a dead-provider profile would stop chat too. A scratch script instead fails only the embedding call, on smoke, and records the gate that applies (bm25's thresholds) and its verdicts. It is a scripted check, not a CLI run.
+
 ## Phase 9 completion (2026-11-12)
 
 These entries record how the rest of Phase 9 was implemented under the [contracts](#phase-9-contracts-2026-11-07) below. Evidence is in the [Phase 9 report](PHASE_9_STATUS.md). The owner decided the gold-set annotator, AC-07.4 and AC-08.3 on 2026-11-12, and later that day approved the adopted threshold, the similarity-scale guard and keyphrase policy v2, kept the P9-6 rule for secondary categories, and made the two proposed improvements a separate implementation task. On 2026-11-13 the owner confirmed Fable 5.2 as the round-2 annotator, and the held-out round 2 was scored once. The owner then accepted AC-07.4 as met at the point estimate and closed AC-08.3 as not met with no further work, which completes Phase 9. Each entry records its decision.

@@ -347,6 +347,24 @@ def test_four_configurations_run_and_reranking_without_a_reranker_is_reported(be
     assert caught.value.response.error.code == "INVALID_ARGUMENT"
 
 
+def test_questions_outside_the_calibration_set_are_held_out_and_get_no_adoptable_proposal(bench, model_settings, registry):
+    """P10-8: thresholds come from the smoke file beside the manifest; a run with other questions only describes them."""
+    lines = bench["dataset"].read_text(encoding="utf-8").splitlines(keepends=True)
+    calibration = bench["manifest"].parent / "benchmark_smoke.jsonl"
+    calibration.write_text("".join(lines[:2]), encoding="utf-8")
+    report = run(bench, model_settings, registry, modes=["bm25"])
+    assert report["dataset"]["calibration"] == {"dataset_id": "benchmark_smoke", "sha256": load_dataset(calibration).sha256,
+                                                "calibration_questions": 2, "held_out": 2}
+    assert any("2 are held out" in note for note in report["notes"])
+    assert not any("not an independent holdout" in note for note in report["notes"])
+    markdown = render_markdown(report)
+    assert "descriptive, not for adoption" in markdown and "```toml" not in markdown
+    calibration.write_text("".join(lines), encoding="utf-8")
+    report = run(bench, model_settings, registry, modes=["bm25"])
+    assert report["dataset"]["calibration"]["held_out"] == 0 and "```toml" in render_markdown(report)
+    assert any("not an independent holdout" in note for note in report["notes"])
+
+
 def test_unanswerable_questions_get_score_spreads_not_recall(bench, model_settings, registry):
     report = run(bench, model_settings, registry, modes=["bm25"])
     row = next(item for item in report["questions"] if item["id"] == "ood-1")["results"]["bm25"]

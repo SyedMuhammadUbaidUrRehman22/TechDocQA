@@ -41,6 +41,9 @@ P0_SUMMARY_KEYS = ("mode", "status", "error", "retrieval_config_id", "evaluated_
                    "by_technology", "answerable_top_score", "answerable_top_relevance", "unanswerable", "refusal_calibration")
 LIBRARIES = ("langchain-core", "langchain-community", "langchain-chroma", "langchain-ollama", "chromadb", "rank-bm25", "pydantic", "numpy")
 SCORE_DIGITS = 6
+# P10-8: FR-18 thresholds are calibrated on the smoke benchmark only, kept beside the corpus manifest. Questions of
+# another dataset that smoke does not contain are held out, and proposals computed on them are not for adoption.
+CALIBRATION_DATASET = "benchmark_smoke.jsonl"
 TIME_LIMIT_SECONDS = 300
 
 
@@ -372,13 +375,31 @@ def environment(settings, modes) -> dict:
     return values
 
 
-def notes(dataset, corpus: dict, answerable: int, unanswerable: int) -> list[str]:
+def calibration_overlap(dataset, manifest_path: Path) -> dict:
+    """How many of this dataset's questions the calibration dataset holds (by ID); the rest are held out."""
+    source = Path(manifest_path).parent / CALIBRATION_DATASET
+    ids = {question.id for question in dataset.questions}
+    try:
+        calibration = load_dataset(source)
+    except TechDocQAError:
+        return {"dataset_id": None, "sha256": None, "calibration_questions": None, "held_out": None}
+    shared = ids & {question.id for question in calibration.questions}
+    return {"dataset_id": calibration.dataset_id, "sha256": calibration.sha256, "calibration_questions": len(shared),
+            "held_out": len(ids - shared)}
+
+
+def notes(dataset, corpus: dict, answerable: int, unanswerable: int, calibration: dict | None = None) -> list[str]:
     drafts = sum(1 for question in dataset.questions if question.review == "draft")
     found = [f"Indicative only: {answerable} answerable and {unanswerable} unanswerable questions; "
              f"one question moves a mean by {1 / answerable:.3f}." if answerable else "No answerable questions."]
     if drafts:
         found.append(f"{drafts} of {len(dataset.questions)} questions are drafts without second-person review (FR-19); results are provisional.")
-    found.append("The same questions calibrate FR-18 refusal, so calibration and this assessment overlap; this is not an independent holdout.")
+    if calibration and calibration["held_out"]:
+        found.append(f"FR-18 thresholds are calibrated on `{calibration['dataset_id']}` only (P10-8): {calibration['calibration_questions']} of "
+                     f"these {len(dataset.questions)} questions are in it and {calibration['held_out']} are held out. Refusal proposals "
+                     "computed on this run are descriptive and not for adoption.")
+    else:
+        found.append("The same questions calibrate FR-18 refusal, so calibration and this assessment overlap; this is not an independent holdout.")
     found.append(f"Results are cut at rank {max(K_VALUES)}: MRR scores 0 when the first relevant item is below that rank.")
     found.append("Precision@K credits at most one position per labeled relevant item, so a question with n labeled items "
                  "scores at most n / K.")
@@ -410,6 +431,7 @@ def run_evaluation(dataset_path: Path, manifest_path: Path, settings, registry, 
         results[mode] = rows
     unanswerable = sum(1 for question in dataset.questions if question.unanswerable)
     answerable = len(dataset.questions) - unanswerable
+    calibration = calibration_overlap(dataset, manifest_path)
     questions = [{"id": entry["question"].id, "technology": entry["question"].technology, "type": entry["question"].type,
                   "unanswerable": entry["question"].unanswerable, "review": entry["question"].review,
                   "items": entry["items"], "flags": entry["flags"],
@@ -417,7 +439,7 @@ def run_evaluation(dataset_path: Path, manifest_path: Path, settings, registry, 
                  for entry in labeled]
     dataset_info = {"dataset_id": dataset.dataset_id, "path": dataset.path, "sha256": dataset.sha256,
                     "questions": len(dataset.questions), "answerable": answerable, "unanswerable": unanswerable,
-                    "draft": sum(1 for question in dataset.questions if question.review == "draft"),
+                    "draft": sum(1 for question in dataset.questions if question.review == "draft"), "calibration": calibration,
                     "checks": {"ds06_30_to_50_questions": 30 <= len(dataset.questions) <= 50,
                                "smoke_at_least_10_unanswerable": unanswerable >= 10,
                                "q12_20_answerable_10_unanswerable": (answerable, unanswerable) == (20, 10)}}
@@ -444,7 +466,7 @@ def run_evaluation(dataset_path: Path, manifest_path: Path, settings, registry, 
         "comparisons": comparisons(configurations, questions),
         "flags": [{"question": question["id"], **flag} for question in questions for flag in question["flags"]],
         "results_fingerprint": results_fingerprint(dataset.sha256, state["summary"]["corpus_fingerprint"], configurations, questions),
-        "notes": notes(dataset, state["summary"], answerable, unanswerable),
+        "notes": notes(dataset, state["summary"], answerable, unanswerable, calibration),
         "questions": questions,
     }
 
@@ -490,11 +512,14 @@ def hybrid_refusal_lines(run_id: str, row: dict) -> tuple[list[str], list[str]]:
     return lines, ["", "```toml", hybrid_toml_block(proposed, run_id, calibration["scoring_config_id"]), "```"]
 
 
-def refusal_lines(run_id: str, completed: list[dict]) -> list[str]:
+def refusal_lines(run_id: str, completed: list[dict], for_adoption: bool = True) -> list[str]:
     from techdocqa.answering.sufficiency import toml_block
+    adoption = ("A proposal takes effect only when its section below is copied into the configuration, which makes this run the "
+                "calibration run." if for_adoption else
+                "This dataset holds questions the calibration set does not (P10-8), so the proposals are descriptive, not for "
+                "adoption, and no configuration section is given.")
     lines = ["", "## Refusal calibration (FR-18)", "",
-             "Top-1 relevance on each mode's 0-1 scale, judged before context trimming. A proposal takes effect only when its "
-             "section below is copied into the configuration, which makes this run the calibration run.", "",
+             f"Top-1 relevance on each mode's 0-1 scale, judged before context trimming. {adoption}", "",
              "| Configuration | Answerable min / median / max | Unanswerable min / median / max | Proposed threshold | Margin | "
              "Answerable passed | Unanswerable refused | Leave-one-out errors | Active thresholds |",
              "|---|---|---|---|---|---|---|---|---|"]
@@ -521,7 +546,7 @@ def refusal_lines(run_id: str, completed: list[dict]) -> list[str]:
                      f"{proposed['min_top_score']} | {proposed['margin']} | {proposed['answerable_passed']} of {proposed['answerable']} | "
                      f"{proposed['unanswerable_refused']} of {proposed['unanswerable']} | {proposed['leave_one_out_errors']} | {current} |")
         blocks += ["", "```toml", toml_block(calibration.get("section", row["mode"]), proposed, run_id, calibration["scoring_config_id"]), "```"]
-    return lines + gated + blocks
+    return lines + gated + (blocks if for_adoption else [])
 
 
 def comparison_lines(report: dict) -> list[str]:
@@ -582,7 +607,7 @@ def render_markdown(report: dict) -> str:
         for row in completed:
             lines.append(f"| {row['mode']} | {triple(row['answerable_top_score'])} | {triple(row['unanswerable']['top_score'])} | "
                          f"{row['unanswerable']['with_results']} of {row['unanswerable']['questions']} |")
-        lines += refusal_lines(report["run_id"], completed)
+        lines += refusal_lines(report["run_id"], completed, not (report["dataset"].get("calibration") or {}).get("held_out"))
     lines += ["", "## Flags", ""]
     lines += [f"- {flag['question']}: {flag['reason']} ({flag['source_key']})" for flag in report["flags"]] or ["None."]
     lines += ["", "## Notes", ""] + [f"- {note}" for note in report["notes"]]
