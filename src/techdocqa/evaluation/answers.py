@@ -302,8 +302,7 @@ def run_refusal_check(dataset_path: Path, manifest_path: Path, settings, registr
         "dataset": dataset_summary(dataset), "corpus": state["summary"],
         "environment": {**answer_environment(settings), "warm_up": warm},
         "retrieval": {"mode": first.get("mode"), "retrieval_config_id": first.get("retrieval_config_id"),
-                      "sufficiency": {key: value for key, value in (first.get("sufficiency") or {}).items()
-                                      if key not in ("passed", "top_score", "supporting_chunks")}},
+                      "sufficiency": gate_settings(first.get("sufficiency") or {})},
         "summary": {
             "questions": len(rows), "statuses": statuses(responses),
             "excluded": [row["id"] for row in rows if not row["unanswerable"] and row["flags"]],
@@ -316,19 +315,43 @@ def run_refusal_check(dataset_path: Path, manifest_path: Path, settings, registr
             # AC-18.1: a refusal by the gate must never have sent a chat request.
             "gate_refusals": len(gated), "llm_calls_on_gate_refusals": sum(1 for item in gated if item["llm_called"]),
             "llm_calls": sum(1 for item in responses if item["llm_called"]),
+            # Degraded hybrid answers from one retriever under that mode's thresholds (P10-3).
+            "degraded": sum(1 for item in responses if item.get("degraded")),
             "latency_ms": latencies(responses),
         },
         "questions": rows,
     }
 
 
+def gate_settings(check: dict) -> dict:
+    """The thresholds a run applied, without any one question's verdict or scores."""
+    verdict = ("passed", "top_score", "supporting_chunks")
+    kept = {key: value for key, value in check.items() if key not in (*verdict, "components")}
+    if check.get("components"):
+        kept["components"] = {name: {key: value for key, value in values.items() if key not in verdict}
+                              for name, values in check["components"].items()}
+    return kept
+
+
+def top_relevance(check: dict) -> str:
+    if check.get("components"):
+        return "; ".join(f"{name} {values['top_score']}" for name, values in check["components"].items())
+    return str(check.get("top_score"))
+
+
 def render_refusal_markdown(report: dict) -> str:
     summary, environment, retrieval = report["summary"], report["environment"], report["retrieval"]
     gate, warm = retrieval["sufficiency"], environment["warm_up"]
     first, second = summary["ac_18_1"], summary["ac_18_2"]
-    thresholds = (f"min_top_score {gate['min_top_score']}, min_chunk_score {gate['min_chunk_score']}, "
-                  f"min_supporting_chunks {gate['min_supporting_chunks']}, calibration run `{gate['calibration_run_id']}`"
-                  if gate.get("calibrated") else "none: this mode is not calibrated, so no question was gated")
+    if gate.get("calibrated") and gate.get("components"):
+        judged = "; ".join(f"{name} min_top_score {values['min_top_score']}, min_chunk_score {values['min_chunk_score']}, "
+                           f"min_supporting_chunks {values['min_supporting_chunks']}" for name, values in gate["components"].items())
+        thresholds = f"hybrid gate `{gate['gate']}`: {judged}; calibration run `{gate['calibration_run_id']}`"
+    elif gate.get("calibrated"):
+        thresholds = (f"min_top_score {gate['min_top_score']}, min_chunk_score {gate['min_chunk_score']}, "
+                      f"min_supporting_chunks {gate['min_supporting_chunks']}, calibration run `{gate['calibration_run_id']}`")
+    else:
+        thresholds = "none: this mode is not calibrated, so no question was gated"
     loaded = f"loaded in {warm['ms']} ms" if warm["loaded"] else f"not loaded ({warm['code'] or 'nothing to load'})"
     lines = [f"# Refusal check {report['run_id']}", "",
              f"- Date: {report['started_at']}, {report['duration_seconds']} s",
@@ -346,6 +369,7 @@ def render_refusal_markdown(report: dict) -> str:
              f"target {second['target']} ({'met' if second['met'] else 'NOT met'}) |",
              f"| Refused by the gate / chat requests among them | {summary['gate_refusals']} / {summary['llm_calls_on_gate_refusals']} |",
              f"| Chat requests in the run | {summary['llm_calls']} of {summary['questions']} questions |",
+             f"| Degraded searches (hybrid answered from one retriever) | {summary.get('degraded', 0)} |",
              "| Statuses | " + ", ".join(f"{name} {value}" for name, value in summary["statuses"].items()) + " |",
              "| Unanswerable outcomes | " + ", ".join(f"{name} {value}" for name, value in sorted(first["reasons"].items(), key=str)) + " |",
              "| Answerable outcomes | " + ", ".join(f"{name} {value}" for name, value in sorted(second["reasons"].items(), key=str)) + " |"]
@@ -360,7 +384,7 @@ def render_refusal_markdown(report: dict) -> str:
         response = row["response"]
         check = response["sufficiency"] or {}
         lines.append(f"| {row['id']} | {'yes' if row['unanswerable'] else 'no'} | {response['status']} | {response['reason'] or ''} | "
-                     f"{check.get('top_score')} | {check.get('passed')} | {'yes' if response['llm_called'] else 'no'} | "
+                     f"{top_relevance(check)} | {check.get('passed')} | {'yes' if response['llm_called'] else 'no'} | "
                      f"{len(response['citations'])} | {response['latency_ms']['total']} |")
     return "\n".join(lines) + "\n"
 

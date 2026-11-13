@@ -47,10 +47,16 @@ def render_answer(response) -> str:
     elif response.answer:
         lines += ["", response.answer]
     gate = response.sufficiency
-    if response.reason == "LOW_RELEVANCE" and gate is not None:
+    if response.reason == "LOW_RELEVANCE" and gate is not None and gate.components:
+        judged = "; ".join(f"{name} best {check.top_score}, needs {check.min_top_score}" for name, check in gate.components.items())
+        lines += [f"Hybrid gate '{gate.gate}': {judged} (calibration run {gate.calibration_run_id})."]
+    elif response.reason == "LOW_RELEVANCE" and gate is not None:
         lines += [f"Best match relevance {gate.top_score}; this mode needs {gate.min_top_score} "
                   f"(calibration run {gate.calibration_run_id})."]
     codes = {warning.code for warning in response.warnings}
+    if response.degraded:
+        lines += ["", f"Warning: hybrid search was degraded ({response.degradation_reason}); the answer used the other "
+                      f"retriever's results, judged by {(gate.thresholds_from if gate else None) or 'its'} thresholds."]
     if codes & {"SUFFICIENCY_NOT_CALIBRATED", "SUFFICIENCY_CALIBRATION_STALE"}:
         lines += ["", "Warning: no calibrated relevance threshold applies to this retrieval mode, so this answer was not gated "
                       "and questions the documents do not cover may still be answered."]
@@ -71,9 +77,9 @@ def calibration_status(settings) -> dict:
     from techdocqa.answering.sufficiency import STALE, active_thresholds
     from techdocqa.indexing.embeddings import embedding_profile
     status = {}
-    for mode in ("bm25", "vector"):
+    for mode in ("bm25", "vector", "hybrid"):
         try:
-            thresholds, warning = active_thresholds(mode, settings, embedding_profile(settings.model) if mode == "vector" else None)
+            thresholds, warning = active_thresholds(mode, settings, embedding_profile(settings.model) if mode != "bm25" else None)
         except TechDocQAError:
             # No verified embedding profile means no vector scale to calibrate against.
             thresholds, warning = None, None

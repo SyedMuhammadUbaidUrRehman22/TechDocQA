@@ -62,3 +62,18 @@ class LexicalIndex:
         # Dividing by a per-query constant keeps the ranking. A tiny corpus can give negative IDFs, hence the clamp.
         ceiling = self.ceiling(tokens)
         return [(chunk, score, min(1.0, max(0.0, score / ceiling)) if ceiling > 0 else 0.0) for chunk, score in matches[:top_k]]
+
+    def scored(self, query: str, chunk_ids: set[str]) -> dict[str, tuple[float, float]]:
+        """(raw score, 0-1 relevance) for the named chunks, on the same scale as search(); a chunk sharing no query
+        token scores 0. Hybrid uses it for chunks that only the vector retriever ranked (P10-3)."""
+        tokens = tokenize(query)
+        if not tokens:
+            return {chunk['chunk_id']: (0.0, 0.0) for chunk in self.chunks if chunk['chunk_id'] in chunk_ids}
+        wanted, ceiling = set(tokens), self.ceiling(tokens)
+        scores = self.vectorizer.get_scores(tokens)
+        found = {}
+        for chunk, score, frequencies in zip(self.chunks, scores, self.vectorizer.doc_freqs, strict=True):
+            if chunk['chunk_id'] in chunk_ids:
+                score = float(score) if wanted.intersection(frequencies) else 0.0
+                found[chunk['chunk_id']] = score, (min(1.0, max(0.0, score / ceiling)) if ceiling > 0 else 0.0)
+        return found

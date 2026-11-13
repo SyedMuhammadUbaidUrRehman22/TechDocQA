@@ -257,6 +257,7 @@ def write_query_log(settings, response: QAResponse, question: str, prompt_sha256
         "warnings": [warning.model_dump() for warning in response.warnings],
         "sufficiency": response.sufficiency.model_dump() if response.sufficiency else None, "llm_called": response.llm_called,
         "chunks_retrieved": response.chunks_retrieved, "chunks_used": response.chunks_used, "mode": response.mode,
+        "degraded": response.degraded, "degradation_reason": response.degradation_reason,
         "retrieval_config_id": response.retrieval_config_id, "generation_config_id": response.generation_config_id,
         "provider": response.provider, "model_id": response.model_id, "usage": token_usage,
         "latency_ms": response.latency_ms.model_dump(),
@@ -289,7 +290,7 @@ def answer_question(question: str, settings, registry, *, mode: str | None = Non
     request = SearchRequest(query=question, mode=mode or settings.retrieval.mode, top_k=settings.retrieval.top_k,
                             filters=filters or SearchFilters())
     profile = None
-    if request.mode == "vector":
+    if request.mode in ("vector", "hybrid"):
         from techdocqa.indexing.embeddings import embedding_profile
         profile = embedding_profile(settings.model)
     config_id = retrieval_config_id(request, settings, profile)
@@ -326,6 +327,17 @@ def answer_question(question: str, settings, registry, *, mode: str | None = Non
         # An unreachable embedder or a damaged index is a provider failure, never missing evidence (FR-18.4).
         return finish(status="generation_error", reason=detail.code, retryable=detail.retryable)
     latency.retrieval = elapsed_ms(started)
+    if found.degraded:
+        # Degraded hybrid is judged by the surviving mode's own thresholds on its own relevance (P10-3).
+        surviving = next(name for name in ("bm25", "vector") if name != found.failed_retriever)
+        thresholds, uncalibrated = sufficiency.active_thresholds(surviving, settings, profile if surviving == "vector" else None)
+        warnings[:] = [warning for warning in warnings if warning.code not in (sufficiency.NOT_CALIBRATED, sufficiency.STALE)]
+        warnings += [QAWarning(code=code) for code in (uncalibrated, "SEARCH_DEGRADED") if code]
+        gate = fields["sufficiency"] = sufficiency.new_check(request.mode, thresholds, thresholds_from=surviving)
+        fields.update(degraded=True, degradation_reason=found.degradation_reason)
+        if not found.results:
+            # The failed retriever might have found evidence, so this is a provider failure, not missing evidence (FR-18.4).
+            return finish(status="generation_error", reason=found.degradation_reason, retryable=True)
     if not found.results:
         return finish(status="no_evidence", reason="NO_MATCHING_DOCUMENTS", answer=MESSAGES["NO_MATCHING_DOCUMENTS"])
 

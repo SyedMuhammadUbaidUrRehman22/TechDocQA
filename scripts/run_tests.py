@@ -19,7 +19,7 @@ ROOT = Path(__file__).resolve().parents[1]
 GROUPS = {
     "core": ["test_schemas.py", "test_settings.py", "test_registry.py", "test_safety.py", "test_normalization.py",
              "test_segmentation.py", "test_loaders.py", "test_ingest.py", "test_online.py", "test_chunking.py"],
-    "retrieval": ["test_versioning.py", "test_indexing.py", "test_cli.py"],
+    "retrieval": ["test_versioning.py", "test_indexing.py", "test_cli.py", "test_hybrid.py"],
     "answering": ["test_evaluation.py", "test_generation.py", "test_citations.py", "test_sufficiency.py"],
     "enrichment": ["test_entities.py", "test_keyphrases.py", "test_nlp_gold.py", "test_enrichment.py", "test_classification.py",
                    "test_enrichment_eval.py"],

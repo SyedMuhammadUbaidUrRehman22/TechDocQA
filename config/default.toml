@@ -50,6 +50,9 @@ top_k = 5
 bm25_k1 = 1.2
 bm25_b = 0.75
 rrf_k = 60
+# rrf-v1 weights; equal weights are FR-14's formula (P10-1). They enter only hybrid's configuration IDs.
+rrf_bm25_weight = 1.0
+rrf_vector_weight = 1.0
 rerank = false
 rerank_max_candidates = 20
 

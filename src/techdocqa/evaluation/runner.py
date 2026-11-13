@@ -5,6 +5,7 @@ or whose anchor no longer matches, flags its question; the question is excluded 
 and the benchmark file is never changed (FR-21, AC-21.3).
 """
 
+from collections import Counter
 from datetime import datetime, timezone
 import hashlib
 from importlib import metadata
@@ -22,7 +23,7 @@ from techdocqa.evaluation.dataset import load_dataset
 from techdocqa.evaluation.metrics import (BOOTSTRAP_CONFIDENCE, BOOTSTRAP_POLICY, BOOTSTRAP_RESAMPLES, BOOTSTRAP_SEED, K_VALUES,
                                           METRIC_POLICY, METRICS, P0_METRICS, macro_average, p95, paired_bootstrap, question_metrics)
 from techdocqa.ingestion.chunks import stored_chunks
-from techdocqa.retrieval.search import search
+from techdocqa.retrieval.search import COMPONENTS, search
 from techdocqa.schemas import SearchRequest
 
 # The four FR-19 configurations, each a search mode and a rerank flag. The default stays the two P0 modes.
@@ -134,13 +135,23 @@ def spread(values: list[float]) -> dict | None:
 
 
 def rounded(values: dict) -> dict:
-    return {name: (None if value is None else round(value, SCORE_DIGITS)) for name, value in values.items()}
+    return {name: maybe(value) for name, value in values.items()}
+
+
+def maybe(value: float | None) -> float | None:
+    return None if value is None else round(value, SCORE_DIGITS)
+
+
+def component_tops(row: dict, top_k: int) -> dict[str, float | None]:
+    """Hybrid: each component's best relevance among the first top_k results, which its min_top_score judges."""
+    return {name: max(values) if (values := [value for value in row["relevances"][name][:top_k] if value is not None]) else None
+            for name in COMPONENTS}
 
 
 def run_mode(name: str, labeled: list[dict], scope: frozenset, settings, registry) -> tuple[dict, dict]:
     """One configuration over every question; `name` is a key of CONFIGURATIONS."""
     mode, rerank = CONFIGURATIONS[name]
-    per_question, config_id = {}, None
+    per_question, config_id, degraded = {}, None, []
     started = time.perf_counter()
     try:
         for entry in labeled:
@@ -150,12 +161,17 @@ def run_mode(name: str, labeled: list[dict], scope: frozenset, settings, registr
             response = search(request, settings, registry, source_keys=scope)
             latency = time.perf_counter() - begun
             config_id = response.retrieval_config_id
+            if response.degraded:
+                degraded.append(f"{response.failed_retriever} {response.degradation_reason}")
             matches = [entry["chunk_items"].get(result.chunk_id, set()) for result in response.results]
             row = {"ranked": [result.chunk_id for result in response.results],
                    "scores": [round(result.scores[mode], SCORE_DIGITS) for result in response.results],
-                   "relevance": [round(result.relevance, SCORE_DIGITS) for result in response.results],
+                   "relevance": [maybe(result.relevance) for result in response.results],
                    "matched_items": [sorted(items) for items in matches],
                    "latency_seconds": round(latency, 3)}
+            if mode == "hybrid":
+                # Both component relevances of every fused result: the hybrid gate judges these (P10-3).
+                row["relevances"] = {name: [maybe(result.relevances.get(name)) for result in response.results] for name in COMPONENTS}
             if not question.unanswerable and not entry["flags"]:
                 row["first_relevant_rank"] = next((rank for rank, items in enumerate(matches, 1) if items), None)
                 row["metrics"] = rounded(question_metrics(matches, entry["grades"]))
@@ -163,6 +179,12 @@ def run_mode(name: str, labeled: list[dict], scope: frozenset, settings, registr
     except TechDocQAError as error:
         detail = error.response.error
         return {"mode": name, "status": "failed", "error": {"code": detail.code, "message": detail.message},
+                "duration_seconds": round(time.perf_counter() - started, 3)}, {}
+    if degraded:
+        # A degraded search answers from one retriever, so the run would not measure this configuration.
+        reasons = ", ".join(f"{reason} {count}" for reason, count in sorted(Counter(degraded).items()))
+        return {"mode": name, "status": "failed",
+                "error": {"code": "SEARCH_DEGRADED", "message": f"{len(degraded)} of {len(labeled)} searches were degraded: {reasons}."},
                 "duration_seconds": round(time.perf_counter() - started, 3)}, {}
     scored = [(entry["question"], per_question[entry["question"].id]) for entry in labeled]
     answered = [(question, row) for question, row in scored if "metrics" in row]
@@ -182,12 +204,17 @@ def run_mode(name: str, labeled: list[dict], scope: frozenset, settings, registr
                           for technology, rows in sorted(by_technology.items())},
         # Raw score scales differ by mode; relevance is each mode's 0-1 scale, which FR-18 thresholds use.
         "answerable_top_score": spread([row["scores"][0] for _, row in answered if row["scores"]]),
-        "answerable_top_relevance": spread([row["relevance"][0] for _, row in answered if row["relevance"]]),
+        "answerable_top_relevance": spread([row["relevance"][0] for _, row in answered if row["relevance"] and row["relevance"][0] is not None]),
         "unanswerable": {"questions": len(unanswerable), "with_results": sum(1 for row in unanswerable if row["ranked"]),
                          "top_score": spread([row["scores"][0] for row in unanswerable if row["scores"]]),
-                         "top_relevance": spread([row["relevance"][0] for row in unanswerable if row["relevance"]])},
+                         "top_relevance": spread([row["relevance"][0] for row in unanswerable if row["relevance"] and row["relevance"][0] is not None])},
         "refusal_calibration": refusal_calibration(mode, [row for _, row in answered], unanswerable, settings),
     }
+    if mode == "hybrid":
+        top_k = settings.retrieval.top_k
+        summary["component_top_relevance"] = {
+            group: {name: spread([value for row in rows if (value := component_tops(row, top_k)[name]) is not None]) for name in COMPONENTS}
+            for group, rows in (("answerable", [row for _, row in answered]), ("unanswerable", unanswerable))}
     return summary, per_question
 
 
@@ -200,10 +227,12 @@ def refusal_calibration(mode: str, answered: list[dict], unanswerable: list[dict
     from techdocqa.answering import sufficiency
     from techdocqa.retrieval.search import scoring_config_id
     profile = None
-    if mode == "vector":
+    if mode in ("vector", "hybrid"):
         from techdocqa.indexing.embeddings import embedding_profile
         profile = embedding_profile(settings.model)
     top_k = settings.retrieval.top_k
+    if mode == "hybrid":
+        return hybrid_refusal_calibration(answered, unanswerable, settings, profile)
     def top(rows):
         return [row["relevance"][0] if row["relevance"] else None for row in rows]
     thresholds, warning = sufficiency.active_thresholds(mode, settings, profile)
@@ -214,6 +243,28 @@ def refusal_calibration(mode: str, answered: list[dict], unanswerable: list[dict
                       unanswerable=len(unanswerable), unanswerable_refused=len(unanswerable) - sum(verdicts[1]))
     return {"relevance_policy": sufficiency.relevance_policy(mode), "scoring_config_id": scoring_config_id(mode, settings, profile),
             "active": active, "proposed": sufficiency.propose(top(answered), top(unanswerable))}
+
+
+def hybrid_refusal_calibration(answered: list[dict], unanswerable: list[dict], settings, profile: dict) -> dict:
+    """P10-3 on this run: every gate's proposal with the selection, and how the active hybrid gate judges the run."""
+    from techdocqa.answering import sufficiency
+    from techdocqa.retrieval.search import scoring_config_id
+    top_k = settings.retrieval.top_k
+    thresholds, warning = sufficiency.active_thresholds("hybrid", settings, profile)
+    active = {"status": "calibrated" if thresholds else ("stale" if warning == sufficiency.STALE else "not_calibrated")}
+    if thresholds:
+        def passes(row):
+            values = {name: [value for value in row["relevances"][name][:top_k] if value is not None] for name in COMPONENTS}
+            return sufficiency.judge_gate(values, thresholds)[1]
+        verdicts = [[passes(row) for row in rows] for rows in (answered, unanswerable)]
+        active.update(gate=thresholds.gate, calibration_run_id=thresholds.calibration_run_id,
+                      thresholds={name: levels.min_top_score for name, levels in thresholds.components().items()},
+                      answerable=len(answered), answerable_passed=sum(verdicts[0]),
+                      unanswerable=len(unanswerable), unanswerable_refused=len(unanswerable) - sum(verdicts[1]))
+    return {"relevance_policy": sufficiency.relevance_policy("hybrid"), "gate_selection": sufficiency.HYBRID_SELECTION_POLICY,
+            "scoring_config_id": scoring_config_id("hybrid", settings, profile), "active": active,
+            "proposed": sufficiency.propose_hybrid([component_tops(row, top_k) for row in answered],
+                                                   [component_tops(row, top_k) for row in unanswerable])}
 
 
 def fingerprinted(summary: dict) -> dict:
@@ -260,7 +311,8 @@ def results_fingerprint(dataset_sha256: str, corpus_fingerprint: str, configurat
     repeatable = {"dataset": dataset_sha256, "corpus": corpus_fingerprint, "policy": METRIC_POLICY,
                   "configurations": [fingerprinted(summary) for summary in configurations],
                   "questions": [{"id": question["id"], "flags": question["flags"],
-                                 "results": {mode: {"ranked": row["ranked"], "scores": row["scores"], "relevance": row["relevance"]}
+                                 "results": {mode: {"ranked": row["ranked"], "scores": row["scores"], "relevance": row["relevance"],
+                                                    **({"relevances": row["relevances"]} if "relevances" in row else {})}
                                              for mode, row in question["results"].items()}}
                                 for question in questions]}
     return hashlib.sha256(json.dumps(repeatable, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
@@ -278,6 +330,7 @@ def code_version() -> dict:
 
 def environment(settings, modes) -> dict:
     from techdocqa.retrieval.lexical import TOKENIZER_POLICY
+    from techdocqa.retrieval.search import fusion_values
     versions = {}
     for name in LIBRARIES:
         try:
@@ -288,7 +341,9 @@ def environment(settings, modes) -> dict:
     values = {"code": code_version(), "python": platform.python_version(), "platform": platform.platform(),
               "libraries": versions, "provider": model.provider, "bm25": {"k1": settings.retrieval.bm25_k1,
               "b": settings.retrieval.bm25_b, "tokenizer": TOKENIZER_POLICY}, "candidate_depth": settings.retrieval.candidate_depth}
-    if "vector" in modes:
+    if any(name in modes for name in ("hybrid", "hybrid+rerank")):
+        values["fusion"] = fusion_values(settings)
+    if any(name in modes for name in ("vector", "hybrid", "hybrid+rerank")):
         values["embedding"] = {"model": model.embedding_model, "digest": model.embedding_model_digest,
                                "dimension": model.embedding_dimension, "query_prefix": model.embedding_query_prefix}
     return values
@@ -383,6 +438,35 @@ def triple(values: dict | None) -> str:
     return "n/a" if values is None else f"{values['min']} / {values['median']} / {values['max']}"
 
 
+def hybrid_refusal_lines(run_id: str, row: dict) -> tuple[list[str], list[str]]:
+    from techdocqa.answering.sufficiency import hybrid_toml_block
+    calibration = row["refusal_calibration"]
+    proposed, active = calibration["proposed"], calibration["active"]
+    lines = ["", f"### {row['mode']}: gate candidates (P10-3)", "",
+             "Each question's best component relevance among its top results; G3 and G4 combine G1's and G2's thresholds. "
+             "Selected by fewest leave-one-out errors, then the largest margin, then the order G1 to G4. Margins are raw, "
+             "so a vector margin is on a narrower scale than a BM25 one.", ""]
+    for group, label in (("answerable", "Answerable"), ("unanswerable", "Unanswerable")):
+        spreads = row.get("component_top_relevance", {}).get(group, {})
+        lines.append(f"- {label} min / median / max: " + "; ".join(f"{name} {triple(spreads.get(name))}" for name in COMPONENTS))
+    if active["status"] == "calibrated":
+        lines.append(f"- Active gate `{active['gate']}` {active['thresholds']} from `{active['calibration_run_id']}`: "
+                     f"{active['answerable_passed']} of {active['answerable']} passed, {active['unanswerable_refused']} of "
+                     f"{active['unanswerable']} refused")
+    else:
+        lines.append(f"- Active gate: {active['status'].replace('_', ' ')}")
+    if proposed is None:
+        return lines + ["", "No proposal: a group is empty or has fewer than two distinct scores."], []
+    lines += ["", "| Gate | Thresholds | Margin | Answerable passed | Unanswerable refused | Leave-one-out errors | Selected |",
+              "|---|---|---|---|---|---|---|"]
+    for number, candidate in enumerate(proposed["candidates"], 1):
+        values = ", ".join(f"{name} {value}" for name, value in candidate["thresholds"].items())
+        lines.append(f"| {candidate['gate']} | {values} | {candidate['margin']} | {candidate['answerable_passed']} of {candidate['answerable']} | "
+                     f"{candidate['unanswerable_refused']} of {candidate['unanswerable']} | {candidate['leave_one_out_errors']} | "
+                     f"{'yes' if candidate['gate'] == proposed['gate'] else ''} |")
+    return lines, ["", "```toml", hybrid_toml_block(proposed, run_id, calibration["scoring_config_id"]), "```"]
+
+
 def refusal_lines(run_id: str, completed: list[dict]) -> list[str]:
     from techdocqa.answering.sufficiency import toml_block
     lines = ["", "## Refusal calibration (FR-18)", "",
@@ -391,9 +475,15 @@ def refusal_lines(run_id: str, completed: list[dict]) -> list[str]:
              "| Configuration | Answerable min / median / max | Unanswerable min / median / max | Proposed threshold | Margin | "
              "Answerable passed | Unanswerable refused | Leave-one-out errors | Active thresholds |",
              "|---|---|---|---|---|---|---|---|---|"]
-    blocks = []
+    blocks, gated = [], []
     for row in completed:
         calibration = row["refusal_calibration"]
+        if "gate_selection" in calibration:
+            lines.append(f"| {row['mode']} | see gate candidates below | | | | | | | |")
+            section, block = hybrid_refusal_lines(run_id, row)
+            gated += section
+            blocks += block
+            continue
         proposed, active = calibration["proposed"], calibration["active"]
         if active["status"] == "calibrated":
             current = (f"{active['min_top_score']} from `{active['calibration_run_id']}`: {active['answerable_passed']} of "
@@ -408,7 +498,7 @@ def refusal_lines(run_id: str, completed: list[dict]) -> list[str]:
                      f"{proposed['min_top_score']} | {proposed['margin']} | {proposed['answerable_passed']} of {proposed['answerable']} | "
                      f"{proposed['unanswerable_refused']} of {proposed['unanswerable']} | {proposed['leave_one_out_errors']} | {current} |")
         blocks += ["", "```toml", toml_block(row["mode"], proposed, run_id, calibration["scoring_config_id"]), "```"]
-    return lines + blocks
+    return lines + gated + blocks
 
 
 def comparison_lines(report: dict) -> list[str]:

@@ -26,7 +26,36 @@ Implementation, step 1 (metrics and runner):
   - The p95 latency is nearest-rank: the ⌈0.95 n⌉-th smallest per-question search time, over every question in the run.
   - The rule's pairs are hybrid against vector and hybrid with reranking against hybrid. nDCG@5 decides; Recall@5 and MRR, and vector against BM25, are descriptive.
   - The rule is judged on the full benchmark only. On smoke, which also calibrates FR-18, the verdict is diagnostic.
-- **Configurations.** `eval --mode` takes `bm25`, `vector`, `hybrid` and `hybrid+rerank`; the default stays `bm25` and `vector`. Until steps 2 and 3, the hybrid rows report `failed: MODE_NOT_AVAILABLE`. `--answers` and `--refusal` take a search mode, so they refuse `hybrid+rerank`; reranking there follows the configuration (P10-9).
+- **Configurations.** `eval --mode` takes `bm25`, `vector`, `hybrid` and `hybrid+rerank`; the default stays `bm25` and `vector`.
+
+Implementation, step 2 (hybrid search):
+
+- **Fusion (P10-1).** `rrf-v1` sums w_r / (k + rank) over the retrievers that ranked a chunk, in a fixed order, with ties going to `chunk_id`.
+  - Each retriever searches to max(top_k, `candidate_depth`) with the same filters.
+  - New settings `rrf_bm25_weight` and `rrf_vector_weight` default to 1.0. They, `rrf_k` and the depth enter only hybrid's IDs; a test checks that the `bm25` and `vector` IDs do not move.
+  - `bm25` mode still fetches `top_k`, even above the depth.
+- **Hybrid results.** A fused result keeps each retriever's rank where it ranked the chunk, both raw scores, and both component relevances in a new `relevances` field.
+  - A component relevance is computed for every fused chunk. BM25 uses the lexical index's own scale, where a chunk sharing no query word scores 0. Vector uses Chroma's score where it ranked the chunk, and the cosine of the stored vector otherwise. A test checks that the two agree to 1e-6.
+  - `relevance` is null for hybrid, which has no single scale. In degraded hybrid it is the surviving mode's relevance.
+- **Hybrid scale.** Hybrid's `scoring_config_id` hashes both component scales and the fusion settings, because the fusion decides which chunks the gate judges. Hybrid's `retrieval_config_id` also hashes the BM25 and vector thresholds that would judge a degraded search.
+- **Degradation (P10-2).**
+  - A retriever error at run time gives the other retriever's results, `degraded = true`, the error code as `degradation_reason`, and the new `failed_retriever`. A request or configuration error still raises.
+  - Both retrievers failing raises `HYBRID_SEARCH_FAILED`, naming both codes.
+  - In `ask`, a degraded search that finds nothing is `generation_error` with the failed retriever's code, retryable. The failed retriever might have found evidence, so this is not `no_evidence` (FR-18.4).
+  - In `eval`, any degraded search fails the hybrid configuration with `SEARCH_DEGRADED`, so a run with the embedder down cannot pass as a hybrid measurement.
+- **Gate (P10-3), parameters fixed before any live hybrid run.**
+  - `[retrieval.sufficiency.hybrid]` names a gate: `vector` (G1), `bm25` (G2), `either` (G3) or `both` (G4). It holds a threshold table for each component the gate judges.
+  - A component passes on the kept chunks' relevances with the usual `min_top_score`, `min_chunk_score` and `min_supporting_chunks`. A chunk without that component's relevance does not count.
+  - For a proposal, each question's statistic per component is the best relevance among its top results, which is what `min_top_score` judges. G1 and G2 are chosen by `balanced-accuracy-midpoint-v1` on that component. G3 and G4 combine those two thresholds, and leave-one-out re-chooses both.
+  - The margin is the smallest distance from a question's deciding relevance to its threshold: the best component under either, the worst under both. A question that cannot flip is left out of the margin.
+  - The selection policy is `fewest-loo-errors-then-margin-then-order-v1`: fewest leave-one-out errors, then the largest raw margin, then the order G1 to G4.
+  - Margins are compared raw, although vector relevance spans a narrower range than BM25's. The report says so; nothing is normalized after the fact.
+  - Degraded hybrid is judged by the surviving mode's own section, shown as `thresholds_from`. Those are the Phase 8 thresholds: a degraded search's top results are exactly that mode's, at the same depth and order.
+- **Checked on the real index (2026-11-13), invariant 1 and AC-14.3.**
+  - The smoke `eval` still gives `48ce89dc...a3af410`, with the same `bm25` and `vector` retrieval and scoring IDs, and both Phase 8 calibrations still active.
+  - `verify_index.py --compare .tmp/p9-top5-before-enrich.json` passed: the top 5 is identical in both modes, and 8 of 8 identifiers are at rank 1.
+  - With `--profile .tmp/dead-provider.toml`, which points the Ollama endpoint at an unreachable port, `search --mode hybrid` returned `degraded: true`, `EMBEDDING_PROVIDER_UNAVAILABLE` and `failed_retriever: vector`. Its top 5 equalled `--mode bm25`'s, with the same relevances.
+  - The unreachable endpoint stands in for stopping Ollama: it exercises the same failure path without touching the running service. Until steps 2 and 3, the hybrid rows report `failed: MODE_NOT_AVAILABLE`. `--answers` and `--refusal` take a search mode, so they refuse `hybrid+rerank`; reranking there follows the configuration (P10-9).
 
 ## Phase 9 completion (2026-11-12)
 

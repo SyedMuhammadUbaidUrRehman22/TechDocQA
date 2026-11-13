@@ -450,8 +450,8 @@ def test_reopen_and_rebuild_restore_identical_top_five_without_model_calls(index
         index_versions(['ver_x'], model_settings, registry, rebuild=True)
 
 
-def test_hybrid_and_rerank_are_refused_until_their_phase(indexed, model_settings, registry):
-    for request in (SearchRequest(query='x', mode='hybrid'), SearchRequest(query='x', mode='bm25', rerank=True)):
+def test_rerank_is_refused_until_its_phase(indexed, model_settings, registry):
+    for request in (SearchRequest(query='x', mode='hybrid', rerank=True), SearchRequest(query='x', mode='bm25', rerank=True)):
         with pytest.raises(TechDocQAError) as error:
             search(request, model_settings, registry)
         assert error.value.response.error.code == 'MODE_NOT_AVAILABLE'
@@ -713,8 +713,9 @@ def test_cli_workflow_index_search_withdraw_delete(indexed, model_settings, regi
     assert set(payload['results'][0]) >= {'rank', 'chunk_id', 'document_id', 'title', 'section_path', 'page', 'text', 'scores', 'ranks'}
     assert main(['search', '--mode', 'bm25', '--', '--flag-name']) == 0
     assert json.loads(capsys.readouterr().out)['results']
-    assert main(['search', 'Kafka brokers', '--mode', 'hybrid']) == 1
-    assert json.loads(capsys.readouterr().err)['error']['code'] == 'MODE_NOT_AVAILABLE'
+    assert main(['search', 'Kafka brokers', '--mode', 'hybrid']) == 0
+    payload = json.loads(capsys.readouterr().out)
+    assert payload['mode'] == 'hybrid' and payload['degraded'] is False and set(payload['results'][0]['relevances']) == {'bm25', 'vector'}
     assert main(['search', 'x' * 1001]) == 2
     assert json.loads(capsys.readouterr().err)['error']['code'] == 'INVALID_ARGUMENT'
     assert main(['search', 'Kafka', '--top-k', '0']) == 2

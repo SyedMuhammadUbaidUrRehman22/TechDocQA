@@ -315,12 +315,14 @@ def test_comparisons_pair_questions_evaluated_in_both(bench, model_settings, reg
     assert run(bench, model_settings, registry, modes=["bm25"])["comparisons"] == []
 
 
-def test_four_configurations_run_and_hybrid_reports_its_failure_until_it_exists(bench, model_settings, registry):
+def test_four_configurations_run_and_reranking_reports_its_failure_until_it_exists(bench, model_settings, registry):
     report = run(bench, model_settings, registry, modes=["bm25", "vector", "hybrid", "hybrid+rerank"])
     statuses = {row["mode"]: (row["status"], row.get("error", {}).get("code")) for row in report["configurations"]}
     assert statuses == {"bm25": ("completed", None), "vector": ("completed", None),
-                        "hybrid": ("failed", "MODE_NOT_AVAILABLE"), "hybrid+rerank": ("failed", "MODE_NOT_AVAILABLE")}
-    assert [(entry["candidate"], entry["baseline"]) for entry in report["comparisons"]] == [("vector", "bm25")]
+                        "hybrid": ("completed", None), "hybrid+rerank": ("failed", "MODE_NOT_AVAILABLE")}
+    assert [(entry["candidate"], entry["baseline"]) for entry in report["comparisons"]] == [("vector", "bm25"), ("hybrid", "vector")]
+    rule = report["comparisons"][1]["benefit_rule"]
+    assert set(rule) == {"interval_above_zero", "p95_latency_seconds", "latency_within_limit", "measured_benefit"}
     assert "| hybrid+rerank | failed: MODE_NOT_AVAILABLE |" in render_markdown(report)
     with pytest.raises(TechDocQAError) as caught:
         run(bench, model_settings, registry, modes=["reranked"])

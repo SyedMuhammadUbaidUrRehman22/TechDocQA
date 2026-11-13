@@ -299,10 +299,9 @@ def test_model_insufficiency_phrase_is_no_evidence(indexed, qa_settings, registr
     assert response.evidence and response.chunks_used == len(response.evidence)
 
 
-def test_hybrid_and_mismatched_configurations_are_request_errors(indexed, qa_settings, registry, chat):
-    for call, code in ((lambda: ask(qa_settings, registry, mode="hybrid"), "MODE_NOT_AVAILABLE"),
-                       (lambda: answer_question("Kafka?", qa_settings, registry, mode="bm25", expected_config_id="rc_other"),
-                        "RETRIEVAL_CONFIG_MISMATCH")):
+def test_mismatched_configurations_are_request_errors(indexed, qa_settings, registry, chat):
+    for call, code in ((lambda: answer_question("Kafka?", qa_settings, registry, mode="bm25", expected_config_id="rc_other"),
+                        "RETRIEVAL_CONFIG_MISMATCH"),):
         with pytest.raises(TechDocQAError) as caught:
             call()
         assert caught.value.response.error.code == code
@@ -422,7 +421,6 @@ def test_ask_prints_json_or_numbered_citations(indexed, qa_settings, registry, c
 
 @pytest.mark.parametrize("arguments, code, exit_code", [
     (["ask", "x" * 1001, "--mode", "bm25"], "INVALID_QUESTION", 1),
-    (["ask", "Kafka?", "--mode", "hybrid"], "MODE_NOT_AVAILABLE", 1),
     (["ask", "Kafka?", "--mode", "bm25", "--retrieval-config-id", "rc_other"], "RETRIEVAL_CONFIG_MISMATCH", 1),
     (["ask", "Kafka?", "--mode", "fuzzy"], "INVALID_ARGUMENT", 2),
     (["eval", "--answers", "0"], "INVALID_ARGUMENT", 2),

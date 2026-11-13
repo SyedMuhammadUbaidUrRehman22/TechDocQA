@@ -79,6 +79,12 @@ class VectorStore:
         with store_errors():
             self.store.reset_collection()
 
+    def stored(self, where: dict) -> list[tuple[dict, list[float]]]:
+        """(metadata, stored vector) for every entry matching where."""
+        with store_errors():
+            found = self.store.get(where=where, include=["metadatas", "embeddings"])
+        return [(metadata, [float(value) for value in vector]) for metadata, vector in zip(found["metadatas"], found["embeddings"], strict=True)]
+
     def search(self, vector: list[float], k: int, where: dict) -> list[tuple[Document, float]]:
         """Nearest documents with a 0-1 relevance: (cosine + 1) / 2, which equals 1 - distance / 2."""
         with store_errors():
