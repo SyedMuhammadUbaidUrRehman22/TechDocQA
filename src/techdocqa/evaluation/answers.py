@@ -3,6 +3,8 @@
 The answer review covers a technology-balanced sample of answerable smoke questions, for AC-16.1 and the AC-16.6
 review. Whether a cited chunk holds a labeled passage is an automated hint only; support is judged by the reviewer, whose
 ratings are read back from the filled review sheet and recorded, with the reviewer's name, in the report.
+With a seed, the review is FR-19.3's instead (P10-9): answerable questions in a seeded order, answered until the
+requested number have an answer with a citation, each rated for faithfulness and for answer relevance.
 The refusal check asks every smoke question, for AC-18.1 and AC-18.2.
 Committed reports name chunk IDs, not chunk text. The review sheet with cited text stays in the ignored data directory.
 """
@@ -12,6 +14,7 @@ from datetime import datetime, timezone
 import json
 import math
 from pathlib import Path
+import random
 import re
 import statistics
 import time
@@ -25,6 +28,21 @@ from techdocqa.evaluation.runner import code_version, corpus_state, label_questi
 RATINGS = ("yes", "partly", "no")
 AC_16_6_TARGET = 0.80
 TABLE_HEADER = "| Question | Status | Citations | Labeled passage cited | Supported | Reviewer notes |"
+# FR-19.3 (P10-9): faithfulness is the Phase 8 rating of the same thing, stored as `supported`; relevance is added.
+FR_19_3_SCHEME = "fr-19.3-v1"
+FR_19_3_HEADER = "| Question | Status | Citations | Labeled passage cited | Faithful | Relevant | Reviewer notes |"
+
+
+def seeded_order(dataset, seed: int) -> list:
+    """P10-9: the answerable questions in file order, shuffled once by random.Random(seed)."""
+    questions = [question for question in dataset.questions if not question.unanswerable]
+    random.Random(seed).shuffle(questions)
+    return questions
+
+
+def has_answer(response: dict) -> bool:
+    """AC-16.1's answer: answered, non-empty, with at least one citation."""
+    return response["status"] == "answered" and bool(response["answer"]) and bool(response["citations"])
 
 
 def select_questions(dataset, count: int) -> list:
@@ -73,8 +91,12 @@ def latencies(responses: list[dict]) -> dict:
 
 
 def run_answer_review(dataset_path: Path, manifest_path: Path, settings, registry, *, count: int = 10,
-                      mode: str | None = None) -> tuple[dict, dict]:
-    """The report, and the text of every cited or consulted chunk for the local review sheet."""
+                      mode: str | None = None, rerank: bool | None = None, seed: int | None = None) -> tuple[dict, dict]:
+    """The report, and the text of every cited or consulted chunk for the local review sheet.
+
+    Without a seed: the first `count` answerable questions, round-robin by technology (Phase 8, AC-16.6). With one
+    (FR-19.3): the seeded order, asked until `count` have an answer with a citation or the questions run out. A question
+    without one stays in the report, unrated, and is not replaced by choice: the next in the order is simply asked."""
     from techdocqa.answering.generation import answer_question, warm_up
     started_at, started = datetime.now(timezone.utc).isoformat(), time.perf_counter()
     dataset = load_dataset(dataset_path)
@@ -83,10 +105,12 @@ def run_answer_review(dataset_path: Path, manifest_path: Path, settings, registr
     scope = frozenset(state["chunks"])
     warm = warm_up(settings)
     rows = []
-    for question in select_questions(dataset, count):
-        response = answer_question(question.question, settings, registry, mode=mode, source_keys=scope)
+    for question in (select_questions(dataset, count) if seed is None else seeded_order(dataset, seed)):
+        if seed is not None and sum(1 for row in rows if row["rated"]) >= count:
+            break
+        response = answer_question(question.question, settings, registry, mode=mode, source_keys=scope, rerank=rerank)
         hits = labeled[question.id]["chunk_items"]
-        rows.append({
+        row = {
             "id": question.id, "technology": question.technology, "type": question.type, "question": question.question,
             "flags": labeled[question.id]["flags"],
             "response": response.model_dump(),
@@ -94,18 +118,30 @@ def run_answer_review(dataset_path: Path, manifest_path: Path, settings, registr
             "cites_labeled_passage": any(hits.get(citation.chunk_id) for citation in response.citations),
             "evidence_has_labeled_passage": any(hits.get(chunk_id) for chunk_id in response.evidence),
             "review": {"supported": None, "reviewer": None, "notes": None},
-        })
+        }
+        if seed is not None:
+            row["rated"] = has_answer(row["response"])
+            row["review"] = {"supported": None, "relevant": None, "reviewer": None, "notes": None}
+        rows.append(row)
     responses = [row["response"] for row in rows]
-    answered = [item for item in responses if item["status"] == "answered" and item["answer"] and item["citations"]]
+    answered = [item for item in responses if has_answer(item)]
     usages = [item["usage"] for item in responses if item["usage"] and item["usage"]["prompt_tokens"] is not None]
     texts = {chunk["chunk_id"]: chunk["text"] for items in state["chunks"].values() for chunk, _, _ in items}
     shown = {citation["chunk_id"] for item in responses for citation in item["citations"] + item["context_consulted"]}
+    scheme = {} if seed is None else {
+        "review_scheme": FR_19_3_SCHEME, "seed": seed,
+        "sample": {"target": count, "asked": len(rows), "answered_with_citation": len(answered),
+                   "without_answer": [row["id"] for row in rows if not row["rated"]], "short": len(answered) < count}}
+    selection = (f"first {count} answerable questions, round-robin by technology in file order" if seed is None else
+                 f"answerable questions in file order, shuffled once by random.Random({seed}), asked in that order until {count} "
+                 "had an answer with a citation (P10-9)")
     return {
         "run_id": "answers_" + uuid.uuid4().hex, "started_at": started_at, "finished_at": datetime.now(timezone.utc).isoformat(),
         "duration_seconds": round(time.perf_counter() - started, 3),
         "dataset": dataset_summary(dataset),
         "corpus": state["summary"],
-        "selection": f"first {count} answerable questions, round-robin by technology in file order",
+        "selection": selection,
+        **scheme,
         "environment": {**answer_environment(settings), "warm_up": warm},
         "summary": {
             "questions": len(rows),
@@ -118,7 +154,8 @@ def run_answer_review(dataset_path: Path, manifest_path: Path, settings, registr
             "prompt_tokens": {"max": max((u["prompt_tokens"] for u in usages), default=None),
                               "max_bound": max((u["prompt_token_bound"] for u in usages), default=None),
                               "bound_held": all(u["prompt_tokens"] <= u["prompt_token_bound"] for u in usages)},
-            "human_review": "pending: AC-16.6 needs a reviewer to rate support against the cited chunks",
+            "human_review": ("pending: AC-16.6 needs a reviewer to rate support against the cited chunks" if seed is None else
+                             f"pending: FR-19.3 needs faithfulness and relevance ratings for the {len(answered)} answers"),
         },
         "questions": rows,
     }, {chunk_id: texts[chunk_id] for chunk_id in shown if chunk_id in texts}
@@ -145,8 +182,40 @@ def fenced(text: str) -> list[str]:
     return [fence + "text", *text.splitlines(), fence]
 
 
+def is_fr_19_3(report: dict) -> bool:
+    return report.get("review_scheme") == FR_19_3_SCHEME
+
+
+def review_table(report: dict) -> list[str]:
+    """The table a reviewer fills in: Phase 8's Supported column, or FR-19.3's Faithful and Relevant columns."""
+    if not is_fr_19_3(report):
+        lines = ["A reviewer rates each answer against its cited chunks: **yes** (every claim supported), **partly** or **no**. "
+                 "AC-16.6 needs at least 8 of 10 rated yes. Record the ratings with `eval --record-review <sheet> --reviewer <name>`.", "",
+                 TABLE_HEADER, "|---|---|---|---|---|---|"]
+    else:
+        lines = ["A reviewer rates each answer twice, with **yes**, **partly** or **no**. **Faithful:** every claim is supported by the "
+                 "cited chunks. **Relevant:** the answer addresses the question asked. Questions asked without an answer are listed "
+                 "but not rated. Record the ratings with `eval --record-review <sheet> --reviewer <name>`.", "",
+                 FR_19_3_HEADER, "|---|---|---|---|---|---|---|"]
+    for row in report["questions"]:
+        response, review = row["response"], row["review"]
+        ratings = [review["supported"] or ""] + ([review["relevant"] or ""] if is_fr_19_3(report) else [])
+        values = [row["id"], response["status"] + (" " + response["reason"] if response["reason"] else ""),
+                  str(len(response["citations"])), "yes" if row["cites_labeled_passage"] else "no", *ratings, cell(review["notes"])]
+        lines.append("|" + "|".join(f" {value} " if value else " " for value in values) + "|")
+    return lines
+
+
 def render_markdown(report: dict, chunk_text: dict | None = None) -> str:
     summary, environment = report["summary"], report["environment"]
+    if is_fr_19_3(report):
+        sample = report["sample"]
+        answered = [f"| Answered with a citation | {sample['answered_with_citation']} of {sample['asked']} asked, for a target of "
+                    f"{sample['target']}{' (short: the questions ran out)' if sample['short'] else ''} |",
+                    "| Asked without an answer, not rated | " + (", ".join(sample["without_answer"]) or "none") + " |"]
+    else:
+        answered = [f"| AC-16.1 answered with a citation | {summary['ac_16_1']['answered_with_citation']} of {summary['questions']} "
+                    f"({'met' if summary['ac_16_1']['met'] else 'NOT met'}) |"]
     lines = [f"# Answer review {report['run_id']}", "",
              f"- Date: {report['started_at']}, {report['duration_seconds']} s",
              f"- Model: `{environment['model_id']}`, generation config `{environment['generation_config_id'][:15]}`, "
@@ -154,26 +223,15 @@ def render_markdown(report: dict, chunk_text: dict | None = None) -> str:
              f"- Dataset: `{report['dataset']['dataset_id']}` sha256 `{report['dataset']['sha256']}`; corpus fingerprint `{report['corpus']['corpus_fingerprint']}`",
              f"- Code: {environment['code']['commit']} (dirty: {environment['code']['dirty']})",
              f"- Selection: {report['selection']}", "",
-             "| Check | Result |", "|---|---|",
-             f"| AC-16.1 answered with a citation | {summary['ac_16_1']['answered_with_citation']} of {summary['questions']} "
-             f"({'met' if summary['ac_16_1']['met'] else 'NOT met'}) |",
+             "| Check | Result |", "|---|---|", *answered,
              "| Statuses | " + ", ".join(f"{name} {value}" for name, value in summary["statuses"].items()) + " |",
              f"| Cites a labeled passage (hint, not support) | {summary['cites_labeled_passage']} of {summary['questions']} |",
              f"| Prompt tokens, max reported / max bound | {summary['prompt_tokens']['max']} / {summary['prompt_tokens']['max_bound']} "
              f"(bound held: {summary['prompt_tokens']['bound_held']}) |"]
     for stage, values in summary["latency_ms"].items():
         lines.append(f"| {stage.capitalize()} ms, median / p95 / max | {values['median']} / {values['p95']} / {values['max']} |")
-    lines += [f"| AC-16.6 review | {summary['human_review']} |", "",
-              "## Review table", "",
-              "A reviewer rates each answer against its cited chunks: **yes** (every claim supported), **partly** or **no**. "
-              "AC-16.6 needs at least 8 of 10 rated yes. Record the ratings with `eval --record-review <sheet> --reviewer <name>`.", "",
-              TABLE_HEADER, "|---|---|---|---|---|---|"]
-    for row in report["questions"]:
-        response, review = row["response"], row["review"]
-        values = [row["id"], response["status"] + (" " + response["reason"] if response["reason"] else ""),
-                  str(len(response["citations"])), "yes" if row["cites_labeled_passage"] else "no",
-                  review["supported"] or "", cell(review["notes"])]
-        lines.append("|" + "|".join(f" {value} " if value else " " for value in values) + "|")
+    lines += [f"| {'FR-19.3' if is_fr_19_3(report) else 'AC-16.6'} review | {summary['human_review']} |", "",
+              "## Review table", "", *review_table(report)]
     for row in report["questions"]:
         response = row["response"]
         lines += ["", f"## {row['id']}", "", f"**Question:** {row['question']}", "",
@@ -208,31 +266,65 @@ def cell(text: str | None) -> str:
 
 
 def read_review_sheet(path: Path) -> tuple[str, dict]:
-    """The run ID and each rated row's rating and notes, from the review table of a filled sheet."""
+    """The run ID and each rated row's ratings and notes, from the review table of a filled sheet (either scheme)."""
     try:
         lines = Path(path).read_text(encoding="utf-8").splitlines()
     except (OSError, UnicodeDecodeError):
         raise TechDocQAError("INVALID_ARGUMENT", "The review sheet cannot be read.", stage="arguments") from None
     # The run ID names the report file, so it must be exactly an answer run ID.
-    if not lines or not re.fullmatch(r"# Answer review answers_[0-9a-f]{32}", lines[0].strip()) or TABLE_HEADER not in lines:
+    headers = [header for header in (TABLE_HEADER, FR_19_3_HEADER) if header in lines]
+    if not lines or not re.fullmatch(r"# Answer review answers_[0-9a-f]{32}", lines[0].strip()) or len(headers) != 1:
         raise TechDocQAError("INVALID_ARGUMENT", "The file is not an answer review sheet.", stage="arguments")
+    columns = ["supported"] if headers[0] == TABLE_HEADER else ["supported", "relevant"]
     ratings = {}
-    for line in lines[lines.index(TABLE_HEADER) + 2:]:
+    for line in lines[lines.index(headers[0]) + 2:]:
         if not line.startswith("|"):
             break
         cells = [part.strip().replace("\\|", "|") for part in re.split(r"(?<!\\)\|", line.strip())[1:-1]]
-        if len(cells) != 6 or cells[4].lower() not in RATINGS + ("",):
-            raise TechDocQAError("INVALID_ARGUMENT", "Each Supported cell must be yes, partly, no or empty.", stage="arguments")
-        if cells[4]:
-            ratings[cells[0]] = {"supported": cells[4].lower(), "notes": cells[5] or None}
+        if len(cells) != 5 + len(columns) or any(value.lower() not in RATINGS + ("",) for value in cells[4:-1]):
+            raise TechDocQAError("INVALID_ARGUMENT", "Each rating cell must be yes, partly, no or empty.", stage="arguments")
+        if any(cells[4:-1]):
+            ratings[cells[0]] = {**{name: value.lower() or None for name, value in zip(columns, cells[4:-1])}, "notes": cells[-1] or None}
     return lines[0].removeprefix("# Answer review ").strip(), ratings
 
 
+def apply_fr_19_3_review(report: dict, ratings: dict, reviewer: str) -> dict:
+    """FR-19.3: counts of faithfulness and relevance ratings over the answers; no pass mark is set (P10-9)."""
+    rows = report["questions"]
+    sample = [row for row in rows if row["rated"]]
+    if set(ratings) - {row["id"] for row in sample}:
+        raise TechDocQAError("INVALID_ARGUMENT", "The sheet rates a question that has no answer in this report.", stage="arguments")
+    if any("relevant" not in rating for rating in ratings.values()):
+        raise TechDocQAError("INVALID_ARGUMENT", "An FR-19.3 report takes the Faithful and Relevant columns.", stage="arguments")
+    for row in rows:
+        rating = ratings.get(row["id"])
+        row["review"] = ({"supported": rating["supported"], "relevant": rating["relevant"], "reviewer": reviewer,
+                          "notes": rating["notes"]} if rating else {"supported": None, "relevant": None, "reviewer": None, "notes": None})
+    rated = sum(1 for row in sample if row["review"]["supported"] and row["review"]["relevant"])
+    counts = {label: {name: sum(1 for row in sample if row["review"][key] == name) for name in RATINGS}
+              for label, key in (("faithfulness", "supported"), ("relevance", "relevant"))}
+    for values in counts.values():
+        values["yes_rate"] = rate(values["yes"], len(sample))
+    complete = rated == len(sample) and bool(sample)
+    report["summary"]["fr_19_3"] = {"answers": len(sample), "rated": rated, **counts, "complete": complete, "reviewer": reviewer,
+                                    "recorded_at": datetime.now(timezone.utc).isoformat()}
+    report["summary"]["human_review"] = (
+        f"{len(sample)} answers rated by {reviewer}: faithful " + ", ".join(f"{counts['faithfulness'][name]} {name}" for name in RATINGS)
+        + "; relevant " + ", ".join(f"{counts['relevance'][name]} {name}" for name in RATINGS)
+        if complete else f"pending: {rated} of {len(sample)} answers rated on both")
+    return report
+
+
 def apply_review(report: dict, ratings: dict, reviewer: str) -> dict:
-    """AC-16.6: at least 80% of the reviewed answers rated yes, once every answer is rated."""
+    """AC-16.6: at least 80% of the reviewed answers rated yes, once every answer is rated. FR-19.3 reports go to
+    apply_fr_19_3_review."""
+    if is_fr_19_3(report):
+        return apply_fr_19_3_review(report, ratings, reviewer)
     rows = report["questions"]
     if set(ratings) - {row["id"] for row in rows}:
         raise TechDocQAError("INVALID_ARGUMENT", "The sheet rates a question that is not in this report.", stage="arguments")
+    if any("relevant" in rating for rating in ratings.values()):
+        raise TechDocQAError("INVALID_ARGUMENT", "This report takes the Phase 8 Supported column only.", stage="arguments")
     for row in rows:
         rating = ratings.get(row["id"])
         row["review"] = ({"supported": rating["supported"], "reviewer": reviewer, "notes": rating["notes"]} if rating
@@ -271,7 +363,8 @@ def rate(part: int, whole: int) -> float | None:
     return round(part / whole, 3) if whole else None
 
 
-def run_refusal_check(dataset_path: Path, manifest_path: Path, settings, registry, *, mode: str | None = None) -> dict:
+def run_refusal_check(dataset_path: Path, manifest_path: Path, settings, registry, *, mode: str | None = None,
+                      rerank: bool | None = None) -> dict:
     """Every smoke question through answer_question(), for AC-18.1 (unanswerable refused) and AC-18.2 (answerable answered).
 
     The chat model is loaded first and that load is timed on its own, so a cold start cannot time out the first answer.
@@ -286,7 +379,7 @@ def run_refusal_check(dataset_path: Path, manifest_path: Path, settings, registr
     warm = warm_up(settings)
     rows = []
     for question in dataset.questions:
-        response = answer_question(question.question, settings, registry, mode=mode, source_keys=scope)
+        response = answer_question(question.question, settings, registry, mode=mode, source_keys=scope, rerank=rerank)
         rows.append({"id": question.id, "technology": question.technology, "type": question.type,
                      "unanswerable": question.unanswerable, "flags": flags[question.id], "response": response.model_dump()})
     responses = [row["response"] for row in rows]
@@ -302,8 +395,7 @@ def run_refusal_check(dataset_path: Path, manifest_path: Path, settings, registr
         "dataset": dataset_summary(dataset), "corpus": state["summary"],
         "environment": {**answer_environment(settings), "warm_up": warm},
         "retrieval": {"mode": first.get("mode"), "retrieval_config_id": first.get("retrieval_config_id"),
-                      "sufficiency": {key: value for key, value in (first.get("sufficiency") or {}).items()
-                                      if key not in ("passed", "top_score", "supporting_chunks")}},
+                      "sufficiency": gate_settings(first.get("sufficiency") or {})},
         "summary": {
             "questions": len(rows), "statuses": statuses(responses),
             "excluded": [row["id"] for row in rows if not row["unanswerable"] and row["flags"]],
@@ -316,19 +408,43 @@ def run_refusal_check(dataset_path: Path, manifest_path: Path, settings, registr
             # AC-18.1: a refusal by the gate must never have sent a chat request.
             "gate_refusals": len(gated), "llm_calls_on_gate_refusals": sum(1 for item in gated if item["llm_called"]),
             "llm_calls": sum(1 for item in responses if item["llm_called"]),
+            # Degraded hybrid answers from one retriever under that mode's thresholds (P10-3).
+            "degraded": sum(1 for item in responses if item.get("degraded")),
             "latency_ms": latencies(responses),
         },
         "questions": rows,
     }
 
 
+def gate_settings(check: dict) -> dict:
+    """The thresholds a run applied, without any one question's verdict or scores."""
+    verdict = ("passed", "top_score", "supporting_chunks")
+    kept = {key: value for key, value in check.items() if key not in (*verdict, "components")}
+    if check.get("components"):
+        kept["components"] = {name: {key: value for key, value in values.items() if key not in verdict}
+                              for name, values in check["components"].items()}
+    return kept
+
+
+def top_relevance(check: dict) -> str:
+    if check.get("components"):
+        return "; ".join(f"{name} {values['top_score']}" for name, values in check["components"].items())
+    return str(check.get("top_score"))
+
+
 def render_refusal_markdown(report: dict) -> str:
     summary, environment, retrieval = report["summary"], report["environment"], report["retrieval"]
     gate, warm = retrieval["sufficiency"], environment["warm_up"]
     first, second = summary["ac_18_1"], summary["ac_18_2"]
-    thresholds = (f"min_top_score {gate['min_top_score']}, min_chunk_score {gate['min_chunk_score']}, "
-                  f"min_supporting_chunks {gate['min_supporting_chunks']}, calibration run `{gate['calibration_run_id']}`"
-                  if gate.get("calibrated") else "none: this mode is not calibrated, so no question was gated")
+    if gate.get("calibrated") and gate.get("components"):
+        judged = "; ".join(f"{name} min_top_score {values['min_top_score']}, min_chunk_score {values['min_chunk_score']}, "
+                           f"min_supporting_chunks {values['min_supporting_chunks']}" for name, values in gate["components"].items())
+        thresholds = f"hybrid gate `{gate['gate']}`: {judged}; calibration run `{gate['calibration_run_id']}`"
+    elif gate.get("calibrated"):
+        thresholds = (f"min_top_score {gate['min_top_score']}, min_chunk_score {gate['min_chunk_score']}, "
+                      f"min_supporting_chunks {gate['min_supporting_chunks']}, calibration run `{gate['calibration_run_id']}`")
+    else:
+        thresholds = "none: this mode is not calibrated, so no question was gated"
     loaded = f"loaded in {warm['ms']} ms" if warm["loaded"] else f"not loaded ({warm['code'] or 'nothing to load'})"
     lines = [f"# Refusal check {report['run_id']}", "",
              f"- Date: {report['started_at']}, {report['duration_seconds']} s",
@@ -346,6 +462,7 @@ def render_refusal_markdown(report: dict) -> str:
              f"target {second['target']} ({'met' if second['met'] else 'NOT met'}) |",
              f"| Refused by the gate / chat requests among them | {summary['gate_refusals']} / {summary['llm_calls_on_gate_refusals']} |",
              f"| Chat requests in the run | {summary['llm_calls']} of {summary['questions']} questions |",
+             f"| Degraded searches (hybrid answered from one retriever) | {summary.get('degraded', 0)} |",
              "| Statuses | " + ", ".join(f"{name} {value}" for name, value in summary["statuses"].items()) + " |",
              "| Unanswerable outcomes | " + ", ".join(f"{name} {value}" for name, value in sorted(first["reasons"].items(), key=str)) + " |",
              "| Answerable outcomes | " + ", ".join(f"{name} {value}" for name, value in sorted(second["reasons"].items(), key=str)) + " |"]
@@ -360,7 +477,7 @@ def render_refusal_markdown(report: dict) -> str:
         response = row["response"]
         check = response["sufficiency"] or {}
         lines.append(f"| {row['id']} | {'yes' if row['unanswerable'] else 'no'} | {response['status']} | {response['reason'] or ''} | "
-                     f"{check.get('top_score')} | {check.get('passed')} | {'yes' if response['llm_called'] else 'no'} | "
+                     f"{top_relevance(check)} | {check.get('passed')} | {'yes' if response['llm_called'] else 'no'} | "
                      f"{len(response['citations'])} | {response['latency_ms']['total']} |")
     return "\n".join(lines) + "\n"
 

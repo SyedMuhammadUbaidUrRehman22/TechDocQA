@@ -257,6 +257,7 @@ def write_query_log(settings, response: QAResponse, question: str, prompt_sha256
         "warnings": [warning.model_dump() for warning in response.warnings],
         "sufficiency": response.sufficiency.model_dump() if response.sufficiency else None, "llm_called": response.llm_called,
         "chunks_retrieved": response.chunks_retrieved, "chunks_used": response.chunks_used, "mode": response.mode,
+        "degraded": response.degraded, "degradation_reason": response.degradation_reason, "reranked": response.reranked,
         "retrieval_config_id": response.retrieval_config_id, "generation_config_id": response.generation_config_id,
         "provider": response.provider, "model_id": response.model_id, "usage": token_usage,
         "latency_ms": response.latency_ms.model_dump(),
@@ -272,7 +273,8 @@ def elapsed_ms(since: float) -> int:
 
 
 def answer_question(question: str, settings, registry, *, mode: str | None = None, filters: SearchFilters | None = None,
-                    expected_config_id: str | None = None, source_keys: frozenset[str] | None = None) -> QAResponse:
+                    expected_config_id: str | None = None, source_keys: frozenset[str] | None = None,
+                    rerank: bool | None = None) -> QAResponse:
     """One bounded question. Request and configuration errors raise; every runtime outcome is a QAResponse.
 
     source_keys limits retrieval to those sources, as in evaluation.
@@ -287,19 +289,19 @@ def answer_question(question: str, settings, registry, *, mode: str | None = Non
         raise TechDocQAError("CHAT_PROFILE_UNVERIFIED", "Select a chat model, its context window and a verified chat tokenizer.",
                              stage="configuration") from None
     request = SearchRequest(query=question, mode=mode or settings.retrieval.mode, top_k=settings.retrieval.top_k,
-                            filters=filters or SearchFilters())
+                            filters=filters or SearchFilters(), rerank=settings.retrieval.rerank if rerank is None else rerank)
     profile = None
-    if request.mode == "vector":
+    if request.mode in ("vector", "hybrid"):
         from techdocqa.indexing.embeddings import embedding_profile
         profile = embedding_profile(settings.model)
     config_id = retrieval_config_id(request, settings, profile)
     if expected_config_id is not None and expected_config_id != config_id:
         raise TechDocQAError("RETRIEVAL_CONFIG_MISMATCH", "The requested retrieval configuration is not the active one.", stage="question")
 
-    # Q-07: only this mode's thresholds, and only if calibrated on the active score scale.
-    thresholds, uncalibrated = sufficiency.active_thresholds(request.mode, settings, profile)
+    # Q-07: only the thresholds of the scale the results will be judged on, and only if calibrated on it.
+    planned, thresholds, uncalibrated = sufficiency.applicable(request.mode, request.rerank, None, settings, profile)
     warnings = [QAWarning(code=uncalibrated)] if uncalibrated else []
-    gate = sufficiency.new_check(request.mode, thresholds)
+    gate = sufficiency.new_check(request.mode, thresholds, thresholds_from=planned if planned != request.mode else None)
     fields = {"mode": request.mode, "retrieval_config_id": config_id, "generation_config_id": generation_config_id(settings),
               "provider": settings.model.provider, "model_id": model_id(settings.model), "request_id": f"req_{uuid4().hex}",
               "warnings": warnings, "sufficiency": gate}
@@ -326,6 +328,21 @@ def answer_question(question: str, settings, registry, *, mode: str | None = Non
         # An unreachable embedder or a damaged index is a provider failure, never missing evidence (FR-18.4).
         return finish(status="generation_error", reason=detail.code, retryable=detail.retryable)
     latency.retrieval = elapsed_ms(started)
+    # A reranker failure falls back to the gate below it, and degraded hybrid to the surviving mode's (P10-3, P10-4).
+    applied, actual, warning = sufficiency.applicable(request.mode, found.reranked, found.failed_retriever, settings, profile)
+    if applied != planned:
+        thresholds = actual
+        warnings[:] = [item for item in warnings if item.code not in (sufficiency.NOT_CALIBRATED, sufficiency.STALE)]
+        warnings += [QAWarning(code=warning)] if warning else []
+        gate = fields["sufficiency"] = sufficiency.new_check(request.mode, thresholds,
+                                                             thresholds_from=applied if applied != request.mode else None)
+    fields["reranked"] = found.reranked
+    if found.degraded:
+        warnings.append(QAWarning(code="SEARCH_DEGRADED"))
+        fields.update(degraded=True, degradation_reason=found.degradation_reason)
+        if not found.results:
+            # The failed retriever might have found evidence, so this is a provider failure, not missing evidence (FR-18.4).
+            return finish(status="generation_error", reason=found.degradation_reason, retryable=True)
     if not found.results:
         return finish(status="no_evidence", reason="NO_MATCHING_DOCUMENTS", answer=MESSAGES["NO_MATCHING_DOCUMENTS"])
 

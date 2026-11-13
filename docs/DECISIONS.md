@@ -1,5 +1,245 @@
 # TechDocQA architectural decisions
 
+## Phase 10 contracts (2026-11-13)
+
+The project owner approved decisions P10-1 to P10-12 of the [Phase 10 plan](PHASE_10_PLAN.md#decisions-to-approve-before-coding) on 2026-11-13, as recommended. The plan's rows are the contracts, and they settle D-11 (fusion) and D-12 (reranking). This section records the owner's choices among the plan's options and, later, what implementation changed.
+
+- **Reranker download authorized (P10-5).** The dependency gate may download one reranker model, preferring a small English cross-encoder on the installed `onnxruntime`, with no torch. Licence, hashes, offline use, determinism, latency and memory are checked before anything depends on it.
+- **Provider demo: full switch (P10-10). Withdrawn on 2026-11-13; see the revision below.** OpenAI chat and embeddings in a second configuration file, with a rebuilt public-only index and its own calibration. DDIA is excluded by construction and by a tested guard. The owner will create the key, set `OPENAI_API_KEY` and set a spend cap.
+- **P10-10 revised: no OpenAI API (2026-11-13).** The owner decided that TechDocQA will not use the OpenAI API, so it stays local-only: Ollama chat and embeddings, and the local cross-encoder.
+  - **Step 8 is dropped.** No key was created, and no request of any kind was sent to OpenAI.
+  - **No package added.** Before the decision, `langchain-openai` 1.7.0 had been checked in a scratch environment against the lock. It added 4 packages with permissive licences and no known vulnerabilities, and moved no pin. It was never installed in the project environment or added to the lock, and the downloads were discarded. P10-11 therefore adds no package in Phase 10.
+  - **Open by owner decision: AC-22.4 and C-07's provider switch.** AC-22.4 asks for the same `ask` under `openai` and `ollama`, and Phase 10 does not demonstrate it. The Phase 7 `ChatOpenAI` branch and its mocked tests stay as they are, untested against the live service.
+  - **No DDIA guard.** It existed only for a non-local provider, so it is not built.
+  - **C-06** is reported as local hardware and run times, with no API cost.
+- **Reviewers (P10-8, P10-9).** The owner reviews the 20 new benchmark questions and rates the 20 answers, as the requirement intends. No AI reviewer is designated for Phase 10.
+- **Reranker licence caveat accepted (2026-11-13).** The owner accepted `cross-encoder/ms-marco-MiniLM-L6-v2` for TechDocQA. Its weights are published under Apache-2.0, though it was trained on MS MARCO, whose terms describe the data as intended for non-commercial research (step 5 below). No other model is downloaded.
+- **Thresholds adopted (2026-11-13).** The owner adopted both smoke proposals from `eval_a4d00103eb5645a89f93cf78065aecf0`.
+  - Hybrid: gate G1, vector relevance, at 0.858223. It had 0 leave-one-out errors against 1 or 2 for the other three gates, with a margin of 0.021.
+  - Reranked: 0.518618 on the cross-encoder's 0-1 scale over hybrid candidates, with 0 leave-one-out errors and a margin of 0.452.
+  - On smoke, both pass 20 of 20 answerable questions and refuse 10 of 10 unanswerable ones. The smoke negatives are all other technologies, so the full benchmark's four in-domain negatives are the held-out check.
+- **Default mode: hybrid (2026-11-13).** Hybrid met the P10-6 rule over vector on the full benchmark (nDCG@5 +0.046, interval [+0.009, +0.085], p95 1.335 s), and the owner made it the default: `[retrieval] mode = "hybrid"` in `config/default.toml`.
+  - `search` and `ask` without `--mode` now use hybrid, its gate and its degraded path. If the embedder is down, they answer from BM25 and say so.
+  - `eval` still defaults to the two P0 modes, so the P0 fingerprint does not move. The code default in `settings.py` stays `vector` for configurations that set no mode.
+  - Reranking stays off.
+- **Benchmark reviewer of record: Fable 5.2 (2026-11-13).** Asked to confirm who reviewed the 20 new questions, the owner could not decide and said to use Fable 5.2 (`claude-fable-5-2`). The review log now names it as the reviewer of record, designated by the owner.
+  - This revises the Reviewers decision above for P10-8: it is an AI reviewer where FR-19 intends a person, as in Phase 8's AC-16.6.
+  - The frozen file and its hash do not change.
+  - The FR-19.3 answer ratings stay recorded as the project owner's.
+- **Git.** Work continues on a local branch, `feat/phase-10`, created from `feat/phase-9`, with local commits and nothing pushed.
+
+Implementation, step 1 (metrics and runner):
+
+- **P1 metrics under Q-13 (P10-7, clarification).** The Q-13 text does not say how "count each item once" applies to precision and nDCG, or what a chunk holding two labeled items earns.
+  - The rule: a result is *credited* when it holds a relevant item that no earlier result held.
+  - **Precision@K** is credited results in the top K divided by K; missing results count as misses.
+  - **nDCG@K** gives each credited result the gain 2^grade − 1 of the highest-graded item it newly finds, discounted by log2(rank + 1). The ideal ranks the labeled relevant items by grade, one per position.
+  - Both stay between 0 and 1 for any ranking, and a repeat earns nothing, as in Recall@K.
+  - A question with n labeled items scores at most n / K on precision.
+  - In the stored baseline run, no smoke chunk holds two labeled items, so the rule changes no current number. The policy ID stays `q13-v1`.
+- **Fingerprint scope.** `results_fingerprint` hashes only the P0 part of each configuration summary: an allowlist of the P0 keys, with only Recall@K and MRR. Precision@K, nDCG@K, latency and paired differences are derived from the fingerprinted ranks and labels, so leaving them out loses nothing and keeps the P0 baseline comparable. Checked on the real index on 2026-11-13: the smoke `eval` gave `48ce89dc...a3af410` at `a6f3bc8` before the change and again after it, with every P0 metric identical in both modes.
+- **Paired differences (P10-6, parameters fixed before any hybrid result).** Policy `paired-bootstrap-percentile-v1`:
+  - Per-question differences, candidate minus baseline, over the answerable questions evaluated in both configurations, computed from the per-question values stored in the report.
+  - 10,000 resamples with replacement from Python's `random.Random(20261113)`, seeded afresh for each comparison.
+  - The 95% interval drops 250 sorted means from each end, the 251st and the 9,750th of 10,000. "Above 0" means the lower bound is strictly greater than 0.
+  - The p95 latency is nearest-rank: the ⌈0.95 n⌉-th smallest per-question search time, over every question in the run.
+  - The rule's pairs are hybrid against vector and hybrid with reranking against hybrid. nDCG@5 decides; Recall@5 and MRR, and vector against BM25, are descriptive.
+  - The rule is judged on the full benchmark only. On smoke, which also calibrates FR-18, the verdict is diagnostic.
+- **Configurations.** `eval --mode` takes `bm25`, `vector`, `hybrid` and `hybrid+rerank`; the default stays `bm25` and `vector`.
+
+Implementation, step 2 (hybrid search):
+
+- **Fusion (P10-1).** `rrf-v1` sums w_r / (k + rank) over the retrievers that ranked a chunk, in a fixed order, with ties going to `chunk_id`.
+  - Each retriever searches to max(top_k, `candidate_depth`) with the same filters.
+  - New settings `rrf_bm25_weight` and `rrf_vector_weight` default to 1.0. They, `rrf_k` and the depth enter only hybrid's IDs; a test checks that the `bm25` and `vector` IDs do not move.
+  - `bm25` mode still fetches `top_k`, even above the depth.
+- **Hybrid results.** A fused result keeps each retriever's rank where it ranked the chunk, both raw scores, and both component relevances in a new `relevances` field.
+  - A component relevance is computed for every fused chunk. BM25 uses the lexical index's own scale, where a chunk sharing no query word scores 0. Vector uses Chroma's score where it ranked the chunk, and the cosine of the stored vector otherwise. A test checks that the two agree to 1e-6.
+  - `relevance` is null for hybrid, which has no single scale. In degraded hybrid it is the surviving mode's relevance.
+- **Hybrid scale.** Hybrid's `scoring_config_id` hashes both component scales and the fusion settings, because the fusion decides which chunks the gate judges. Hybrid's `retrieval_config_id` also hashes the BM25 and vector thresholds that would judge a degraded search.
+- **Degradation (P10-2).**
+  - A retriever error at run time gives the other retriever's results, `degraded = true`, the error code as `degradation_reason`, and the new `failed_retriever`. A request or configuration error still raises.
+  - Both retrievers failing raises `HYBRID_SEARCH_FAILED`, naming both codes.
+  - In `ask`, a degraded search that finds nothing is `generation_error` with the failed retriever's code, retryable. The failed retriever might have found evidence, so this is not `no_evidence` (FR-18.4).
+  - In `eval`, any degraded search fails the hybrid configuration with `SEARCH_DEGRADED`, so a run with the embedder down cannot pass as a hybrid measurement.
+- **Gate (P10-3), parameters fixed before any live hybrid run.**
+  - `[retrieval.sufficiency.hybrid]` names a gate: `vector` (G1), `bm25` (G2), `either` (G3) or `both` (G4). It holds a threshold table for each component the gate judges.
+  - A component passes on the kept chunks' relevances with the usual `min_top_score`, `min_chunk_score` and `min_supporting_chunks`. A chunk without that component's relevance does not count.
+  - For a proposal, each question's statistic per component is the best relevance among its top results, which is what `min_top_score` judges. G1 and G2 are chosen by `balanced-accuracy-midpoint-v1` on that component. G3 and G4 combine those two thresholds, and leave-one-out re-chooses both.
+  - The margin is the smallest distance from a question's deciding relevance to its threshold: the best component under either, the worst under both. A question that cannot flip is left out of the margin.
+  - The selection policy is `fewest-loo-errors-then-margin-then-order-v1`: fewest leave-one-out errors, then the largest raw margin, then the order G1 to G4.
+  - Margins are compared raw, although vector relevance spans a narrower range than BM25's. The report says so; nothing is normalized after the fact.
+  - Degraded hybrid is judged by the surviving mode's own section, shown as `thresholds_from`. Those are the Phase 8 thresholds: a degraded search's top results are exactly that mode's, at the same depth and order.
+- **Checked on the real index (2026-11-13), invariant 1 and AC-14.3.**
+  - The smoke `eval` still gives `48ce89dc...a3af410`, with the same `bm25` and `vector` retrieval and scoring IDs, and both Phase 8 calibrations still active.
+  - `verify_index.py --compare .tmp/p9-top5-before-enrich.json` passed: the top 5 is identical in both modes, and 8 of 8 identifiers are at rank 1.
+  - With `--profile .tmp/dead-provider.toml`, which points the Ollama endpoint at an unreachable port, `search --mode hybrid` returned `degraded: true`, `EMBEDDING_PROVIDER_UNAVAILABLE` and `failed_retriever: vector`. Its top 5 equalled `--mode bm25`'s, with the same relevances.
+  - The unreachable endpoint stands in for stopping Ollama: it exercises the same failure path without touching the running service.
+
+Implementation, step 3 (reranking interface, with no model yet):
+
+- **Interface (FR-15, P10-5).** `retrieval/rerank.py` sends the query and the first `rerank_max_candidates` candidate texts to a `Reranker`.
+  - Results follow descending reranker score, with ties keeping the input order, cut to `top_k`.
+  - Candidates beyond the maximum are dropped from reranking, so a request for more than the maximum gets at most the maximum. The configuration now requires `top_k <= rerank_max_candidates`.
+  - Reranking works on any mode, since FR-15 depends on FR-12 or FR-13. It is off by default and switched by `[retrieval] rerank` or per request: `--rerank` / `--no-rerank` on `search` and `ask`, and `eval --mode hybrid+rerank` for metrics, `--answers` and `--refusal`.
+  - Tests mock the reranker. Until the dependency gate (step 5) installs a model, `build_reranker` reports `RERANKER_UNAVAILABLE`.
+- **Results (FR-15.5).** Each reranked result keeps its source metadata, its earlier ranks, scores and relevances, and adds `rerank` to `scores` (raw), `ranks` and `relevances`. Its `relevance` becomes the reranker's 0-1 value under `cross-encoder-sigmoid-v1`, 1 / (1 + e^-score).
+- **Failures (FR-15.4).**
+  - Any exception while reranking keeps the unreranked order, cut to `top_k`, with `degraded = true` and its code in `rerank_failure`. A runtime exception's detail never reaches the response. Wrong-length or non-finite scores count as failures.
+  - A missing reranker configuration is `RERANKER_NOT_CONFIGURED`, a configuration error, not a degradation.
+  - `degradation_reason` is the retriever's code when a retriever also failed.
+- **Scale and IDs (P10-4).**
+  - `[retrieval.sufficiency.reranked]` holds the reranker's thresholds. Its `scoring_config_id` hashes the policy, the reranker identity (`[retrieval.reranker]`: model, revision, file hashes, truncation length), the candidate maximum and the base mode.
+  - So thresholds calibrated on hybrid candidates go stale, with a warning, for a reranked `bm25` or `vector` request rather than judging it.
+  - Only a reranked request's `retrieval_config_id` carries this identity, so the unreranked IDs do not move.
+- **Which gate applies.** The reranker's thresholds when it ordered the results, including after a retriever failure, because a cross-encoder score depends only on the query and the chunk. When it failed, the gate below it applies: the hybrid gate, or the surviving mode's if a retriever also failed. The response names the scale in `thresholds_from`.
+- **Evaluation.** `hybrid+rerank` records the reranker's raw scores and proposes a `[retrieval.sufficiency.reranked]` section from its own relevances. A reranker failure on any question fails the configuration with `SEARCH_DEGRADED`.
+- **Checked on the real index (2026-11-13).**
+  - The smoke `eval` still gives `48ce89dc...a3af410` with the same `bm25` and `vector` IDs and calibrations. `verify_index.py --compare` passed in both modes.
+  - The stored-vector lookup was checked on two real queries. Over the 40 chunks vector search ranked, it matched Chroma's relevance to within 2.2e-7.
+  - The 8 and 9 chunks in each query's hybrid top 20 that only BM25 ranked got lookup relevances below the lowest vector-ranked score, as an exact search implies. Until steps 2 and 3, the hybrid rows report `failed: MODE_NOT_AVAILABLE`. `--answers` and `--refusal` take a search mode, so they refuse `hybrid+rerank`; reranking there follows the configuration (P10-9).
+
+Implementation, step 4 (full benchmark, reviewed and frozen):
+
+- **Draft (P10-8).** `datasets/benchmark_full.jsonl` holds the 30 smoke lines byte for byte, then 20 new `full-*` questions: 4 answerable per technology, each set with an identifier and a how-to, plus 4 in-domain negatives. That gives 50 questions, 14 of them unanswerable (28%). Claude Code drafted them on 2026-11-13 (draft `2754e5b2...46a3ca34`, c550a8e). The [review log](../datasets/review_log.md#full-benchmark-review-log-phase-10) lists every question, label, check and point for the owner.
+- **Checks.** Every anchor resolves to exactly one current chunk, and no two items of one question share a chunk, which would cap nDCG below 1. No question shares a four-word run with a labeled chunk, identifiers aside. The negatives' key terms have no hits in the 816 public chunks. The smoke file's hash is unchanged.
+- **Review and freeze.** The owner reviewed all 20 the same day against the cited official documentation and accepted them without changes. The only edit is `draft` to `reviewed` on the 20 lines. **Frozen SHA-256 `15c3bcb2...e0b0162a`**.
+- **Held out.** No search in any mode had been run on the 20 before the freeze. Calibration (step 6) still uses smoke only.
+
+Implementation, step 5 (hashed lock and reranker gate):
+
+- **Hashed lock (P9-11).** Each of the 142 pins in `requirements.lock.txt` now carries the SHA-256 of its Windows CPython 3.13 wheel. The `name==version` set is unchanged, and the 24 Phase 9 nlp hashes reproduce exactly. The odd pin is `pip` itself: 141 installed packages plus pip.
+  - Evidence: the 142 wheels were downloaded once. A fresh environment installed them offline with `--no-index --require-hashes`, `pip check` was clean, and its installed set equals the lock. A deliberately wrong hash is refused.
+  - `README.md` and `deployment/local_setup.md` now say the lock is for Windows cp313 only.
+- **Reranker gate (P10-5): passed on the first option, with one licence caveat for the owner.** The model is `cross-encoder/ms-marco-MiniLM-L6-v2` at revision `233902d25c440f23af6f7d6e94d2946bac0bee0a`, as its fp32 ONNX export, on the already locked `onnxruntime` 1.31.1 and `tokenizers` 0.23.3. It adds no package and no torch.
+  - **Licences.**
+    - Weights: the model card says `apache-2.0`. The repository ships no licence file, and its README states no other terms.
+    - **Caveat:** the training data is MS MARCO, whose terms describe the data as intended for non-commercial research. Whether that binds weights published under Apache-2.0 is not settled here.
+    - `onnxruntime` ships an MIT `LICENSE` and `ThirdPartyNotices.txt`. The `tokenizers` wheel ships no licence file; its metadata says Apache, and its SBOM's 130 bundled crates are all permissive.
+  - **One download (2026-11-13).** The repository's file list was read at the resolved commit first. Six files were then fetched with no credential sent: `onnx/model.onnx`, `tokenizer.json`, `config.json`, `tokenizer_config.json`, `special_tokens_map.json` and `README.md`. They went to the ignored `data/models/`, and the model file matched the repository's SHA-256. `[retrieval.reranker]` pins the three files the runtime reads; `scripts/fetch_reranker.py` fetches them again and verifies them. Every measurement below ran with a hook refusing all non-loopback connections.
+  - **Correct and deterministic.**
+    - The model card's example scores 8.607141 and -4.320077, against the card's 8.607138 and -4.320078.
+    - Scores were identical over 3 runs and across 3 processes with different hash seeds.
+    - Scoring a pair alone equals scoring it in a padded batch of 20 exactly, and 1 and 4 threads agree exactly. The implementation scores pairs one at a time anyway, so a score depends only on its pair.
+  - **Truncation.** `longest_first` to 512 tokens, the model's position limit. The longest smoke question with every public chunk is at most 458 tokens, so no corpus pair is cut, and a 1,000-character query still scores. The rule enters the reranker's `scoring_config_id`.
+  - **Latency (NFR-02), over the 30 smoke questions with both Ollama models loaded** (0.31 and 1.78 GB, 0.2 to 0.7 GB of memory free):
+
+    | Configuration | Median | p95 | Max |
+    |---|---|---|---|
+    | hybrid | 1.99 s | 2.64 s | 8.08 s (first, cold) |
+    | hybrid+rerank, 1 thread | 3.27 s | **5.13 s (fails)** | 5.50 s |
+    | hybrid+rerank, 4 threads | 2.86 s | 3.55 s | 3.80 s |
+
+    So the session uses a fixed 4 threads. The first reranked search, including the load and hash check, took 3.45 s. Search with reranking held a working set of about 300 MB, and nothing degraded or failed.
+  - **`pip-audit` 2.10.1 over the hashed lock** found 33 records in 6 existing packages, against 20 in 4 in Phase 9. Phase 10 adds no package.
+    - New since Phase 9: `pip` 25.0.1 (6 advisories about malicious archives; hash-checking now admits only the pinned wheels) and `soupsieve` 3.0.3 (slow descendant-combinator matching; `ingestion/html.py`'s one selector has no descendant combinator). chromadb gained one more server-side advisory.
+    - All are left to the separate security chore with the Phase 9 four.
+- **Implementation.**
+  - `retrieval/cross_encoder.py` checks every pinned file's SHA-256 before opening a session. A missing or altered file is `RERANKER_UNAVAILABLE`, so search degrades to the unreranked order.
+  - It checks `max_length` against the model's position limit, uses the CPU provider, and sets truncation explicitly with no padding. It keeps one session per process.
+  - `rerank` stays false.
+- **Checked on the real index.**
+  - The smoke `eval` still gives `48ce89dc...a3af410` with the same `bm25` and `vector` IDs and calibrations, and `verify_index.py --compare` passed.
+  - The reranker tests pass, 25 of them, including the real model's. The groups affected passed: retrieval 154 (645.6 s), answering 110 with 1 skipped (311.3 s), and core 238 with 2 skipped (73.0 s, the existing symlink skips).
+
+Implementation, step 6 (runs). The protocol below was fixed before the full benchmark was first run:
+
+- **Smoke proposals.** `eval_a4d00103eb5645a89f93cf78065aecf0` ran smoke in all four configurations, and the owner adopted both new sections (see the owner decisions above).
+- **One full run.**
+  - All four configurations run in one invocation on `benchmark_full.jsonl` (SHA-256 `15c3bcb2...e0b0162a`), with no trial run of any mode on that file first. A completed configuration is never rerun.
+  - If a configuration fails (it then has no rows), all four are rerun together once, and both reports are kept.
+  - Both Ollama models are loaded first, `/api/ps` and free memory are recorded before and after, and nothing else runs alongside.
+- **Frozen tunables.** The thresholds, the hybrid gate, the RRF weights and `k`, the candidate count, `top_k`, the truncation rule and the 4 reranker threads do not change after the full results are seen. An in-domain negative passing a gate is a finding to report, not a reason to recalibrate.
+- **Held-out view.** The runner now compares any dataset with `benchmark_smoke.jsonl` beside the manifest.
+  - It records how many questions are held out, and says so in the notes.
+  - On a dataset with held-out questions, it prints no configuration section: proposals computed there are descriptive, not for adoption.
+  - From the full run's stored JSON, the write-up reports metrics over the 16 new answerable questions per configuration, and each gate's pass or refusal for the 4 in-domain negatives. The P10-6 rule is judged on all 36 answerable questions, as fixed.
+- **Refusal with the model.** `eval --refusal` asks the smoke questions, as in Phase 8, in `hybrid` and `hybrid+rerank`. The in-domain negatives are judged at the gate from the full run's relevances; they are not sent to the chat model.
+- **Degraded hybrid.** One `base_url` serves chat and embeddings, so a dead-provider profile would stop chat too. A scratch script instead fails only the embedding call, on smoke, and records the gate that applies (bm25's thresholds) and its verdicts. It is a scripted check, not a CLI run.
+
+Implementation, step 6 (results, 2026-11-13). Nothing below changed a tunable:
+
+- **Full run.** `eval_b8b8c7dbd9684b848d28ad710cd40d8b` ran all four configurations in one invocation at `bc85dc3`, with no tracked file changed. It took 243.0 s, and no configuration failed, so nothing was rerun. Free memory was 1.43 GB before and 2.05 GB after, with `nomic-embed-text` (0.31 GB) and `qwen3:1.7b` (1.78 GB) loaded. Of the 50 questions, 36 are answerable, and the runner counts 20 held out from calibration.
+
+  | Configuration | Recall@5 | MRR | nDCG@5 | Precision@5 | Search p95 |
+  |---|---|---|---|---|---|
+  | bm25 | 0.815 | 0.708 | 0.699 | 0.217 | 0.051 s |
+  | vector | 0.884 | 0.757 | 0.739 | 0.239 | 1.917 s |
+  | hybrid | 0.894 | 0.788 | 0.785 | 0.244 | 1.335 s |
+  | hybrid+rerank | 0.898 | 0.811 | 0.820 | 0.244 | 3.064 s |
+
+- **P10-6 verdicts** (nDCG@5, all 36 answerable questions, candidate minus baseline):
+  - **Hybrid against vector: met.** The mean difference is +0.046, with interval [+0.009, +0.085]; 12 questions are better, 21 tied and 3 worse, and the p95 is 1.335 s. Hybrid is therefore eligible to replace `vector` as the default mode. That change is the owner's decision, and the default stays `vector` until then.
+  - **Hybrid with reranking against hybrid: not met.** The mean difference is +0.035, but the interval [-0.029, +0.099] includes 0 (10 better, 21 tied, 5 worse; p95 3.064 s). `rerank` stays false.
+  - Vector against BM25 (descriptive): +0.040, interval [-0.047, +0.129], 11 better, 14 tied, 11 worse.
+- **Held-out view.** This covers the 16 new answerable questions, from the stored JSON, with smoke's 20 alongside:
+
+  | Configuration | Held-out Recall@5 | Held-out MRR | Held-out nDCG@5 | Smoke nDCG@5 |
+  |---|---|---|---|---|
+  | bm25 | 0.677 | 0.708 | 0.617 | 0.765 |
+  | vector | 0.833 | 0.724 | 0.692 | 0.777 |
+  | hybrid | 0.823 | 0.752 | 0.731 | 0.828 |
+  | hybrid+rerank | 0.802 | 0.762 | 0.740 | 0.884 |
+
+  On nDCG@5, every configuration scores lower on the new questions and keeps its order. Recall@5 does not keep it: there `vector` (0.833) is ahead of `hybrid` (0.823) and `hybrid+rerank` (0.802). BM25's MRR is 0.708 on both sets. The reranker leads hybrid on nDCG@5 by 0.056 on smoke but by only 0.009 on the held-out questions.
+- **Gates on the held-out questions,** from the full run's relevances, with the thresholds in force:
+  - **In-domain negatives.** `bm25`, `vector` and `hybrid` refuse all 4. Under the hybrid gate (vector relevance, 0.858223), their top relevances fall short of the threshold by between 0.0009 and 0.038. The closest is `full-postgresql-05` (pg_dump) at 0.857328.
+  - **Finding: `hybrid+rerank` passes `full-postgresql-05`** at 0.914 on the reranker's scale, against a threshold of 0.518618. Its top chunk is the getting-started tutorial's passage on setting `PGHOST` for a remote server, which says nothing about `pg_dump`. Reranking is off by default, so the default path refuses the question. As fixed in the protocol, this is reported and nothing is recalibrated.
+  - **Answerable questions.** `vector`, `hybrid` and `hybrid+rerank` pass 15 of 16. All three refuse `full-postgresql-02` (`COPY`), though its labeled chunk is retrieved (Recall@5 1.0): its top five reach only 0.836 on vector relevance and 0.019 on the reranker's scale. `full-kafka-02` passes the hybrid gate with a margin of 0.006. `bm25` passes only 7 of 16 at its Phase 8 threshold of 0.297285.
+  - **Smoke negatives.** All four configurations refuse all 10; these are the calibration questions.
+- **Label gap in `full-kafka-04`.** The question asks why Kafka consumers pull rather than have brokers push. Its Recall@5 is 0 in every configuration. Its two labeled anchors are in chunks 29 and 30 of the design page's "Push vs. pull" section. The section's first chunk, chunk 28, is unlabeled, yet it states the choice and a reason for it (a push-based broker controls the rate, which suits diverse consumers poorly). `vector`, `hybrid` and `hybrid+rerank` rank it second, and `bm25` ranks it fourth. The benchmark is frozen, so the labels stand, and this question's scores understate retrieval.
+- **Refusal with the model** (`eval --refusal` on smoke, at `c32b7fd`, with no tracked file changed):
+  - `hybrid`, `refusal_fa0ff07673a0407ab32a411053a49a52`:
+    - **AC-18.1:** 10 of 10 refused (1.0 against 0.9), all at the gate as `LOW_RELEVANCE`, with no chat call.
+    - **AC-18.2:** 18 of 20 answered (0.9 against 0.85). The model returned `INSUFFICIENT_CONTEXT` for `smoke-spark-02` and `NO_VALID_CITATIONS` for `smoke-postgresql-03`.
+    - Search p95 was 1.98 s and total p95 30.5 s.
+  - `hybrid+rerank`, `refusal_62b3e54624284c8c8e18b14da328a873`, with `thresholds_from: reranked`:
+    - The counts are the same: AC-18.1 10 of 10 and AC-18.2 18 of 20.
+    - The two failures were `INSUFFICIENT_CONTEXT` for `smoke-kafka-03` and `NO_VALID_CITATIONS` for `smoke-postgresql-03`.
+    - Search p95 was 3.79 s and total p95 19.1 s.
+- **Degraded hybrid** (the protocol's scratch script, on smoke, at `c32b7fd`). `embed_query` raised, so the vector retriever failed on every question, while chat used the real model. Step 7's code edits began during the run, after the script had loaded the modules it uses.
+  - `hybrid`, `refusal_25281f684f7a46fcb82f6c197a75356e`:
+    - All 30 searches degraded with `EMBEDDING_PROVIDER_UNAVAILABLE`, and every question was judged by BM25's Phase 8 thresholds (0.297285, `thresholds_from: bm25`).
+    - **AC-18.1:** 10 of 10 refused, at the gate with no chat call.
+    - **AC-18.2:** 19 of 20 answered (0.95). The model returned `INSUFFICIENT_CONTEXT` for `smoke-airflow-03`.
+  - `hybrid+rerank`, `refusal_033417cf118148d0b47cada31c35d4dd`:
+    - All 30 degraded in the same way. The reranker ordered BM25's candidates, and its own thresholds judged them (`thresholds_from: reranked`), as step 3 fixed.
+    - **AC-18.1:** 10 of 10 refused.
+    - **AC-18.2:** 17 of 20 answered (0.85, exactly the target). All three misses passed the gate with a top relevance of at least 0.996. The model returned `INSUFFICIENT_CONTEXT` for `smoke-kafka-03` and `smoke-kafka-05`, and `NO_VALID_CITATIONS` for `smoke-postgresql-03`.
+  - **Limits.** Smoke calibrated both BM25's thresholds (Phase 8) and the reranked ones, so these runs check the degraded path, not refusal on new questions. For new questions, the full run gives the evidence: BM25's gate passed only 7 of its 16 held-out answerable questions, and degraded hybrid without reranking uses that gate. The reranked gate over BM25 candidates was not measured on held-out questions. Light scripts ran alongside both runs, so their latencies are not comparable with the other runs'.
+
+Implementation, step 7 (answer review for FR-19.3). This was fixed before any answer was generated:
+
+- **Sample (P10-9).** The plan's "seeded order" had no seed. It now uses the step 1 seed, `random.Random(20261113)`, which predates every result. The answerable questions of `benchmark_full.jsonl` are shuffled once, in file order. This was settled after the full run's per-question retrieval results were seen, but before any answer existed. The order begins `smoke-airflow-01`, `full-spark-02`, `full-postgresql-01`, `smoke-airflow-03`, `full-kafka-02`; the 10th question is `full-postgresql-02`, which the hybrid gate refuses (step 6).
+- **Top-up.** P10-9 fixes 20 questions, while FR-19.3 asks for 20 answers.
+  - The run asks the questions in the seeded order until 20 have an answer with a citation.
+  - A question without one stays in the report, is listed and is not rated. It is not replaced by choice: the next question in the order is simply asked.
+  - If the 36 run out first, the report says so.
+- **Ratings.** The owner rates each answer for faithfulness (every claim supported by the cited chunks) and for relevance (it answers the question), each as yes, partly or no.
+  - Faithfulness is the Phase 8 rating of the same thing and is stored as `supported`.
+  - The report gives counts for both ratings. No pass mark is set, and AC-16.6 is not judged on this run.
+- **Run.** `eval --answers 20 --seed 20261113 --mode hybrid` on `benchmark_full.jsonl`.
+  - `--mode hybrid` is passed because the default is still `vector`. Reranking follows the configuration, which is off.
+  - The chat model is the default Ollama one. Searches are scoped to the evaluation manifest, so DDIA is never searched.
+  - This run is P10-9's sanctioned search on the `full-*` questions, the only one after the full run. No trial run was made on the full benchmark; the tooling was tested on fixtures.
+- **Tooling.** Phase 8's path is unchanged.
+  - `eval --answers N` without `--seed` keeps the round-robin selection, the six-column sheet and AC-16.6.
+  - With `--seed`, the report carries `review_scheme: fr-19.3-v1`, the seed and a `sample` block. The sheet gets Faithful and Relevant columns.
+  - `--record-review` reads either sheet, and refuses a rating on a question without an answer or a sheet that does not fit its report.
+- **Run (2026-11-13): `answers_014faa565acb49c68956490a1ed2cd55`,** at `62d93c2` with no tracked file changed, 305.3 s. Both models were loaded first; free memory was 4.16 GB before and 0.68 GB after.
+  - It asked 24 questions in the recorded order to get 20 answers with a citation, so the sample is not short. All 24 searches were `hybrid`, unreranked and not degraded. No citation or consulted chunk is outside the evaluation manifest's public documents.
+  - The four without an answer:
+    - `full-postgresql-02`: `LOW_RELEVANCE` at the gate, as step 6 predicted, with no chat call.
+    - `full-kafka-02` and `smoke-postgresql-03`: `NO_VALID_CITATIONS`.
+    - `full-airflow-01`: `INSUFFICIENT_CONTEXT`. These three passed the gate, and the model then declined.
+  - **The 20 answers.** 11 are new questions and 9 smoke. By technology: Airflow 7, Spark 6, PostgreSQL 5 and Kafka 2. 19 of 20 cite a chunk that holds a labeled passage, a hint only.
+  - **Prompts and latency.** Prompts reached at most 1,822 tokens, against a bound of 6,418. The total time per question had a median of 11.8 s and a p95 of 19.6 s.
+  - The ratings are the owner's. The sheet with the cited text is `data/evaluation/answers_014faa565acb49c68956490a1ed2cd55_review.md`, which is ignored.
+- **Ratings recorded (2026-11-13): faithful 17 yes, 3 partly, 0 no; relevant 20 of 20 yes.**
+  - The owner rated the 20 answers and wrote the ratings into the sheet's file, replacing the sheet with a re-aligned table that has no run heading. `--record-review` needs that heading and the exact header.
+  - So the ratings and notes were copied verbatim into `..._review_canonical.md` beside it, with only cell padding and the heading changed. The copy was checked row by row against the owner's file and the report, and recorded from there with `--reviewer "Project owner"`, because no name was given. The owner's file was left as it is.
+  - The three answers rated partly are `full-postgresql-01`, `full-spark-01` and `full-kafka-03`, with the owner's notes in the report. No pass mark applies (P10-9).
+
 ## Phase 9 completion (2026-11-12)
 
 These entries record how the rest of Phase 9 was implemented under the [contracts](#phase-9-contracts-2026-11-07) below. Evidence is in the [Phase 9 report](PHASE_9_STATUS.md). The owner decided the gold-set annotator, AC-07.4 and AC-08.3 on 2026-11-12, and later that day approved the adopted threshold, the similarity-scale guard and keyphrase policy v2, kept the P9-6 rule for secondary categories, and made the two proposed improvements a separate implementation task. On 2026-11-13 the owner confirmed Fable 5.2 as the round-2 annotator, and the held-out round 2 was scored once. The owner then accepted AC-07.4 as met at the point estimate and closed AC-08.3 as not met with no further work, which completes Phase 9. Each entry records its decision.

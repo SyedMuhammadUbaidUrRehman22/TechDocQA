@@ -34,15 +34,26 @@ class SearchResult(StrictModel):
     # Raw scores in each retriever's own scale.
     scores: dict[str, float | None]
     ranks: dict[str, int]
-    # The mode's documented 0-1 relevance, which the FR-18 thresholds use (Q-07).
+    # The mode's documented 0-1 relevance, which the FR-18 thresholds use (Q-07). Hybrid has none of its own: it is
+    # null there, or the surviving mode's relevance when hybrid degraded.
     relevance: float | None = None
+    # Hybrid only: each component's 0-1 relevance for this chunk, whether or not that retriever ranked it; null when
+    # it cannot be computed, such as a failed retriever or a chunk not yet in the vector index (P10-3).
+    relevances: dict[str, float | None] = Field(default_factory=dict)
 
 
 class SearchResponse(StrictModel):
     retrieval_config_id: str
-    mode: Literal["bm25", "vector"]
+    mode: Literal["bm25", "vector", "hybrid"]
+    # Hybrid with one retriever failed returns the other's candidates: degraded, that retriever and its error code.
+    # A reranker failure keeps the unreranked order: degraded, with its code in rerank_failure (FR-15.4). When both
+    # happen, degradation_reason is the retriever's code.
     degraded: bool = False
     degradation_reason: str | None = None
+    failed_retriever: Literal["bm25", "vector"] | None = None
+    # True when the reranker ordered these results.
+    reranked: bool = False
+    rerank_failure: str | None = None
     results: list[SearchResult]
 
 
@@ -101,6 +112,15 @@ class QAUsage(StrictModel):
     prompt_token_bound: int
 
 
+class ComponentCheck(StrictModel):
+    passed: bool | None = None
+    top_score: float | None = None
+    supporting_chunks: int | None = None
+    min_top_score: float
+    min_chunk_score: float
+    min_supporting_chunks: int
+
+
 class SufficiencyCheck(StrictModel):
     """The FR-18 gate on the chunks kept for the prompt. Thresholds are null when the mode has no calibration that applies."""
     calibrated: bool
@@ -113,6 +133,12 @@ class SufficiencyCheck(StrictModel):
     min_supporting_chunks: int | None = None
     calibration_run_id: str | None = None
     relevance_policy: str
+    # Hybrid: which component relevances must pass, and each judged component's check (P10-3).
+    gate: str | None = None
+    components: dict[str, ComponentCheck] | None = None
+    # The scale whose thresholds judged, when it is not the mode's own: "reranked", or the surviving mode of
+    # degraded hybrid.
+    thresholds_from: str | None = None
 
 
 class QAResponse(StrictModel):
@@ -129,7 +155,12 @@ class QAResponse(StrictModel):
     evidence: list[str] = Field(default_factory=list)
     chunks_retrieved: int = 0
     chunks_used: int = 0
-    mode: Literal["bm25", "vector"]
+    mode: Literal["bm25", "vector", "hybrid"]
+    # Hybrid with one retriever failed answers from the other; the reason is that retriever's error code (FR-14.4).
+    # A reranker failure answers from the unreranked order (FR-15.4).
+    degraded: bool = False
+    degradation_reason: str | None = None
+    reranked: bool = False
     retrieval_config_id: str | None = None
     generation_config_id: str | None = None
     provider: str

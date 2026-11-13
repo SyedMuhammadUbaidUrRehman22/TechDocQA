@@ -246,7 +246,7 @@ def test_ask_text_explains_a_refusal_and_an_ungated_answer(indexed, qa_settings,
     # Only the first, ungated question reached the model.
     assert "Warning" not in text and len(chat.prompts) == 1
     assert main(["config-check", "--config", str(config)]) == 0
-    assert json.loads(capsys.readouterr().out)["sufficiency"] == {"bm25": "calibrated", "vector": "not_calibrated"}
+    assert json.loads(capsys.readouterr().out)["sufficiency"] == {"bm25": "calibrated", "vector": "not_calibrated", "hybrid": "not_calibrated"}
 
 
 # Calibration in the eval report

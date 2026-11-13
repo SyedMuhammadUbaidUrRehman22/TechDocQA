@@ -1,9 +1,11 @@
 # TechDocQA
-TechDocQA is a domain-specific RAG project for answering software and data engineering questions from technical documentation with source citations. It uses LangChain, local embeddings, a persisted Chroma index and BM25 search, and answers questions with a local Ollama model that cites the stored source of each claim. When no retrieved passage is relevant enough, it refuses without calling the model. It also extracts technical entities and keyphrases and classifies documents (Phase 9); hybrid search is planned.
+TechDocQA is a domain-specific RAG project for answering software and data engineering questions from technical documentation with source citations. It uses LangChain, local embeddings, a persisted Chroma index and BM25 search, and answers questions with a local Ollama model that cites the stored source of each claim. When no retrieved passage is relevant enough, it refuses without calling the model. It also extracts technical entities and keyphrases and classifies documents (Phase 9). Phase 10 adds hybrid search, optional local reranking and a 50-question benchmark. Everything runs locally.
 
 ## Current status
 
-Phases 1-9 are implemented. You can ingest local files and approved web pages, normalize and chunk them, build a local index, search it by BM25 or vector similarity, ask questions with `ask`, withdraw or delete documents, and measure retrieval and refusal with `eval`.
+Phases 1-10 are implemented. You can ingest local files and approved web pages, normalize and chunk them, build a local index, search it by BM25, vector similarity or both fused (hybrid), optionally reranked, ask questions with `ask`, withdraw or delete documents, and measure retrieval and refusal with `eval`.
+
+**Phase 10 (P1 hybrid search, reranking and full evaluation) is implemented. Hybrid is now the default search mode.** `search --mode hybrid` fuses BM25 and vector rankings by reciprocal rank. If one retriever fails, it answers from the other and says so. `--rerank` reorders the candidates with a small local cross-encoder, which is pinned by hash and off by default. On the full benchmark of 50 reviewed questions, hybrid beat vector search on nDCG@5 by +0.046 (95% interval +0.009 to +0.085), and the owner made it the default for `search` and `ask`. Reranking added +0.035, but its interval includes 0, so it stays off. Both new modes refuse 10 of 10 out-of-domain smoke questions and answer 18 of 20 answerable ones. The owner rated 20 hybrid-mode answers: 17 fully faithful to their citations and 3 partly, with all 20 relevant. The OpenAI provider demo was withdrawn by the owner, so TechDocQA stays local-only. See the [Phase 10 report](docs/PHASE_10_STATUS.md).
 
 **Phase 9 (P1 NLP enrichment) is complete; one criterion is not met.** `enrich` extracts entities from a gazetteer and regex rules, keyphrases as short technical n-grams (RAKE selectable), and categories by embedding similarity, and `enrichment` shows them. Verified entities feed `--entity`, and inferred categories feed `--category` for documents without a user category. On the 20 public documents, classification puts 19 of 20 in their manifest category, and the out-of-topic cooking article is `unclassified`. `eval --enrichment` measures it all, and unfiltered retrieval is unchanged: the smoke benchmark repeats exactly after `enrich`. AI annotators the owner approved labeled the gold sets, Fable 5.1 for round 1 and Fable 5.2 for the held-out round 2. Their scores therefore measure agreement with an AI annotator, not human ground truth. Sentence boundaries meet AC-06.4 at the point estimate (F1 0.989). With entity rules v2, entities meet AC-07.4 at the point estimate on the held-out round (precision 0.892, recall 0.619). Key terms with the n-gram policy do not meet AC-08.3 (0.239 against 0.50). See the [Phase 9 report](docs/PHASE_9_STATUS.md).
 
@@ -72,7 +74,7 @@ stateDiagram-v2
 | 7 | [Answers and citations](docs/PHASE_7_STATUS.md) | ✅ Built, human answer review open |
 | 8 | [Calibrated refusal and P0 release gate](docs/PHASE_8_STATUS.md) | ✅ Built, P0 release gate passed 2026-11-07 |
 | 9 | [NLP enrichment](docs/PHASE_9_STATUS.md): entities, keyphrases, categories | 🟡 Complete; AC-08.3 not met |
-| 10 | Hybrid search, reranking | ⬜ Planned |
+| 10 | [Hybrid search, reranking, full benchmark](docs/PHASE_10_STATUS.md) | ✅ Built and rated; hybrid is the default; OpenAI demo withdrawn |
 | 11-12 | Operational verification, optional extras | ⬜ Planned |
 
 ## Measured results
@@ -101,6 +103,13 @@ stateDiagram-v2
 | Entity precision and recall, held-out round 2 (AC-07.4) | At least 0.80 and 0.60 | 0.892 and 0.619, recall interval from 0.560 | 🟡 |
 | Key terms in the top 10, held-out round 2 (AC-08.3) | At least 0.50 | 0.239 | ❌ |
 | Smoke benchmark before and after `enrich` | Identical | Identical | ✅ |
+| Full benchmark, four configurations (AC-19.2) | One table | bm25, vector, hybrid, hybrid+rerank | ✅ |
+| Hybrid over vector, nDCG@5 (P10-6) | Interval above 0, p95 at most 5 s | +0.046 [+0.009, +0.085], 1.3 s | ✅ |
+| Reranking over hybrid, nDCG@5 (P10-6) | Interval above 0, p95 at most 5 s | +0.035 [-0.029, +0.099], 3.1 s | ❌ stays off |
+| Out-of-domain smoke questions refused, hybrid and reranked | At least 90% | 10 of 10 | ✅ |
+| Answerable smoke questions answered, hybrid and reranked | At least 85% | 18 of 20 | ✅ |
+| 20 answers rated for faithfulness and relevance (FR-19.3) | Rated by a person | Faithful 17 yes, 3 partly; relevant 20 of 20 | ✅ |
+| Same `ask` under OpenAI and Ollama (AC-22.4) | Demonstrated | Withdrawn: local-only by owner decision | ⬜ |
 
 ```mermaid
 pie showData title Chunks indexed
@@ -149,6 +158,8 @@ py -3.13 -m venv .venv
 .\.venv\Scripts\python.exe scripts\run_tests.py
 .\.venv\Scripts\techdocqa.exe config-check
 ```
+
+`requirements.lock.txt` pins every package with the SHA-256 of its Windows CPython 3.13 (win_amd64) wheel, so pip installs it in hash-checking mode and refuses any other file. Another platform or Python version needs its own resolved and hashed lock.
 
 `config-check` validates settings without contacting providers. `config-check --require-models` succeeds for the selected default profile; it verifies selection, not connectivity or model quality. TOML settings are in [config/default.toml](config/default.toml). TECHDOCQA_CHAT_MODEL and TECHDOCQA_EMBEDDING_MODEL override model names. Changing embeddings requires a verified context/tokenizer/digest profile and explicit re-chunking; unsupported profiles fail safely. Relative paths resolve against the base configuration file.
 
@@ -246,7 +257,14 @@ Requires the local Ollama service with the pinned `nomic-embed-text:latest` for 
 .\.venv\Scripts\techdocqa.exe search linger.ms --mode bm25
 .\.venv\Scripts\techdocqa.exe search --mode bm25 -- --flag-name
 .\.venv\Scripts\techdocqa.exe index --rebuild
+.\.venv\Scripts\techdocqa.exe search "What does linger.ms do?" --mode hybrid
+.\.venv\Scripts\python.exe scripts\fetch_reranker.py
+.\.venv\Scripts\techdocqa.exe search "What does linger.ms do?" --mode hybrid --rerank
 ```
+
+`--mode hybrid` runs both searches over the same filters and fuses them by reciprocal rank (`rrf-v1`). Each result keeps both ranks, scores and relevances. If one retriever fails at run time, the other's results come back with `degraded: true` and `failed_retriever`; if both fail, the search fails.
+
+`--rerank` sends at most 20 candidates to the cross-encoder `cross-encoder/ms-marco-MiniLM-L6-v2` and reorders them by its score. It runs on CPU through `onnxruntime`, with no torch. `scripts\fetch_reranker.py` downloads the model's three pinned files once, from huggingface.co at the pinned revision, into `data\models`, and checks each SHA-256. After that, reranking runs offline. A missing or altered file, or any reranker error, leaves the unreranked order with `degraded: true`. Reranking is off unless `[retrieval] rerank` or `--rerank` turns it on. The model's weights are Apache-2.0, but it was trained on MS MARCO, whose terms describe the data as for non-commercial research.
 
 `index` embeds only chunks without a stored vector, so a repeat run needs no provider. `--rebuild` restores the whole vector index from stored vectors, also with no model call. BM25 needs no provider and serves chunked versions straight away; vector search needs `index` first. Filters are `--document-id`, `--technology`, `--category` and `--entity`; `--entity` matches only after `enrich` has run (see [NLP enrichment](#nlp-enrichment)). Unfiltered search includes every active document, including any private ones you have indexed. `hybrid` is not implemented yet. After changing the embedding model, run `chunk` and then `index`; each model keeps its own collection.
 
@@ -264,7 +282,10 @@ Requires Ollama for vector mode; BM25 mode needs no provider.
 .\.venv\Scripts\techdocqa.exe eval
 .\.venv\Scripts\techdocqa.exe eval --mode bm25
 .\.venv\Scripts\techdocqa.exe eval --report-dir reports\evaluation
+.\.venv\Scripts\techdocqa.exe eval --dataset datasets\benchmark_full.jsonl --mode bm25 --mode vector --mode hybrid --mode hybrid+rerank
 ```
+
+`--mode` can be repeated, up to all four configurations. The report then adds Precision@K and nDCG@K, per-technology tables, and paired bootstrap intervals for hybrid against vector and for reranked against unreranked hybrid. [The full benchmark](datasets/benchmark_full.jsonl) is the 30 smoke questions plus 20 held-out ones. Refusal thresholds are calibrated on smoke only, so on the full benchmark the refusal proposals are descriptive, and no configuration section is offered.
 
 `eval` runs [the smoke questions](datasets/benchmark_smoke.jsonl) through the same search as `search`, limited to the documents the [frozen manifest](datasets/corpus_manifest.json) includes for evaluation, so the private DDIA supplement is left out. It prints a JSON summary and writes a JSON and a Markdown report, by default to the ignored `data\evaluation`. Reports contain chunk IDs, not chunk text. Two runs on unchanged inputs print the same `results_fingerprint`.
 
@@ -294,7 +315,7 @@ With `--text` it prints the status, the answer and the numbered citations; witho
 
 Questions and document text stay on this machine. Each question adds a line to the ignored `data\logs\qa.jsonl` with chunk IDs, configuration IDs, the sufficiency result and timings; the question and answer appear there only as hashes. The first answer after Ollama loads the models took 44 s in one measurement, within the 60 s timeout; a timeout returns a retryable `LLM_TIMEOUT`.
 
-`eval --answers 10` answers 10 smoke questions from the public reference and writes a report with an empty review column for AC-16.6. A review sheet with the cited chunk text is written to the ignored `data\evaluation`. After filling in its Supported column with `yes`, `partly` or `no`, `eval --record-review <sheet> --reviewer <name>` copies the ratings into the report and judges AC-16.6. `eval --refusal` asks all 30 smoke questions and reports AC-18.1 and AC-18.2. Both load the chat model first, so a cold start does not count against the first answer. `scripts\cli_smoke.ps1` runs ingest, process, chunk, index, search, ask, withdraw and ask again with the real models, in a temporary directory that it deletes afterwards.
+`eval --answers 10` answers 10 smoke questions from the public reference and writes a report with an empty review column for AC-16.6. A review sheet with the cited chunk text is written to the ignored `data\evaluation`. After filling in its Supported column with `yes`, `partly` or `no`, `eval --record-review <sheet> --reviewer <name>` copies the ratings into the report and judges AC-16.6. With `--seed S`, `eval --answers N` instead runs the FR-19.3 review. It shuffles the answerable questions once with that seed and asks them in order until N have an answer with a citation. Its sheet has Faithful and Relevant columns, and the report counts both ratings. `eval --refusal` asks all 30 smoke questions and reports AC-18.1 and AC-18.2. Both load the chat model first, so a cold start does not count against the first answer. `scripts\cli_smoke.ps1` runs ingest, process, chunk, index, search, ask, withdraw and ask again with the real models, in a temporary directory that it deletes afterwards.
 
 </details>
 

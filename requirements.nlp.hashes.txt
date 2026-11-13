@@ -1,5 +1,6 @@
 # Phase 9 nlp extra: SHA-256 of each wheel added by the 2026-11-07 dependency gate (Windows, CPython 3.13, win_amd64 where
-# platform-specific). After installing requirements.lock.txt, verify with:
+# platform-specific). Since P9-11 (2026-11-13) requirements.lock.txt carries the same hashes for every pin; this
+# file is kept as the Phase 9 gate record. After installing requirements.lock.txt, verify with:
 #   python -m pip install --require-hashes --no-deps -r requirements.nlp.hashes.txt
 # Licenses (from each wheel's license file): MIT, BSD, Apache-2.0, PSF. pip-audit 2.10.1 found no known vulnerability in them.
 blis==1.3.4 --hash=sha256:9fd0af1281cf8df543d13f507a94325871c35c3900e32742db9520f730d240cb

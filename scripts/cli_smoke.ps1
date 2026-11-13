@@ -61,6 +61,15 @@ function Invoke-TechDocQA([string[]]$Arguments, [int]$Expect = 0) {
     return (($output | Out-String) | ConvertFrom-Json)
 }
 
+function Format-Relevance($Sufficiency) {
+    # A single-mode gate reports one top score; the hybrid gate reports one per component it judges (P10-3).
+    if ($null -ne $Sufficiency.top_score) { return "$($Sufficiency.top_score) against $($Sufficiency.min_top_score)" }
+    $parts = foreach ($component in $Sufficiency.components.PSObject.Properties) {
+        "$($component.Name) $($component.Value.top_score) against $($component.Value.min_top_score)"
+    }
+    return ($parts -join ", ")
+}
+
 function Test-Step([string]$Name, [bool]$Passed, [string]$Detail) {
     $script:checks.Add([pscustomobject]@{ Step = $Name; Result = $(if ($Passed) { "pass" } else { "FAIL" }); Detail = $Detail })
     if (-not $Passed) { $script:failed = $true }
@@ -82,14 +91,14 @@ try {
     $answer = Invoke-TechDocQA @("ask", $question)
     $cited = @($answer.citations | Where-Object { $_.document_id -eq $documentId }).Count
     Test-Step "ask" ($answer.status -eq "answered" -and $cited -gt 0 -and $answer.sufficiency.passed) `
-        "$($answer.status), $cited citation(s) of the Halcyon guide, relevance $($answer.sufficiency.top_score) against $($answer.sufficiency.min_top_score)"
+        "$($answer.status), $cited citation(s) of the Halcyon guide, relevance $(Format-Relevance $answer.sufficiency)"
 
     $withdrawn = Invoke-TechDocQA @("withdraw", $documentId, "--reason", "CLI smoke test withdrawal")
     Test-Step "withdraw" ($withdrawn.status -eq "withdrawn") $withdrawn.status
 
     $refused = Invoke-TechDocQA @("ask", $question)
     Test-Step "ask after withdraw" ($refused.status -eq "no_evidence" -and -not $refused.llm_called) `
-        "$($refused.status) ($($refused.reason)), model called: $($refused.llm_called), relevance $($refused.sufficiency.top_score)"
+        "$($refused.status) ($($refused.reason)), model called: $($refused.llm_called), relevance $(Format-Relevance $refused.sufficiency)"
 
     $status = Invoke-TechDocQA @("status", "--document-id", $documentId)
     Test-Step "status" ($status.document.status -eq "withdrawn") $status.document.status

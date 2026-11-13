@@ -1,24 +1,44 @@
-"""Query either baseline retriever with common filters; the registry decides what may be returned."""
+"""Query BM25, vector or hybrid search with common filters; the registry decides what may be returned."""
 
 import hashlib
 import json
+import math
 
 from techdocqa.errors import TechDocQAError
 from techdocqa.ingestion.chunks import stored_chunks
 from techdocqa.schemas import SearchRequest, SearchResponse, SearchResult
 
 _lexical = None
+# Hybrid (FR-14, P10-1 to P10-3): reciprocal rank fusion of both retrievers, judged on their component relevances.
+FUSION_POLICY = "rrf-v1"
+HYBRID_RELEVANCE_POLICY = "hybrid-component-relevance-v1"
+COMPONENTS = ("bm25", "vector")
 
 
 def digest(values: dict) -> str:
     return hashlib.sha256(json.dumps(values, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
 
 
+def fusion_values(settings) -> dict:
+    retrieval = settings.retrieval
+    return {"policy": FUSION_POLICY, "k": retrieval.rrf_k, "candidate_depth": retrieval.candidate_depth,
+            "weights": {"bm25": retrieval.rrf_bm25_weight, "vector": retrieval.rrf_vector_weight}}
+
+
 def scoring_values(mode: str, settings, profile: dict | None) -> dict:
-    """What fixes a (query, chunk) relevance in this mode; thresholds are only valid on the scale these define."""
+    """What fixes a (query, chunk) relevance in this mode; thresholds are only valid on the scale these define.
+
+    Hybrid's gate judges the fused chunks on both component scales, so its scale is both components plus the fusion
+    that chooses which chunks are judged.
+    """
     from techdocqa.indexing.embeddings import SCORE_POLICY
     from techdocqa.retrieval.lexical import RELEVANCE_POLICY, TOKENIZER_POLICY
     retrieval = settings.retrieval
+    if mode == "hybrid":
+        if profile is None:
+            raise ValueError("hybrid scoring needs the embedding profile")
+        return {"mode": mode, "relevance_policy": HYBRID_RELEVANCE_POLICY, "fusion": fusion_values(settings),
+                "components": {"bm25": scoring_values("bm25", settings, None), "vector": scoring_values("vector", settings, profile)}}
     if profile:
         return {"mode": mode, "profile_id": profile["profile_id"], "score_policy": SCORE_POLICY}
     return {"mode": mode, "k1": retrieval.bm25_k1, "b": retrieval.bm25_b, "tokenizer": TOKENIZER_POLICY,
@@ -36,6 +56,16 @@ def retrieval_config_id(request: SearchRequest, settings, profile: dict | None) 
               **scoring_values(request.mode, settings, profile)}
     thresholds, _ = active_thresholds(request.mode, settings, profile)
     values["sufficiency"] = thresholds.model_dump() if thresholds else None
+    if request.mode == "hybrid":
+        # Degraded hybrid is gated by the surviving mode's own thresholds, so they are part of this configuration.
+        fallback = {name: active_thresholds(name, settings, profile if name == "vector" else None)[0] for name in COMPONENTS}
+        values["fallback_sufficiency"] = {name: found.model_dump() if found else None for name, found in fallback.items()}
+    if request.rerank:
+        # Only a reranked request carries the reranker's identity, so the unreranked IDs never move with it.
+        from techdocqa.answering.sufficiency import active_rerank_thresholds
+        from techdocqa.retrieval import rerank
+        reranked, _ = active_rerank_thresholds(request.mode, settings)
+        values["rerank"] = {**rerank.scoring_values(settings, request.mode), "sufficiency": reranked.model_dump() if reranked else None}
     return "rc_" + digest(values)
 
 
@@ -93,24 +123,34 @@ def lexical_index(settings, eligible: list):
     return _lexical[1]
 
 
-def bm25_results(request, settings, eligible, records, entity_chunks) -> list[SearchResult]:
-    titles = {record.version_id: record.title for record in records}
+def bm25_ranked(request, settings, eligible, records, entity_chunks, depth: int) -> list[tuple[dict, float, float]]:
+    """(chunk, raw score, relevance) for the first `depth` chunks, scored over every eligible chunk."""
+    titles = {record.version_id for record in records}
     def allowed(chunk):
         return chunk["version_id"] in titles and (entity_chunks is None or chunk["chunk_id"] in entity_chunks)
-    found = lexical_index(settings, eligible).search(request.query, request.top_k, allowed)
-    return [result(rank, "bm25", score, relevance, chunk_id=chunk["chunk_id"], document_id=chunk["document_id"],
-                   version_id=chunk["version_id"], title=titles[chunk["version_id"]],
-                   section_path=" > ".join(chunk["section_path"]) or None, page=chunk["page"], text=chunk["text"])
-            for rank, (chunk, score, relevance) in enumerate(found, 1)]
+    return lexical_index(settings, eligible).search(request.query, depth, allowed)
 
 
-def vector_results(request, settings, records, entity_chunks, profile) -> list[SearchResult]:
+def chunk_fields(chunk: dict, titles: dict) -> dict:
+    return {"chunk_id": chunk["chunk_id"], "document_id": chunk["document_id"], "version_id": chunk["version_id"],
+            "title": titles[chunk["version_id"]], "section_path": " > ".join(chunk["section_path"]) or None,
+            "page": chunk["page"], "text": chunk["text"]}
+
+
+def bm25_results(request, settings, eligible, records, entity_chunks) -> list[SearchResult]:
+    titles = {record.version_id: record.title for record in records}
+    found = bm25_ranked(request, settings, eligible, records, entity_chunks, request.top_k)
+    return [result(rank, "bm25", score, relevance, **chunk_fields(chunk, titles)) for rank, (chunk, score, relevance) in enumerate(found, 1)]
+
+
+def vector_search(request, settings, records, entity_chunks, profile, depth: int):
+    """(ranked (document, score) pairs, query vector, store, current versions); empty when no version is indexed."""
     from techdocqa.indexing.embeddings import embed_query
     from techdocqa.indexing.vector_store import VectorStore
     # A re-chunked or reactivated version answers lexically but waits here until it is indexed again.
     current = {record.version_id: record for record in records if record.status == "indexed"}
     if not current:
-        return []
+        return [], None, None, current
     store = VectorStore(settings.data_directory, profile["collection"])
     if store.empty():
         raise TechDocQAError("VECTOR_INDEX_MISSING", "The vector index is empty; run index --rebuild.", stage="search", retryable=True)
@@ -118,25 +158,138 @@ def vector_results(request, settings, records, entity_chunks, profile) -> list[S
     if entity_chunks is not None:
         where = {"$and": [where, {"chunk_id": {"$in": sorted(entity_chunks)}}]}
     vector = embed_query(request.query, settings, profile)
-    found = store.search(vector, max(request.top_k, settings.retrieval.candidate_depth), where)
+    found = store.search(vector, depth, where)
     live = [(document, score) for document, score in found
             if (record := current.get(document.metadata["version_id"]))
             and document.metadata["chunking_config_id"] == record.chunking.chunking_config_id]
     # Exact chunk_id tie-break keeps equal-distance repeated text reproducible.
     live.sort(key=lambda item: (-item[1], item[0].metadata["chunk_id"]))
+    return live, vector, store, current
+
+
+def document_fields(document, current: dict) -> dict:
+    metadata = document.metadata
+    return {"chunk_id": metadata["chunk_id"], "document_id": metadata["document_id"], "version_id": metadata["version_id"],
+            "title": current[metadata["version_id"]].title, "section_path": metadata.get("section_path"),
+            "page": metadata.get("page"), "text": document.page_content}
+
+
+def vector_results(request, settings, records, entity_chunks, profile) -> list[SearchResult]:
+    live, _, _, current = vector_search(request, settings, records, entity_chunks, profile,
+                                        max(request.top_k, settings.retrieval.candidate_depth))
     # The FR-12 score is already the documented 0-1 relevance.
-    return [result(rank, "vector", score, score, chunk_id=document.metadata["chunk_id"], document_id=document.metadata["document_id"],
-                   version_id=document.metadata["version_id"], title=current[document.metadata["version_id"]].title,
-                   section_path=document.metadata.get("section_path"), page=document.metadata.get("page"), text=document.page_content)
+    return [result(rank, "vector", score, score, **document_fields(document, current))
             for rank, (document, score) in enumerate(live[:request.top_k], 1)]
 
 
+def rrf(rankings: dict[str, list[str]], k: int, weights: dict[str, float]) -> list[tuple[str, float]]:
+    """rrf-v1: score(c) = sum over the retrievers that ranked c of w_r / (k + rank_r(c)), ranks from 1; ties go to chunk_id.
+
+    Retrievers are summed in a fixed order, so equal inputs give bit-identical scores.
+    """
+    scores: dict[str, float] = {}
+    for name in sorted(rankings, key=lambda name: (COMPONENTS.index(name) if name in COMPONENTS else len(COMPONENTS), name)):
+        for rank, chunk_id in enumerate(rankings[name], 1):
+            scores[chunk_id] = scores.get(chunk_id, 0.0) + weights[name] / (k + rank)
+    return sorted(scores.items(), key=lambda item: (-item[1], item[0]))
+
+
+def stored_relevances(store, query_vector: list[float], current: dict, chunk_ids: set[str]) -> dict[str, float]:
+    """Vector relevance, (cosine + 1) / 2, from the stored vectors of chunks the vector search did not rank."""
+    if not chunk_ids or store is None:
+        return {}
+    import numpy as np
+    query = np.asarray(query_vector, dtype=np.float64)
+    query_norm = float(np.linalg.norm(query))
+    found = {}
+    where = {"$and": [{"version_id": {"$in": sorted(current)}}, {"chunk_id": {"$in": sorted(chunk_ids)}}]}
+    for metadata, stored in store.stored(where):
+        record = current.get(metadata["version_id"])
+        if record is None or metadata["chunking_config_id"] != record.chunking.chunking_config_id:
+            continue
+        vector = np.asarray(stored, dtype=np.float64)
+        norm = query_norm * float(np.linalg.norm(vector))
+        if norm == 0 or not math.isfinite(norm):
+            continue
+        found[metadata["chunk_id"]] = max(0.0, min(1.0, (1 + float(query @ vector) / norm) / 2))
+    return found
+
+
+def runtime_failure(error: TechDocQAError) -> bool:
+    """A retriever failing at run time degrades hybrid; a request or configuration error is the caller's to fix."""
+    return error.response.error.stage not in ("arguments", "configuration")
+
+
+def hybrid_results(request, settings, eligible, records, entity_chunks, profile) -> tuple[list[SearchResult], str | None, str | None]:
+    """(results, failed retriever, its error code). Both retrievers search to the candidate depth with the same filters."""
+    retrieval = settings.retrieval
+    depth = max(request.top_k, retrieval.candidate_depth)
+    titles = {record.version_id: record.title for record in records}
+    failures: dict[str, TechDocQAError] = {}
+    lexical, live, query_vector, store, current = None, [], None, None, {}
+    try:
+        lexical = bm25_ranked(request, settings, eligible, records, entity_chunks, depth)
+    except TechDocQAError as error:
+        if not runtime_failure(error):
+            raise
+        failures["bm25"] = error
+    try:
+        live, query_vector, store, current = vector_search(request, settings, records, entity_chunks, profile, depth)
+    except TechDocQAError as error:
+        if not runtime_failure(error):
+            raise
+        failures["vector"] = error
+    if len(failures) == len(COMPONENTS):
+        codes = ", ".join(f"{name} {failures[name].response.error.code}" for name in COMPONENTS)
+        # Both failing is a search failure, never empty evidence (SDD section 10).
+        raise TechDocQAError("HYBRID_SEARCH_FAILED", f"Both hybrid retrievers failed: {codes}.", stage="search",
+                             retryable=any(failures[name].response.error.retryable for name in COMPONENTS))
+    fields, raw, relevance, rankings = {}, {name: {} for name in COMPONENTS}, {name: {} for name in COMPONENTS}, {}
+    if lexical is not None:
+        rankings["bm25"] = []
+        for chunk, score, value in lexical:
+            fields[chunk["chunk_id"]] = chunk_fields(chunk, titles)
+            rankings["bm25"].append(chunk["chunk_id"])
+            raw["bm25"][chunk["chunk_id"]], relevance["bm25"][chunk["chunk_id"]] = score, value
+    if "vector" not in failures:
+        rankings["vector"] = []
+        for document, score in live[:depth]:
+            chunk_id = document.metadata["chunk_id"]
+            fields.setdefault(chunk_id, document_fields(document, current))
+            rankings["vector"].append(chunk_id)
+            raw["vector"][chunk_id] = relevance["vector"][chunk_id] = score
+    weights = {"bm25": retrieval.rrf_bm25_weight, "vector": retrieval.rrf_vector_weight}
+    fused = rrf(rankings, retrieval.rrf_k, weights)[:request.top_k]
+    top = {chunk_id for chunk_id, _ in fused}
+    # Every fused chunk carries both component relevances, not only where it ranked (P10-3).
+    if lexical is not None and top - set(raw["bm25"]):
+        for chunk_id, (score, value) in lexical_index(settings, eligible).scored(request.query, top - set(raw["bm25"])).items():
+            raw["bm25"][chunk_id], relevance["bm25"][chunk_id] = score, value
+    if "vector" not in failures and query_vector is not None:
+        for chunk_id, value in stored_relevances(store, query_vector, current, top - set(raw["vector"])).items():
+            raw["vector"][chunk_id] = relevance["vector"][chunk_id] = value
+    failed = next(iter(failures), None)
+    surviving = next((name for name in COMPONENTS if name != failed), None) if failed else None
+    ranks = {name: {chunk_id: rank for rank, chunk_id in enumerate(ranked, 1)} for name, ranked in rankings.items()}
+    results = [SearchResult(rank=rank, **fields[chunk_id],
+                            scores={"bm25": raw["bm25"].get(chunk_id), "vector": raw["vector"].get(chunk_id), "hybrid": score},
+                            ranks={**{name: ranks[name][chunk_id] for name in COMPONENTS if chunk_id in ranks.get(name, {})}, "hybrid": rank},
+                            relevance=relevance[surviving].get(chunk_id) if surviving else None,
+                            relevances={name: relevance[name].get(chunk_id) for name in COMPONENTS})
+               for rank, (chunk_id, score) in enumerate(fused, 1)]
+    return results, failed, failures[failed].response.error.code if failed else None
+
+
 def search(request: SearchRequest, settings, registry, *, source_keys: frozenset[str] | None = None) -> SearchResponse:
-    """source_keys limits the corpus itself, so BM25 statistics also come only from those sources (evaluation scope)."""
-    if request.mode == "hybrid" or request.rerank:
-        raise TechDocQAError("MODE_NOT_AVAILABLE", "Hybrid search and reranking are not implemented yet; use bm25 or vector.", stage="search")
+    """source_keys limits the corpus itself, so BM25 statistics also come only from those sources (evaluation scope).
+
+    With rerank, the mode's first rerank_max_candidates results are reranked and cut to top_k (FR-15).
+    """
+    from techdocqa.retrieval import rerank
+    if request.rerank:
+        rerank.require_configured(settings)
     profile = None
-    if request.mode == "vector":
+    if request.mode in ("vector", "hybrid"):
         from techdocqa.indexing.embeddings import embedding_profile
         profile = embedding_profile(settings.model)
     eligible = registry.eligible_versions()
@@ -147,10 +300,19 @@ def search(request: SearchRequest, settings, registry, *, source_keys: frozenset
     # A filter matches only verified entities (FR-07.3), so none means no results.
     entity_chunks = (entity_filter_chunks(settings, registry, request.filters.entity)
                      if request.filters.entity is not None else None)
+    base = request.model_copy(update={"top_k": max(request.top_k, settings.retrieval.rerank_max_candidates)}) if request.rerank else request
+    failed, reason, rerank_failure = None, None, None
     if not records or entity_chunks == set():
         results = []
     elif request.mode == "bm25":
-        results = bm25_results(request, settings, eligible, records, entity_chunks)
+        results = bm25_results(base, settings, eligible, records, entity_chunks)
+    elif request.mode == "vector":
+        results = vector_results(base, settings, records, entity_chunks, profile)
     else:
-        results = vector_results(request, settings, records, entity_chunks, profile)
-    return SearchResponse(retrieval_config_id=retrieval_config_id(request, settings, profile), mode=request.mode, results=results)
+        results, failed, reason = hybrid_results(base, settings, eligible, records, entity_chunks, profile)
+    if request.rerank and results:
+        results, rerank_failure = rerank.rerank(request.query, results, request.top_k, settings)
+    return SearchResponse(retrieval_config_id=retrieval_config_id(request, settings, profile), mode=request.mode,
+                          degraded=failed is not None or rerank_failure is not None, degradation_reason=reason or rerank_failure,
+                          failed_retriever=failed, reranked=request.rerank and bool(results) and rerank_failure is None,
+                          rerank_failure=rerank_failure, results=results)

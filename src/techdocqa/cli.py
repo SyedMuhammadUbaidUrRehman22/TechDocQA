@@ -47,10 +47,17 @@ def render_answer(response) -> str:
     elif response.answer:
         lines += ["", response.answer]
     gate = response.sufficiency
-    if response.reason == "LOW_RELEVANCE" and gate is not None:
+    if response.reason == "LOW_RELEVANCE" and gate is not None and gate.components:
+        judged = "; ".join(f"{name} best {check.top_score}, needs {check.min_top_score}" for name, check in gate.components.items())
+        lines += [f"Hybrid gate '{gate.gate}': {judged} (calibration run {gate.calibration_run_id})."]
+    elif response.reason == "LOW_RELEVANCE" and gate is not None:
         lines += [f"Best match relevance {gate.top_score}; this mode needs {gate.min_top_score} "
                   f"(calibration run {gate.calibration_run_id})."]
     codes = {warning.code for warning in response.warnings}
+    if response.degraded:
+        scale = (gate.thresholds_from if gate else None) or response.mode
+        lines += ["", f"Warning: search was degraded ({response.degradation_reason}); the answer used the results that remained, "
+                      f"judged by the {scale} thresholds."]
     if codes & {"SUFFICIENCY_NOT_CALIBRATED", "SUFFICIENCY_CALIBRATION_STALE"}:
         lines += ["", "Warning: no calibrated relevance threshold applies to this retrieval mode, so this answer was not gated "
                       "and questions the documents do not cover may still be answered."]
@@ -66,14 +73,22 @@ def render_answer(response) -> str:
     return "\n".join(lines)
 
 
+def answer_configuration(args) -> dict:
+    """An answer run's search mode and rerank switch; hybrid+rerank is hybrid reranked, otherwise reranking follows
+    the configuration."""
+    if not args.mode:
+        return {"mode": None, "rerank": None}
+    return {"mode": "hybrid", "rerank": True} if args.mode[0] == "hybrid+rerank" else {"mode": args.mode[0], "rerank": None}
+
+
 def calibration_status(settings) -> dict:
     """Per mode, whether its FR-18 thresholds apply to the configured score scale (AC-18.5); no provider is contacted."""
     from techdocqa.answering.sufficiency import STALE, active_thresholds
     from techdocqa.indexing.embeddings import embedding_profile
     status = {}
-    for mode in ("bm25", "vector"):
+    for mode in ("bm25", "vector", "hybrid"):
         try:
-            thresholds, warning = active_thresholds(mode, settings, embedding_profile(settings.model) if mode == "vector" else None)
+            thresholds, warning = active_thresholds(mode, settings, embedding_profile(settings.model) if mode != "bm25" else None)
         except TechDocQAError:
             # No verified embedding profile means no vector scale to calibrate against.
             thresholds, warning = None, None
@@ -122,12 +137,14 @@ def make_parser() -> argparse.ArgumentParser:
     searching.add_argument("query", help="query text; put -- first if it begins with a dash")
     searching.add_argument("--mode", choices=["bm25", "vector", "hybrid"])
     searching.add_argument("--top-k", type=int)
+    searching.add_argument("--rerank", action=argparse.BooleanOptionalAction, help="rerank the candidates (default: configuration)")
     for field in SearchFilters.model_fields:
         searching.add_argument("--" + field.replace("_", "-"))
     asking = commands.add_parser("ask", help="answer a question from active chunks, citing them; refuses without a model call "
                                              "when no chunk meets the calibrated relevance threshold")
     asking.add_argument("question", help="question text, 1 to 1000 characters; put -- first if it begins with a dash")
     asking.add_argument("--mode", choices=["bm25", "vector", "hybrid"])
+    asking.add_argument("--rerank", action=argparse.BooleanOptionalAction, help="rerank the candidates (default: configuration)")
     for field in SearchFilters.model_fields:
         asking.add_argument("--" + field.replace("_", "-"))
     asking.add_argument("--retrieval-config-id", help="answer only if this is the active retrieval configuration")
@@ -139,12 +156,13 @@ def make_parser() -> argparse.ArgumentParser:
     deletion.add_argument("document_id")
     deletion.add_argument("--reason", required=True)
     deletion.add_argument("--yes", action="store_true", help="confirm this cannot be undone")
-    evaluation = commands.add_parser("eval", help="run the smoke benchmark: Recall@1/3/5 and MRR for BM25 and vector search, "
-                                                  "with proposed refusal thresholds")
+    evaluation = commands.add_parser("eval", help="run a benchmark: Precision, Recall and nDCG at 1/3/5 and MRR per configuration, "
+                                                  "paired differences, and proposed refusal thresholds")
     evaluation.add_argument("--dataset", type=Path, default=Path("datasets/benchmark_smoke.jsonl"))
     evaluation.add_argument("--manifest", type=Path, default=Path("datasets/corpus_manifest.json"),
                             help="frozen corpus manifest; only its evaluation documents are searched")
-    evaluation.add_argument("--mode", action="append", choices=["bm25", "vector"], help="repeat to choose; default both")
+    evaluation.add_argument("--mode", action="append", choices=["bm25", "vector", "hybrid", "hybrid+rerank"],
+                            help="configuration; repeat to choose; default bm25 and vector")
     evaluation.add_argument("--report-dir", type=Path, help="where the JSON and Markdown reports go (default: <data>/evaluation)")
     answer_runs = evaluation.add_mutually_exclusive_group()
     answer_runs.add_argument("--answers", type=int, metavar="N",
@@ -157,6 +175,9 @@ def make_parser() -> argparse.ArgumentParser:
                              help="instead of retrieval metrics, score Phase 9 enrichment against the frozen gold sets, propose the "
                                   "unclassified threshold and check the enriched corpus (read-only)")
     evaluation.add_argument("--reviewer", help="who rated the answers, recorded with --record-review")
+    evaluation.add_argument("--seed", type=int,
+                            help="with --answers: FR-19.3 review, asking answerable questions in this seeded order until N "
+                                 "have an answer, rated for faithfulness and relevance")
     evaluation.add_argument("--gold-dir", type=Path, default=Path("datasets/nlp"),
                             help="frozen Phase 9 gold sets and out-of-topic fixtures, read by --enrichment")
     evaluation.add_argument("--fixtures", type=Path,
@@ -179,6 +200,8 @@ def main(argv: list[str] | None = None) -> int:
                 raise TechDocQAError("INVALID_ARGUMENT", "Choose local paths or one online selection mode; online identity comes from the catalog.", stage="arguments")
         if args.command == "eval" and args.answers is not None and (args.answers < 1 or len(args.mode or []) > 1):
             raise TechDocQAError("INVALID_ARGUMENT", "--answers needs a positive count and at most one --mode.", stage="arguments")
+        if args.command == "eval" and args.seed is not None and args.answers is None:
+            raise TechDocQAError("INVALID_ARGUMENT", "--seed applies only to --answers.", stage="arguments")
         if args.command == "eval" and args.refusal and len(args.mode or []) > 1:
             raise TechDocQAError("INVALID_ARGUMENT", "--refusal takes at most one --mode.", stage="arguments")
         if args.command == "eval" and args.enrichment and args.mode:
@@ -210,14 +233,15 @@ def main(argv: list[str] | None = None) -> int:
             from techdocqa.evaluation.answers import record_review
             report, files = record_review(args.record_review, args.report_dir or Path(settings.data_directory) / "evaluation",
                                           args.reviewer)
-            print(json.dumps({"run_id": report["run_id"], "ac_16_6": report["summary"]["ac_16_6"], "report_files": files},
-                             ensure_ascii=True))
+            key = "fr_19_3" if "fr_19_3" in report["summary"] else "ac_16_6"
+            print(json.dumps({"run_id": report["run_id"], key: report["summary"][key], "report_files": files}, ensure_ascii=True))
             return 0
         request = None
         if args.command == "search":
             try:
                 request = SearchRequest(query=args.query, mode=args.mode or settings.retrieval.mode,
                     top_k=settings.retrieval.top_k if args.top_k is None else args.top_k,
+                    rerank=settings.retrieval.rerank if args.rerank is None else args.rerank,
                     filters=SearchFilters(**{field: getattr(args, field) for field in SearchFilters.model_fields}))
             except ValidationError:
                 raise TechDocQAError("INVALID_ARGUMENT", "Query must be 1 to 1000 characters and top-k positive.", stage="arguments") from None
@@ -258,7 +282,7 @@ def main(argv: list[str] | None = None) -> int:
                 from techdocqa.answering.generation import answer_question
                 response = answer_question(args.question, settings, registry, mode=args.mode,
                     filters=SearchFilters(**{field: getattr(args, field) for field in SearchFilters.model_fields}),
-                    expected_config_id=args.retrieval_config_id)
+                    expected_config_id=args.retrieval_config_id, rerank=args.rerank)
                 if args.text:
                     print_text(render_answer(response))
                 else:
@@ -267,7 +291,7 @@ def main(argv: list[str] | None = None) -> int:
             if args.command == "eval" and args.answers is not None:
                 from techdocqa.evaluation.answers import run_answer_review, write_answer_report
                 report, texts = run_answer_review(args.dataset, args.manifest, settings, registry, count=args.answers,
-                                                  mode=args.mode[0] if args.mode else None)
+                                                  seed=args.seed, **answer_configuration(args))
                 # Cited chunk text stays in the ignored data directory, wherever the report goes.
                 files = write_answer_report(report, args.report_dir or Path(settings.data_directory) / "evaluation",
                                             Path(settings.data_directory) / "evaluation", texts)
@@ -283,7 +307,7 @@ def main(argv: list[str] | None = None) -> int:
                 return 1 if report["classification"].get("status") == "failed" else 0
             if args.command == "eval" and args.refusal:
                 from techdocqa.evaluation.answers import run_refusal_check, write_refusal_report
-                report = run_refusal_check(args.dataset, args.manifest, settings, registry, mode=args.mode[0] if args.mode else None)
+                report = run_refusal_check(args.dataset, args.manifest, settings, registry, **answer_configuration(args))
                 files = write_refusal_report(report, args.report_dir or Path(settings.data_directory) / "evaluation")
                 output = {key: value for key, value in report.items() if key != "questions"}
                 print(json.dumps({**output, "report_files": files}, ensure_ascii=True))

@@ -80,10 +80,54 @@ class SufficiencyThresholds(StrictModel):
     scoring_config_id: str = Field(pattern=r"^sc_[0-9a-f]{64}$")
 
 
+class SufficiencyLevels(StrictModel):
+    """One component's thresholds inside the hybrid gate, on that component's own 0-1 relevance scale."""
+    min_top_score: float = Field(ge=0, le=1)
+    min_chunk_score: float = Field(ge=0, le=1)
+    min_supporting_chunks: int = Field(default=1, ge=1)
+
+
+class HybridThresholds(StrictModel):
+    """Hybrid's FR-18 gate (P10-3). RRF reflects rank only, so the gate judges the fused chunks' component relevances:
+    vector (G1), bm25 (G2), either component passing (G3) or both (G4). Degraded hybrid uses the surviving mode's own
+    section instead. Like a mode's thresholds, it applies only while scoring_config_id names the active hybrid scale."""
+    gate: Literal["vector", "bm25", "either", "both"]
+    bm25: SufficiencyLevels | None = None
+    vector: SufficiencyLevels | None = None
+    calibration_run_id: str = Field(pattern=r"^[A-Za-z0-9_-]{1,100}$")
+    scoring_config_id: str = Field(pattern=r"^sc_[0-9a-f]{64}$")
+
+    @model_validator(mode="after")
+    def check_components(self) -> "HybridThresholds":
+        needed = {"vector": ("vector",), "bm25": ("bm25",), "either": ("bm25", "vector"), "both": ("bm25", "vector")}[self.gate]
+        missing = [name for name in needed if getattr(self, name) is None]
+        if missing:
+            raise ValueError(f"the {self.gate} gate needs thresholds for {', '.join(missing)}")
+        return self
+
+    def components(self) -> dict[str, SufficiencyLevels]:
+        """The components the gate judges, in a fixed order."""
+        return {name: getattr(self, name) for name in ("bm25", "vector") if getattr(self, name) is not None
+                and (self.gate in ("either", "both") or self.gate == name)}
+
+
 class SufficiencySettings(StrictModel):
-    # Hybrid and reranked scores need their own calibration (P1); no mode borrows another's thresholds.
+    # Each mode has its own calibration; no mode borrows another's thresholds (Q-07).
     bm25: SufficiencyThresholds | None = None
     vector: SufficiencyThresholds | None = None
+    hybrid: HybridThresholds | None = None
+    # The reranker's 0-1 relevance, calibrated on one base mode's candidates, which its scoring_config_id names (P10-4).
+    reranked: SufficiencyThresholds | None = None
+
+
+class RerankerSettings(StrictModel):
+    """The local reranker's identity (P10-5). The dependency gate fills it; until then no reranker is configured."""
+    model: str | None = None
+    # A pinned revision and the SHA-256 of every model file, so the scale it scores on is fixed.
+    revision: str | None = None
+    files_sha256: dict[str, str] = Field(default_factory=dict)
+    # Query and chunk are truncated together to this many tokens (an explicit rule for 1,000-character chunks).
+    max_length: int = Field(default=512, gt=0)
 
 
 class RetrievalSettings(StrictModel):
@@ -93,15 +137,24 @@ class RetrievalSettings(StrictModel):
     bm25_k1: float = Field(default=1.2, gt=0)
     bm25_b: float = Field(default=0.75, ge=0, le=1)
     rrf_k: int = Field(default=60, gt=0)
+    # rrf-v1 weights per retriever; equal weights give FR-14's formula exactly (P10-1).
+    rrf_bm25_weight: float = Field(default=1.0, gt=0)
+    rrf_vector_weight: float = Field(default=1.0, gt=0)
     rerank: bool = False
     rerank_max_candidates: int = Field(default=20, gt=0)
+    reranker: RerankerSettings = Field(default_factory=RerankerSettings)
     sufficiency: SufficiencySettings = Field(default_factory=SufficiencySettings)
 
     @model_validator(mode="after")
     def check_depth(self) -> "RetrievalSettings":
         if self.top_k > self.candidate_depth:
             raise ValueError("top_k cannot exceed candidate_depth")
-        for thresholds in (self.sufficiency.bm25, self.sufficiency.vector):
+        if self.top_k > self.rerank_max_candidates:
+            raise ValueError("top_k cannot exceed rerank_max_candidates")
+        hybrid = self.sufficiency.hybrid
+        levels = [self.sufficiency.bm25, self.sufficiency.vector, self.sufficiency.reranked,
+                  *(hybrid.components().values() if hybrid else [])]
+        for thresholds in levels:
             if thresholds is not None and thresholds.min_supporting_chunks > self.top_k:
                 raise ValueError("min_supporting_chunks cannot exceed top_k")
         return self

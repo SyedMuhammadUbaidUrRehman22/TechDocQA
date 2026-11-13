@@ -299,10 +299,9 @@ def test_model_insufficiency_phrase_is_no_evidence(indexed, qa_settings, registr
     assert response.evidence and response.chunks_used == len(response.evidence)
 
 
-def test_hybrid_and_mismatched_configurations_are_request_errors(indexed, qa_settings, registry, chat):
-    for call, code in ((lambda: ask(qa_settings, registry, mode="hybrid"), "MODE_NOT_AVAILABLE"),
-                       (lambda: answer_question("Kafka?", qa_settings, registry, mode="bm25", expected_config_id="rc_other"),
-                        "RETRIEVAL_CONFIG_MISMATCH")):
+def test_mismatched_configurations_are_request_errors(indexed, qa_settings, registry, chat):
+    for call, code in ((lambda: answer_question("Kafka?", qa_settings, registry, mode="bm25", expected_config_id="rc_other"),
+                        "RETRIEVAL_CONFIG_MISMATCH"),):
         with pytest.raises(TechDocQAError) as caught:
             call()
         assert caught.value.response.error.code == code
@@ -422,11 +421,11 @@ def test_ask_prints_json_or_numbered_citations(indexed, qa_settings, registry, c
 
 @pytest.mark.parametrize("arguments, code, exit_code", [
     (["ask", "x" * 1001, "--mode", "bm25"], "INVALID_QUESTION", 1),
-    (["ask", "Kafka?", "--mode", "hybrid"], "MODE_NOT_AVAILABLE", 1),
     (["ask", "Kafka?", "--mode", "bm25", "--retrieval-config-id", "rc_other"], "RETRIEVAL_CONFIG_MISMATCH", 1),
     (["ask", "Kafka?", "--mode", "fuzzy"], "INVALID_ARGUMENT", 2),
     (["eval", "--answers", "0"], "INVALID_ARGUMENT", 2),
     (["eval", "--answers", "2", "--mode", "bm25", "--mode", "vector"], "INVALID_ARGUMENT", 2),
+    (["eval", "--seed", "1"], "INVALID_ARGUMENT", 2),
 ])
 def test_ask_and_answer_review_argument_errors(qa_settings, chat, tmp_path, capsys, arguments, code, exit_code):
     assert main([*arguments, "--config", write_config(tmp_path, qa_settings)]) == exit_code
@@ -535,6 +534,67 @@ def test_recorded_review_copies_ratings_into_the_report_and_judges_ac_16_6(bench
     assert main(["eval", "--record-review", str(tmp_path / "missing.md"), "--reviewer", "A", "--config", config]) == 2
     assert main(["eval", "--record-review", str(sheet), "--answers", "2", "--config", config]) == 2
     capsys.readouterr()
+
+
+def test_fr_19_3_review_asks_in_seeded_order_until_enough_answers_and_rates_two_columns(bench, qa_settings, registry, chat,
+                                                                                        tmp_path, capsys, monkeypatch):
+    from techdocqa.evaluation.answers import FR_19_3_HEADER, TABLE_HEADER, run_answer_review, seeded_order
+    from techdocqa.evaluation.dataset import load_dataset
+    monkeypatch.setattr(generation, "warm_up", lambda settings: {"loaded": True, "ms": 1, "code": None})
+    dataset = load_dataset(bench["dataset"])
+    # One shuffle of the answerable questions in file order (P10-9); the unanswerable question is never drawn.
+    order = [question.id for question in seeded_order(dataset, 20261113)]
+    assert order == ["kafka-2", "redis-1", "kafka-1"] == [question.id for question in seeded_order(dataset, 20261113)]
+    # The first question gets no answer, so the next in the order is asked to reach two answers.
+    chat.replies = ["INSUFFICIENT_CONTEXT", "Kafka brokers replicate partitions across the cluster [C1]."]
+    config = write_config(tmp_path, qa_settings)
+    report_dir = tmp_path / "reports"
+    assert main(["eval", "--answers", "2", "--seed", "20261113", "--mode", "bm25", "--dataset", str(bench["dataset"]),
+                 "--manifest", str(bench["manifest"]), "--report-dir", str(report_dir), "--config", config]) == 0
+    output = json.loads(capsys.readouterr().out)
+    files = output["report_files"]
+    assert output["review_scheme"] == "fr-19.3-v1" and output["seed"] == 20261113 and "random.Random(20261113)" in output["selection"]
+    assert output["sample"] == {"target": 2, "asked": 3, "answered_with_citation": 2, "without_answer": ["kafka-2"], "short": False}
+    report = json.loads(Path(files["json"]).read_text(encoding="utf-8"))
+    assert [(row["id"], row["rated"]) for row in report["questions"]] == [("kafka-2", False), ("redis-1", True), ("kafka-1", True)]
+    assert report["questions"][1]["review"] == {"supported": None, "relevant": None, "reviewer": None, "notes": None}
+    sheet = Path(files["review_sheet"])
+    blank = sheet.read_text(encoding="utf-8")
+    assert FR_19_3_HEADER in blank and TABLE_HEADER not in blank and "AC-16.6" not in blank
+    def fill(text, ratings):
+        lines = text.splitlines()
+        for question, (faithful, relevant, notes) in ratings.items():
+            index = next(number for number, line in enumerate(lines) if line.startswith(f"| {question} | "))
+            assert lines[index].endswith("| | | |")
+            lines[index] = lines[index].removesuffix("| | | |") + f"| {faithful} | {relevant} | {notes} |"
+        sheet.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    record = ["eval", "--record-review", str(sheet), "--report-dir", str(report_dir), "--config", config, "--reviewer", "Owner"]
+    # A question asked without an answer is not rated, and a Phase 8 layout does not fit this report.
+    for text in (blank, blank.replace(FR_19_3_HEADER, TABLE_HEADER)):
+        fill(text, {"kafka-2": ("yes", "yes", "")})
+        assert main(record) == 2
+        assert json.loads(capsys.readouterr().err)["error"]["code"] == "INVALID_ARGUMENT"
+    fill(blank, {"redis-1": ("yes", "partly", "Covers eviction \\| not TTL")})
+    assert main(record) == 0
+    partial = json.loads(capsys.readouterr().out)["fr_19_3"]
+    assert (partial["answers"], partial["rated"], partial["complete"]) == (2, 1, False)
+    fill(blank, {"redis-1": ("yes", "partly", "Covers eviction \\| not TTL"), "kafka-1": ("No", "yes", "")})
+    assert main(record) == 0
+    judged = json.loads(capsys.readouterr().out)["fr_19_3"]
+    # Counts only: P10-9 sets no pass mark, and AC-16.6 is not judged on this report.
+    assert judged["faithfulness"] == {"yes": 1, "partly": 0, "no": 1, "yes_rate": 0.5}
+    assert judged["relevance"] == {"yes": 1, "partly": 1, "no": 0, "yes_rate": 0.5}
+    assert (judged["rated"], judged["complete"], judged["reviewer"]) == (2, True, "Owner") and "met" not in judged
+    report = json.loads(Path(files["json"]).read_text(encoding="utf-8"))
+    assert "ac_16_6" not in report["summary"]
+    assert report["summary"]["human_review"] == "2 answers rated by Owner: faithful 1 yes, 0 partly, 1 no; relevant 1 yes, 1 partly, 0 no"
+    assert report["questions"][1]["review"] == {"supported": "yes", "relevant": "partly", "reviewer": "Owner", "notes": "Covers eviction | not TTL"}
+    markdown = Path(files["markdown"]).read_text(encoding="utf-8")
+    assert "| yes | partly | Covers eviction \\| not TTL |" in markdown and "```text" not in markdown
+    # When the questions run out first, the report says it is short.
+    chat.replies = ["Kafka brokers replicate partitions across the cluster [C1]."]
+    short, _ = run_answer_review(bench["dataset"], bench["manifest"], qa_settings, registry, count=4, mode="bm25", seed=20261113)
+    assert short["sample"] == {"target": 4, "asked": 3, "answered_with_citation": 3, "without_answer": [], "short": True}
 
 
 def test_ac_16_6_needs_eight_of_ten_rated_yes():
