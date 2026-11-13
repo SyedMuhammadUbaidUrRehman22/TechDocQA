@@ -14,6 +14,13 @@ The gold sets are scored by `eval --enrichment` (P9-9): [segmentation](segmentat
 
 At sampling, the gazetteer SHA-256 was `058dc8a88a694de9673d876e71d2b1c1d68145522c06cd55bc14535e694c9d64` and the manifest SHA-256 was `26eb4adc4483636b71ac0cd1e19bcd63cbfd8fca95360e9b4b790c883ddc4bf9`. The gazetteer is now frozen: `freeze` refuses the entity set if this hash changes.
 
+**Round 2 frozen 2026-11-13** in [round2/](round2/), the held-out test for AC-07.4 and AC-08.3. It was labeled by Fable 5.2, which the owner confirmed as annotator on 2026-11-13 ([how the labels were made](#round-2-how-the-labels-were-made-2026-11-13)).
+
+| Set | Size | Who | State |
+|---|---|---|---|
+| Entities | 32 chunks, 8 per technology; 12 in the ambiguous-name stratum; 268 mentions | Fable 5.2 labeled | Frozen |
+| Key terms | 15 documents, every evaluation document not in round 1, 13 to 123 chunks; 216 terms | Fable 5.2 labeled | Frozen |
+
 ## Out-of-topic fixtures (2026-11-12)
 
 [out_of_topic.jsonl](out_of_topic.jsonl) holds the 10 texts for the FR-09 `unclassified` threshold (P9-6, AC-09.2). They are not gold labels and need no annotation. Claude Code wrote them before any measurement and fixed the split in the file: 5 for calibration (gardening, chess, a household budget, CSS layout, Git branches) and 5 held out (the cooking article, garden birds, bicycle brakes, home Wi-Fi, LaTeX). Four of the ten are technical but outside the four configured categories. SHA-256 `e8180839ea52c2af552172ca773049f778f02b18f00fc2ad2e4a2b280b91a71f`. `eval --enrichment` reads them in memory and writes nothing.
@@ -56,3 +63,43 @@ Each `freeze` appends an entry below with the reviewer, the date and the SHA-256
 - `segmentation_gold.jsonl` SHA-256 `fd4aaf641fdd0648957de4c6df972f5e5160a0477263aaa890605343bb551294`
 - `entities_gold.jsonl` SHA-256 `b82e2f094e1a86546482a82f06511b600270ee3103e5a4eda4837c5b14578bc4`
 - `keyphrases_gold.jsonl` SHA-256 `320534b487f0c12bff22f2fbe050d13016de6c5e7609e1a8df1bbebdab7ed88d`
+
+## Round 2: plan fixed before sampling (2026-11-13)
+
+The owner made the AC-07.4 and AC-08.3 improvements a separate implementation task on 2026-11-12 and asked for a fresh blind sample for each. Round 1 is development data (above). Round 2 is the held-out test. This plan was written and committed before the round-2 sample was drawn and before any round-2 label existed.
+
+- **Frozen code.** Entity rules `techdocqa-entity-rules-v2`, gazetteer `techdocqa-gazetteer-2026-11-12` (SHA-256 `7aa9d0f725d871e49a129539ee85a72f9f50c5a69f4d5f697b764de0c52e8744`) and keyphrase policy `technical-ngrams-v1` with code blocks, as committed in `3e48ab8`. Nothing in them changes between sampling and scoring. The only later code change, committed with this plan, is in the evaluator: a verdict on tuned data is now printed as such.
+- **Sample.** `nlp_gold.py --round 2 sheets`, seed `techdocqa-nlp-gold-round2-2026-11-12`. Entities: 8 chunks per technology (32), by the round-1 rule, none overlapping a round-1 entity chunk or sentence passage. Key terms: all 15 evaluation documents not in round 1, of any length. No sentence set: the segmenter was not tuned, and AC-06.4 stands on round 1.
+- **Guidelines.** Revised before sampling only to write down the conventions the round-1 annotators recorded, marked *(round 1)*. The definitions of a key term (1 to 4 words, 10 to 15 per document) and of each entity type are otherwise unchanged.
+- **Annotator (deviation).** The owner approved Fable 5.1 as the annotator for round 1. On 2026-11-13 Fable 5.1 can no longer be selected: the only Fable model offered to Claude Code reports itself as `claude-fable-5-2`. Fable 5.2 is the model the owner first asked for on 2026-11-12, when it was not available. Round 2 is therefore labeled by Fable 5.2. This departs from the approved annotator, and the owner has not yet confirmed it. If the owner prefers another annotator, the same frozen sample can be labeled again, because the extractor does not change.
+- **Blind labeling.** Four separate sessions, one for entities and three for key terms (Airflow and Spark; Kafka; PostgreSQL). Each sees only the guidelines, its sheet and its key-term texts: no extractor output, code, gazetteer, sample file, review log, report, or round-1 sheet or gold file. Claude Code, which coordinates on Fable 5.2 in a separate session, checks that every label is an exact substring and freezes the labels unchanged.
+- **Scoring.** One run of `eval --enrichment --gold-dir datasets/nlp/round2 --fixtures datasets/nlp/out_of_topic.jsonl`. AC-07.4 on verified mentions, micro-averaged over the 32 chunks. AC-08.3 on the configured variant `ngram/with_code`, as the mean over all 15 documents. The split at 30 chunks, round 1's size limit, is a secondary figure, not a verdict. Verdicts follow the existing rules (Wilson 95% lower bound). The result is reported as measured, whatever it is, and no rule, word list or setting is changed after it is seen.
+- **What the score means.** Agreement with an AI annotator, not human ground truth, and with a different model from round 1's annotator.
+
+## Round 2: how the labels were made (2026-11-13)
+
+Written before the round-2 freeze and before any round-2 score was computed. Neither the annotators nor the coordinator saw extractor output on the round-2 sample.
+
+- **Annotator confirmed.** On 2026-11-13 the owner confirmed Fable 5.2 as the round-2 annotator, which settles the deviation recorded in the plan above. The coordinating Claude Code session ran on Opus 5.5, not Fable 5.2 as the plan said; it prepared the packets, validated and transcribed the labels, and froze them. It labeled nothing.
+- **Sessions.** Four fresh Fable 5.2 sessions, as planned: entities (E21 to E52); key terms for Airflow and Spark (K06 to K08, K12 to K15); Kafka (K09 to K11); PostgreSQL (K16 to K20). Each was a new agent, not a copy of the coordinating session, and each reported its model ID as `claude-fable-5-2`. Each got its own folder holding only copies of the guidelines, its part of the sheet and its key-term texts, and was told to open nothing else and run nothing.
+- **Audit.** The coordinator parsed each session's transcript. Every model turn is recorded as `claude-fable-5-2`. Each session made only `Read` calls on its packet files, and only the Kafka session also edited its sheet. No session ran a command, searched the web or opened another file.
+- **Advisor caveat.** Each session also called its built-in advisor after reading and before reporting: the entity session once, Airflow/Spark twice, Kafka once and PostgreSQL once. That reviewer sees only the same session's transcript, which held only the packet, so it could not pass on extractor output, the gazetteer or round-1 data. Its replies are stored encrypted, however, so what it advised cannot be checked, and it may have shaped some labels. Disclosure was inconsistent: Kafka disclosed its call, Airflow/Spark reported one of its two, and the entity session did not mention its call. PostgreSQL reported none. The labels are therefore Fable 5.2's, possibly with advice from its reviewer.
+- **Transcription.** Midway through, the packet folder, a temporary per-session location, was withdrawn, and the sessions stopped writing to it. The Kafka session had written K09 itself. Every other list came back complete in the sessions' final reports. The coordinator copied the 270 entity label lines and notes programmatically from the entity session's report. It typed the key-term lists from the reports and then checked them programmatically against them: all 15 identical.
+- **Validation before freeze.** The coordinator checked more than `freeze` does: the filled sheets differ from the drawn sheets only inside the label and term blocks and the notes. Every entity label has a valid type and is an exact substring of its chunk. Every document has 10 to 15 key terms, each present in its text, of at most 4 words, with no repeat after normalization. Two entity labels failed: E37 `worker nodes` and E46 `sync commit`. Each spans a line break in its chunk, so it cannot be written as one-line exact text. Both went back to the same session, which dropped them: a one-word substitute would break rule 1, and E46 already has `synchronous commit`. No other label was changed. A dry run of `freeze` into a scratch location passed before the real run.
+- **Result.** Entities: 268 mentions, 112 `IDENTIFIER`, 93 `CONCEPT`, 33 `TECHNOLOGY`, 29 `COMPONENT`, 1 `PROTOCOL`. Key terms: 216, from 13 to 15 per document.
+- **Conventions the sessions recorded.** Entities: technology name plus noun is split (`Kafka` and `topic`); Kafka producers and consumers are `COMPONENT`; CamelCase `TaskInstance` is an `IDENTIFIER`, the prose form a `CONCEPT`; function names without parentheses; state words such as `success` and `failed` are not entities, `upstream_failed` is an `IDENTIFIER`; `CREATE TABLE IF NOT EXISTS` is two units. Key terms: the most frequent form wins even over a title (`Dag Run`, `quickstart`, `GC`); a term and a longer phrase containing it are distinct (`WAL` and `WAL record`); typed forms where they dominate (`--deploy-mode`); page titles that name the subject (`Producer Configs`, `Cluster Mode Overview`); no example names. Their full reports stay in the git-ignored `data/round2_annotation/reports/`.
+- **What the score means.** Agreement with Fable 5.2, an AI annotator, not human ground truth, and with a different model from round 1's annotator.
+
+## Round 2 frozen 2026-11-13 by Fable 5.2 (claude-fable-5-2), AI annotator confirmed by the project owner on 2026-11-13
+
+- Seed `techdocqa-nlp-gold-round2-2026-11-12`; manifest SHA-256 `26eb4adc4483636b71ac0cd1e19bcd63cbfd8fca95360e9b4b790c883ddc4bf9`
+- Gazetteer SHA-256 at sampling `7aa9d0f725d871e49a129539ee85a72f9f50c5a69f4d5f697b764de0c52e8744`
+- Kept apart from round-1 `entities_gold.jsonl` SHA-256 `b82e2f094e1a86546482a82f06511b600270ee3103e5a4eda4837c5b14578bc4`
+- Kept apart from round-1 `segmentation_gold.jsonl` SHA-256 `fd4aaf641fdd0648957de4c6df972f5e5160a0477263aaa890605343bb551294`
+- Kept apart from round-1 `keyphrases_gold.jsonl` SHA-256 `320534b487f0c12bff22f2fbe050d13016de6c5e7609e1a8df1bbebdab7ed88d`
+- `datasets/nlp/round2/entities_gold.jsonl` SHA-256 `85ec90a61d46289576e60c44e85bbb9a4ea9b37b23815459c943d114e8ac2735`
+- `datasets/nlp/round2/keyphrases_gold.jsonl` SHA-256 `52bbfd8d74ec28eb299cafdd4fdfdf387aab1b7181e9f1aa1054fdab826ea62f`
+
+## Round 2 scored (2026-11-13)
+
+Scored once, after the freeze above was committed (2982ac8), in run [enrichment_5d0f6cdcc0bd41ddaa2a05dc5bf0f029](../../reports/evaluation/enrichment_5d0f6cdcc0bd41ddaa2a05dc5bf0f029.md), reported as not tuned. AC-07.4 is met at the point estimate only: precision 0.892 and recall 0.619. AC-08.3 is not met: 0.239. No rule, word list, setting or label was changed after the score was seen. Both rounds are now development data for any later change ([Phase 9 report](../../docs/PHASE_9_STATUS.md#round-2-held-out-2026-11-13)).

@@ -5,7 +5,7 @@ TechDocQA is a domain-specific RAG project for answering software and data engin
 
 Phases 1-9 are implemented. You can ingest local files and approved web pages, normalize and chunk them, build a local index, search it by BM25 or vector similarity, ask questions with `ask`, withdraw or delete documents, and measure retrieval and refusal with `eval`.
 
-**Phase 9 (P1 NLP enrichment) is implemented and measured; two of its criteria are not met.** `enrich` extracts entities from a gazetteer and regex rules, keyphrases as short technical n-grams (RAKE selectable), and categories by embedding similarity, and `enrichment` shows them. Verified entities feed `--entity`, and inferred categories feed `--category` for documents without a user category. On the 20 public documents, classification puts 19 of 20 in their manifest category, and the out-of-topic cooking article is `unclassified`. `eval --enrichment` measures it all, and unfiltered retrieval is unchanged: the smoke benchmark repeats exactly after `enrich`. The gold sets were labeled by Fable 5.1, an AI annotator the owner approved, so their scores measure agreement with it, not human ground truth. On them, sentence boundaries meet AC-06.4 at the point estimate (F1 0.989), and entities (AC-07.4: precision 0.730, recall 0.491) and key terms (AC-08.3: 0 of 72) are recorded as not met. Improvements for both, entity rules v2 and the n-gram keyphrase policy, are built and await a held-out round-2 measurement. See the [Phase 9 report](docs/PHASE_9_STATUS.md).
+**Phase 9 (P1 NLP enrichment) is complete; one criterion is not met.** `enrich` extracts entities from a gazetteer and regex rules, keyphrases as short technical n-grams (RAKE selectable), and categories by embedding similarity, and `enrichment` shows them. Verified entities feed `--entity`, and inferred categories feed `--category` for documents without a user category. On the 20 public documents, classification puts 19 of 20 in their manifest category, and the out-of-topic cooking article is `unclassified`. `eval --enrichment` measures it all, and unfiltered retrieval is unchanged: the smoke benchmark repeats exactly after `enrich`. AI annotators the owner approved labeled the gold sets, Fable 5.1 for round 1 and Fable 5.2 for the held-out round 2. Their scores therefore measure agreement with an AI annotator, not human ground truth. Sentence boundaries meet AC-06.4 at the point estimate (F1 0.989). With entity rules v2, entities meet AC-07.4 at the point estimate on the held-out round (precision 0.892, recall 0.619). Key terms with the n-gram policy do not meet AC-08.3 (0.239 against 0.50). See the [Phase 9 report](docs/PHASE_9_STATUS.md).
 
 `ask` now refuses a question when no retrieved chunk meets a relevance threshold calibrated on the smoke benchmark, and it makes no model call when it does. On all 30 smoke questions in vector mode, it refused 10 of 10 out-of-domain questions and answered 19 of 20 answerable ones, against targets of 90% and 85%. **The P0 release gate passed on 2026-11-07.** 8 of 10 answers were rated supported by their citations (AC-16.6), by Claude as the reviewer the project owner designated, where the requirement asks for a person. AC-12.1 is met as amended. The owner approved both changes and Q-07, Q-12 and Q-13. See the [Phase 8 report](docs/PHASE_8_STATUS.md#gate-update-2026-11-07).
 
@@ -71,7 +71,7 @@ stateDiagram-v2
 | 6 | [Smoke benchmark and retrieval metrics](docs/PHASE_6_STATUS.md) | ✅ Done, benchmark reviewed |
 | 7 | [Answers and citations](docs/PHASE_7_STATUS.md) | ✅ Built, human answer review open |
 | 8 | [Calibrated refusal and P0 release gate](docs/PHASE_8_STATUS.md) | ✅ Built, P0 release gate passed 2026-11-07 |
-| 9 | [NLP enrichment](docs/PHASE_9_STATUS.md): entities, keyphrases, categories | 🟡 Built and measured; AC-07.4 and AC-08.3 not met |
+| 9 | [NLP enrichment](docs/PHASE_9_STATUS.md): entities, keyphrases, categories | 🟡 Complete; AC-08.3 not met |
 | 10 | Hybrid search, reranking | ⬜ Planned |
 | 11-12 | Operational verification, optional extras | ⬜ Planned |
 
@@ -98,6 +98,8 @@ stateDiagram-v2
 | Documents in their manifest category (AC-09.1) | At least 0.85 | 19 of 20 = 0.95, interval from 0.764 | 🟡 |
 | Out-of-topic cooking article `unclassified` (AC-09.2) | Unclassified | Unclassified | ✅ |
 | Entity and category filters, each mode (AC-07.3, AC-09.3) | Only matching chunks | 20 of 20 | ✅ |
+| Entity precision and recall, held-out round 2 (AC-07.4) | At least 0.80 and 0.60 | 0.892 and 0.619, recall interval from 0.560 | 🟡 |
+| Key terms in the top 10, held-out round 2 (AC-08.3) | At least 0.50 | 0.239 | ❌ |
 | Smoke benchmark before and after `enrich` | Identical | Identical | ✅ |
 
 ```mermaid
@@ -365,4 +367,4 @@ The source filename says v2, but its contents identify **Revision 3**; those con
 - [Local development setup](deployment/local_setup.md)
 - [Corpus preparation](datasets/README.md)
 
-The reference corpus is frozen as `techdocqa-reference-2026-10-24-v2` and the local models are selected. The smoke benchmark is reviewed, and Phases 7 and 8 answering and calibrated refusal are built. The P0 release gate passed on 2026-11-07. Phase 9 enrichment is implemented and measured on the real corpus and its gold sets; AC-07.4 and AC-08.3 are recorded as not met, and improving them needs a separate task with fresh evaluation samples. Hardware and budget remain open.
+The reference corpus is frozen as `techdocqa-reference-2026-10-24-v2` and the local models are selected. The smoke benchmark is reviewed, and Phases 7 and 8 answering and calibrated refusal are built. The P0 release gate passed on 2026-11-07. Phase 9 enrichment is complete. It is measured on the real corpus and on two gold rounds. On the held-out round, AC-07.4 is met at the point estimate and AC-08.3 is not met. Hardware and budget remain open.

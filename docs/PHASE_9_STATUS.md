@@ -1,8 +1,17 @@
 # Phase 9 P1 NLP enrichment
 
-Implementation and evidence checkpoint 2026-11-12 on Windows, Python 3.13.3, local Ollama with `nomic-embed-text:latest`, spaCy 3.8.18 and `rake-nltk` 1.0.6. Phase 9 adds FR-07 entities, FR-08 keyphrases and FR-09 categories through `enrich`, the FR-06 P1 spaCy segmentation policy, and `eval --enrichment`, which measures all of them. It covers the [Phase 9 plan](PHASE_9_PLAN.md) under its [contracts](DECISIONS.md#phase-9-contracts-2026-11-07).
+Implementation and evidence checkpoint 2026-11-12, completed 2026-11-13, on Windows, Python 3.13.3, local Ollama with `nomic-embed-text:latest`, spaCy 3.8.18 and `rake-nltk` 1.0.6. Phase 9 adds FR-07 entities, FR-08 keyphrases and FR-09 categories through `enrich`, the FR-06 P1 spaCy segmentation policy, and `eval --enrichment`, which measures all of them. It covers the [Phase 9 plan](PHASE_9_PLAN.md) under its [contracts](DECISIONS.md#phase-9-contracts-2026-11-07).
 
-**Result:** everything is built, run on the real corpus and measured. On the 20 public documents, classification puts 19 of 20 in their manifest category: 0.95 against a target of 0.85, **met at the point estimate only**, because the 95% interval starts at 0.764. The cooking article and 3 other held-out out-of-topic fixtures are `unclassified`; the fifth, a LaTeX guide, is not. The real-corpus checks for AC-07.2, AC-07.3, AC-08.1 and AC-09.3 pass in both retrieval modes. Unfiltered retrieval is unchanged: the smoke `eval` fingerprint before and after `enrich` equals the Phase 8 baseline. The gold sets were labeled by Fable 5.1, an AI model the owner approved as annotator, and frozen on 2026-11-12. Their scores therefore measure agreement with an AI annotator, not human ground truth ([gold-set results](#gold-set-results)). **AC-06.4 is met at the point estimate only:** boundary F1 0.989 for both policies, after a spaCy line-break bug that the first scoring exposed was fixed. **AC-07.4 is not met** (precision 0.730 and recall 0.491, against 0.80 and 0.60), and **neither is AC-08.3** (0 of 72 key terms in the top 10). The owner recorded both as not met on 2026-11-12, then approved the threshold, the similarity-scale guard and keyphrase policy v2, kept the P9-6 rule for secondary categories, and made the two improvements a separate implementation task. Both improvements are now built and tested, but not yet measured on held-out data, so both criteria stay not met ([improvements](#improvements-built-awaiting-held-out-measurement)).
+**Result: Phase 9 is complete.** Everything is built and run on the real corpus. Every criterion is measured, and the held-out round 2 has been scored once.
+
+- **Classification.** On the 20 public documents, 19 of 20 land in their manifest category: 0.95 against a target of 0.85, **met at the point estimate only**, because the 95% interval starts at 0.764. The cooking article and 3 other held-out out-of-topic fixtures are `unclassified`; the fifth, a LaTeX guide, is not.
+- **Real-corpus checks.** AC-07.2, AC-07.3, AC-08.1 and AC-09.3 pass in both retrieval modes. Unfiltered retrieval is unchanged: the smoke `eval` fingerprint after `enrich` equals the Phase 8 baseline.
+- **AC-06.4 is met at the point estimate only:** boundary F1 0.989 for both policies on round 1, after a spaCy line-break bug that the first scoring exposed was fixed.
+- **Round 1.** AC-07.4 (precision 0.730, recall 0.491) and AC-08.3 (0 of 72 key terms) were not met, and the owner recorded both as not met on 2026-11-12. Entity rules v2 and the `technical-ngrams-v1` keyphrase policy were then built on round 1, which became development data. They were measured once on a fresh, blind round 2 ([round 2](#round-2-held-out-2026-11-13)).
+- **AC-07.4 is now met at the point estimate only:** precision 0.892 (166 of 186, 95% from 0.840) and recall 0.619 (166 of 268, 95% from 0.560), against 0.80 and 0.60. Precision is met outright; recall only at the point estimate.
+- **AC-08.3 is not met:** on average 0.239 of the annotated key terms are in the top 10, against 0.50.
+
+AI annotators the owner approved labeled the gold sets: Fable 5.1 for round 1 and Fable 5.2 for round 2. Every gold-set score therefore measures agreement with an AI annotator, not human ground truth.
 
 ## What was added
 
@@ -42,7 +51,7 @@ Spans keep the P0 contract: half-open offsets that cover every character, so AC-
 - **Gold file line endings.** `freeze` wrote the gold files with CRLF on Windows and logged the hashes of those bytes, which a checkout with LF would not reproduce. It now writes LF, and so does the enrichment report writer.
 - **Test memory.** Chroma keeps every client it creates in a process-wide cache. Each test's temporary index stayed in memory, so `test_indexing.py` alone grew to 677 MB with 46 cached clients, and a single-process run of the whole suite exhausted a 12 GB machine. Releasing the clients after each test bounds this, and the runner returns memory between groups.
 
-## Real-corpus run (2026-11-12)
+## Real-corpus run (2026-11-12 and 2026-11-13)
 
 | Step | Result |
 |---|---|
@@ -59,6 +68,11 @@ Spans keep the P0 contract: half-open offsets that cover every character, so AC-
 | Gold sets frozen | Labeled by Fable 5.1, the owner-approved AI annotator, checked and frozen; `nlp_gold.py check` passes ([review log](../datasets/nlp/review_log.md)). |
 | `eval --enrichment` on the gold sets | [enrichment_58c67164](../reports/evaluation/enrichment_58c67164e8e84b708c80e6df4721518f.md), the blind run: spaCy v1 boundary F1 0.835. |
 | After the spaCy fix | [enrichment_22888006](../reports/evaluation/enrichment_22888006a487494d8005065bae6c36db.md): spaCy v2 boundary F1 0.989; every other figure unchanged. |
+| `enrich` with entity rules v2 and `technical-ngrams-v1` (2026-11-13) | Stored entities and keyphrases recomputed. Smoke `eval` [eval_1ad1444f](../reports/evaluation/eval_1ad1444fc4f64e508d0d9f2e1a651e83.md): fingerprint `48ce89dc...a3af410`, still the Phase 8 baseline. |
+| Round 1 as development data | [enrichment_e8b952d0](../reports/evaluation/enrichment_e8b952d01ba84d1f93320478eb5dab0a.md): entities 0.929 / 0.709 and key terms 0.432, both flagged as tuned, so neither is evidence. Real-corpus checks met. |
+| Round 2 drawn | `nlp_gold.py --round 2 sheets`, 8 s after the round-2 plan was committed (bf55e14), with the gazetteer and extractor code frozen since 3e48ab8. |
+| Round 2 labeled and frozen | Four blind Fable 5.2 sessions; frozen in 2982ac8 before any round-2 score was computed ([review log](../datasets/nlp/review_log.md#round-2-how-the-labels-were-made-2026-11-13)). |
+| Round 2 scored, once | [enrichment_5d0f6cdc](../reports/evaluation/enrichment_5d0f6cdcc0bd41ddaa2a05dc5bf0f029.md), not tuned: AC-07.4 met at the point estimate only, AC-08.3 not met. The report says `dirty: True` only because of an untracked `research_notes/` folder; the code is 2982ac8 unchanged. |
 
 ## Acceptance
 
@@ -69,15 +83,15 @@ Spans keep the P0 contract: half-open offsets that cover every character, so AC-
 | AC-07.1 | `test_entities.py` fixture | ✅ Met |
 | AC-07.2 | Tests; real corpus: 5,598 entity rows on the 20 public documents, every chunk ID, document ID and both offsets valid | ✅ Met |
 | AC-07.3 | Tests with `entity=Redis`; real corpus with `entity=PostgreSQL`: 20 of 20 results in each mode carry a verified PostgreSQL entity | ✅ Met |
-| AC-07.4 | 20 labeled chunks, 165 mentions: precision 0.730 (81 of 111), recall 0.491 (81 of 165) | ❌ Not met (owner decision 2026-11-12) |
+| AC-07.4 | Held-out round 2, 32 labeled chunks, 268 mentions: precision 0.892 (166 of 186, 95% 0.840 to 0.929), recall 0.619 (166 of 268, 95% 0.560 to 0.675). Round 1 before the improvement: 0.730 and 0.491, not met | 🟡 Met at the point estimate only (accepted by the owner 2026-11-13) |
 | AC-08.1 | Tests; real corpus: all 20 documents have 10 phrases in rank order with non-increasing scores | ✅ Met |
 | AC-08.2 | `test_keyphrases.py` | ✅ Met |
-| AC-08.3 | 5 documents, 72 key terms: 0 in the configured top 10, at most 1 with any other variant | ❌ Not met (owner decision 2026-11-12) |
+| AC-08.3 | Held-out round 2, 15 documents, 216 key terms: mean 0.239 in the configured top 10 (pooled 51 of 216, 95% 0.184 to 0.297). Round 1 before the improvement: 0 of 72 | ❌ Not met (closed by the owner 2026-11-13, no further work) |
 | AC-09.1 | 19 of 20 = 0.95 (95% 0.764 to 0.991), at least 4 documents per category, with the active threshold | 🟡 Met at the point estimate only |
 | AC-09.2 | The held-out cooking article scores 0.507 against a threshold of 0.649 | ✅ Met |
 | AC-09.3 | Tests with `category=Caching`; real corpus with `category=Databases`: 20 of 20 results in each mode from Databases documents | ✅ Met |
 
-AC-06.4, AC-07.4 and AC-08.3 are scored against gold sets labeled by an AI annotator, so they measure agreement with it, not human ground truth ([decision](DECISIONS.md#phase-9-completion-2026-11-12)). The targets in this table are the requirement's, unchanged.
+AC-06.4, AC-07.4 and AC-08.3 are scored against gold sets labeled by an AI annotator, so they measure agreement with it, not human ground truth ([decision](DECISIONS.md#phase-9-completion-2026-11-12)). AC-06.4 stands on round 1, where the segmenter was not tuned. AC-07.4 and AC-08.3 stand on round 2, because the extractor was tuned on round 1. The targets in this table are the requirement's, unchanged.
 
 ## Classification (FR-09)
 
@@ -97,7 +111,7 @@ The threshold 0.649099 is the midpoint between the weakest public document (Airf
 
 ## Gold-set results
 
-Report [enrichment_22888006](../reports/evaluation/enrichment_22888006a487494d8005065bae6c36db.md). Fable 5.1, an AI model, labeled the gold sets. The owner approved it as annotator on 2026-11-12, as a deviation from the plan, under which the owner was to label them. **Every figure in this section measures agreement with an AI annotator, not human ground truth.** The figures are also indicative, because the sets are small (VULN-04).
+This section is round 1. Round 1 has since been used to develop the AC-07.4 and AC-08.3 improvements, so it is development data, and those criteria are judged on the held-out [round 2](#round-2-held-out-2026-11-13). Report [enrichment_22888006](../reports/evaluation/enrichment_22888006a487494d8005065bae6c36db.md). Fable 5.1, an AI model, labeled the gold sets. The owner approved it as annotator on 2026-11-12, as a deviation from the plan, under which the owner was to label them. **Every figure in this section measures agreement with an AI annotator, not human ground truth.** The figures are also indicative, because the sets are small (VULN-04).
 
 ### Sentences (AC-06.4, P9-2)
 
@@ -114,17 +128,81 @@ Precision is 0.730 (81 of 111 verified mentions, 95% 0.640 to 0.804) and recall 
 | No rule finds them: 19 SQL keywords such as `SELECT` and `ORDER BY`, concepts outside the gazetteer such as `task`, `transaction` and `startup cost`, lowercase code names such as `mytab`, and Go, JVM, YARN and Parquet. | 0 | 65 |
 | Extracted but not labeled: `IoT` twice, Airflow's `sensor` in Kafka's text twice, `Dag runs`, `QUERY PLAN`, `deploy mode`, two method chains, `TaskFlow-decorated` and `operators`. | 11 | 0 |
 
-The first two causes are conventions, where the gazetteer and the annotator read the guidelines differently. Counted from this report, resolving them would give precision 0.90 (100 of 111) and recall 0.61 (100 of 165). That figure is hypothetical, not a result: changing either side now would tune on this sample. **AC-07.4 is recorded as not met** (owner decision 2026-11-12). Its thresholds are provisional in the requirement (Q-14) but unchanged. Success may be claimed only after the conventions are aligned and the extractor is measured on a fresh blind sample.
+The first two causes are conventions, where the gazetteer and the annotator read the guidelines differently. Counted from this report, resolving them would give precision 0.90 (100 of 111) and recall 0.61 (100 of 165). That figure is hypothetical, not a result: changing either side now would tune on this sample. **AC-07.4 is recorded as not met** (owner decision 2026-11-12). Its thresholds are provisional in the requirement (Q-14) but unchanged. Success may be claimed only after the conventions are aligned and the extractor is measured on a fresh blind sample. That measurement is [round 2](#round-2-held-out-2026-11-13).
 
 ### Key terms (AC-08.3, P9-5)
 
-None of the 72 key terms is in the configured top 10. The best variants, `word_degree` and `word_frequency`, find 1, and a loose match, where one phrase contains the other, finds 21% to 24%. The cause is structural. RAKE ranks whole runs of content words between stop words, so its top 10 are 3- and 4-word phrases (3.86 words on average with the default metric, 2.92 with `word_frequency`), while 71 of the 72 terms have 1 or 2 words. No RAKE metric or code-block setting closes that gap, so the configured `degree_to_frequency` with code blocks stays. **AC-08.3 is recorded as not met** (owner decision 2026-11-12). Shorter candidates were recorded as a proposed improvement and are now [built](#improvements-built-awaiting-held-out-measurement).
+None of the 72 key terms is in the configured top 10. The best variants, `word_degree` and `word_frequency`, find 1, and a loose match, where one phrase contains the other, finds 21% to 24%. The cause is structural. RAKE ranks whole runs of content words between stop words, so its top 10 are 3- and 4-word phrases (3.86 words on average with the default metric, 2.92 with `word_frequency`), while 71 of the 72 terms have 1 or 2 words. No RAKE metric or code-block setting closes that gap, so the configured `degree_to_frequency` with code blocks stays. **AC-08.3 is recorded as not met** (owner decision 2026-11-12). Shorter candidates were recorded as a proposed improvement, then built and [measured on round 2](#round-2-held-out-2026-11-13).
+
+## Round 2 (held out, 2026-11-13)
+
+Report [enrichment_5d0f6cdc](../reports/evaluation/enrichment_5d0f6cdcc0bd41ddaa2a05dc5bf0f029.md). Round 2 followed the [plan fixed before sampling](../datasets/nlp/review_log.md#round-2-plan-fixed-before-sampling-2026-11-13):
+
+- It was drawn after the extractor was frozen.
+- Four Fable 5.2 sessions labeled it blind.
+- It was frozen before any score was computed, then scored once.
+
+Nothing was changed after the score was seen. The owner confirmed Fable 5.2 as annotator on 2026-11-13. Each session also consulted its built-in advisor, which sees only that session's transcript. Its replies are stored encrypted, so what it advised cannot be checked ([caveat](../datasets/nlp/review_log.md#round-2-how-the-labels-were-made-2026-11-13)). It is a different model from round 1's annotator, so the two rounds are not strictly comparable. Every figure below measures agreement with an AI annotator and is indicative (VULN-04).
+
+### Entities (AC-07.4)
+
+32 chunks, 8 per technology, 12 in the ambiguous-name stratum, with 268 labeled mentions.
+
+- Precision 0.892 (166 of 186 verified mentions, 95% 0.840 to 0.929). The lower bound clears 0.80.
+- Recall 0.619 (166 of 268, 95% 0.560 to 0.675). Only the point estimate clears 0.60.
+- **AC-07.4 is met at the point estimate only.** Ignoring type, precision is 0.925 and recall 0.642.
+
+| Type | Precision | Recall |
+|---|---|---|
+| TECHNOLOGY | 1.000 (26 of 26) | 0.788 (26 of 33) |
+| COMPONENT | 0.913 (21 of 23) | 0.724 (21 of 29) |
+| CONCEPT | 0.875 (28 of 32) | 0.301 (28 of 93) |
+| PROTOCOL | 1.000 (1 of 1) | 1.000 (1 of 1) |
+| IDENTIFIER | 0.865 (90 of 104) | 0.804 (90 of 112) |
+
+Recall by technology: Spark 0.739, Kafka 0.622, Airflow 0.604 and PostgreSQL 0.491. The ambiguous-name stratum recalls as much as the rest (0.618 against 0.621), at lower precision (0.856 against 0.939). On round 1, the same code scored 0.929 and 0.709, on the data it was tuned on.
+
+The 20 false positives and 102 misses have three causes:
+
+| Cause | False positives | Misses |
+|---|---|---|
+| Same text, different type. The CamelCase rule makes the plan nodes `BitmapAnd`, `BitmapOr` and `MergeAppend` identifiers, and so `TaskGroups` and `JVMs`. The gazetteer makes `TaskFlow API` a component. The annotator made them concepts or technologies. | 6 | 6 |
+| Extracted but not labeled: attribute chains on local variables (`self.url`, `exception.response.status_code`), link fragments (`configuration.html#spark-properties`), `URLs`, `NOT` and `EXISTS` split out of `IF NOT EXISTS`. Also gazetteer terms the annotator did not label in that chunk, such as `WAL` beside the labeled `WAL record`. | 14 | 0 |
+| No rule finds them. 60 concepts outside the gazetteer: `tasks`, `messages`, `events`, `transaction`, `heartbeat`, `event loop`. 22 identifiers: imported modules such as `httpx` and `datetime`, the commands `psql`, `cd` and `make`, and the single keywords `STRING` and `OPTIONS`. 8 components (`worker`, `triggerer`) and 6 technologies (`Kryo`, `asyncio`, `parquet`, `Twitter chill`). | 0 | 96 |
+
+Precision holds on unseen data. Recall is limited by concepts: the gazetteer finds 28 of the 93 labeled. The annotator dropped two labels that span a line break (`worker nodes`, `sync commit`), and the extractor did not find either. Keeping them would give a recall of 166 of 270 (0.615, 95% from 0.556): the same verdict.
+
+### Key terms (AC-08.3)
+
+15 documents, every evaluation document not in round 1, from 13 to 123 chunks, with 216 terms, 13 to 15 per document.
+
+- The configured `ngram/with_code` scores a mean of 0.239 (pooled 51 of 216, 95% 0.184 to 0.297). **AC-08.3 is not met.**
+- `ngram/without_code` scores 0.243, one term more. The setting was not changed after the score was seen: the verdict is always the configured variant's. The best RAKE variant scores 0.046, and the former default 0.005.
+- Documents of 30 chunks or fewer score 0.272 (7 documents), longer ones 0.210 (8). On round 1's five short documents, the policy was tuned to 0.432.
+- The lenient match, where one term contains the other, is a diagnostic only: 0.461.
+
+| Document | Hits | Document | Hits | Document | Hits |
+|---|---|---|---|---|---|
+| K06 Airflow Dag runs | 6 of 13 | K11 Kafka design | 1 of 15 | K16 PostgreSQL advanced features | 1 of 14 |
+| K07 Airflow tasks | 3 of 14 | K12 Spark cluster overview | 5 of 14 | K17 PostgreSQL SQL language | 2 of 15 |
+| K08 Airflow Dags | 5 of 15 | K13 Spark submitting applications | 3 of 15 | K18 PostgreSQL isolation | 6 of 15 |
+| K09 Kafka quickstart | 5 of 13 | K14 Spark load and save | 3 of 14 | K19 PostgreSQL transaction system | 5 of 15 |
+| K10 Kafka producer configs | 0 of 15 | K15 Spark tuning | 2 of 14 | K20 PostgreSQL EXPLAIN | 4 of 15 |
+
+Why 165 terms are missed. This is descriptive only; nothing was changed.
+
+- **Ceiling.** With 13 to 15 terms and 10 slots, even a perfect top 10 would average 0.696.
+- **Typed identifiers.** The gold set holds 42 terms with dots, underscores, internal capitals or a leading `--`, and 40 of them are missed. Another 14 misses are upper-case SQL keywords and abbreviations (`GROUP BY`, `ISR`), so together they are 54 of the 165. K10's 15 terms are mostly producer keys such as `linger.ms`. Its top 10 are words repeated in every row of the configuration table (`valid`, `importance`, `null valid`, `low`, `medium`), so it scores 0.
+- **Example data and markup.** These take top-10 places: `san francisco`, `weather`, `city` and `temp_lo` (K17), `cities` and `salary` (K16), `find full` and `spark repo` (K14), and the HTML table tags `td` and `tr` in K12's Markdown.
+- **Length and form.** 8 terms have 3 or 4 words, which the policy cannot produce. 5 have the other singular or plural form in the top 10, such as `window function` for `window functions`.
+
+The n-gram policy improves on RAKE on the same held-out set, 0.239 against 0.005, but it reaches less than half the target.
 
 ## Entities, keyphrases and segmentation on the real corpus
 
-On the 20 public documents, `enrich` stores 5,598 entities, 5,491 of them verified, under 1,073 distinct entity keys. Gazetteer matches give 717 technology, 874 component and 1,405 concept mentions; the patterns give 2,416 identifiers and 79 protocols. The 107 unverified ones are ambiguous names out of context, mostly `worker` and `operator`. They are stored at confidence 0.4 and never filter. The gazetteer is unchanged since sampling (`058dc8a8...`), so the entity set, once labeled, is held out.
+With entity rules v2 and the 2026-11-12 gazetteer, `enrich` stores 6,386 entities on the 20 public documents, 6,276 of them verified, under 1,130 distinct entity keys. The verified ones are 3,320 identifiers, 1,568 concepts, 717 technologies, 592 components and 79 protocols. 797 come from the new SQL-keyword rule. The 110 unverified ones are ambiguous names out of context, mostly `worker` and `operator`. They are stored at confidence 0.4 and never filter. Under rules v1 the figures were 5,598 entities, 5,491 verified, under 1,073 keys.
 
-Keyphrases with RAKE's default score favor long, rare phrases, such as `widely considered bad style` or `0.029 ms execution time`. rake-nltk also drops any run of more than 4 non-stop words instead of trimming it. Short key terms such as `consumer group` therefore rank low, as the [key-term gold set](#key-terms-ac-083-p9-5) confirms for all 3 RAKE metrics, with and without code blocks.
+The default keyphrases now come from `technical-ngrams-v1`. Its top 10 hold short subject terms (`dag run`, `data interval`, `isolation level`, `wal record`). They also hold words that repeat in tables, example data and markup (see [round 2](#key-terms-ac-083)). RAKE's default score, still selectable, favors long, rare phrases, such as `widely considered bad style` or `0.029 ms execution time`. rake-nltk also drops any run of more than 4 non-stop words instead of trimming it, so short key terms such as `consumer group` rank low. Both gold sets confirm this for all 3 RAKE metrics.
 
 The spaCy policy is built, tested and selectable. Its rules were written from the requirement's examples and the guidelines, before any boundary was scored. It ties the rules on the [sentence gold set](#sentences-ac-064-p9-2), so under P9-2 chunking stays on the P0 rules, and no re-chunk, re-index or threshold review is needed.
 
@@ -150,33 +228,40 @@ After the gold-set fixes (spaCy policy v2 with its regression test, and LF outpu
 
 After the improvements (entity rules v2, the gazetteer revision, `technical-ngrams-v1`, round-2 sampling and the evaluator's `--fixtures` and tuned flag), on 2026-11-13: core 238 passed, 2 skipped; retrieval 106 passed; enrichment 141 passed. The enrichment group ran before the last evaluator and round-2 changes, so its affected modules were rerun alone afterwards and passed: `test_enrichment_eval.py`, `test_keyphrases.py` and `test_nlp_gold.py`. Answering was not rerun; it does not reach the changed code.
 
+After the round-2 freeze and scoring on 2026-11-13, which changed data and documentation but no code, the enrichment group was run once more as a whole: 144 passed in 271 s, now including the tests added after its previous full run. Core, retrieval and answering were not rerun, since no code changed after their last runs.
+
 Run alone before the Chroma fix, a module's process used up to about 680 MB, growing with the number of cached clients. With the fix, modules that use Chroma end each test with no cached client.
 
 ## What remains
 
-The owner decided three points on 2026-11-12 ([decisions](DECISIONS.md#phase-9-completion-2026-11-12)):
+**Phase 9 is complete.** The owner's decisions of 2026-11-12 ([decisions](DECISIONS.md#phase-9-completion-2026-11-12)) are carried out, and so is the round-2 task:
 
-1. Fable 5.1 is approved as the gold-set annotator, as a recorded deviation from the plan. The gold-set scores measure agreement with an AI annotator, not human ground truth.
-2. AC-07.4 is recorded as not met. The provisional thresholds are unchanged, and success requires aligned conventions and a fresh blind sample, never tuning and validating on the same sample.
-3. AC-08.3 is recorded as not met. Shorter key-phrase candidates are a proposed improvement that needs a fresh key-term set before acceptance.
+1. **Annotators.** Fable 5.1 labeled round 1 (approved 2026-11-12) and Fable 5.2 round 2 (confirmed 2026-11-13), both as recorded deviations from the plan. The gold-set scores measure agreement with an AI annotator, not human ground truth.
+2. **AC-07.4.** The entity conventions are aligned, and the extractor was measured once on a fresh blind sample: **met at the point estimate only**, with precision 0.892 and recall 0.619 (interval from 0.560).
+3. **AC-08.3.** The shorter key-phrase candidates were measured once on a fresh key-term set: **not met**, at a mean of 0.239.
 
-Later on 2026-11-12 the owner approved the adopted threshold (0.649099), the similarity-scale guard and keyphrase policy v2, kept the P9-6 rule for secondary categories until Phase 10, and made the two improvements a separate implementation task.
+The measurement steps are done. `enrich` was re-run with the new rules and policy, and the smoke fingerprint is unchanged. Round 2 was drawn, labeled blind, frozen and scored once.
 
-That task is built and tested ([below](#improvements-built-awaiting-held-out-measurement)). What remains is its measurement, in this order:
+On 2026-11-13 the owner accepted AC-07.4 as met at the point estimate only, closed AC-08.3 as not met with no further work, and moved the project to Phase 10.
 
-1. Re-run `enrich`, so the stored entities and keyphrases use the new rules and policy, and confirm the corpus checks and the smoke fingerprint.
-2. Draw round 2 with `nlp_gold.py --round 2 sheets`, have Fable 5.1 label it blind, check and freeze it.
-3. Score it once with `eval --enrichment --gold-dir datasets/nlp/round2 --fixtures datasets/nlp/out_of_topic.jsonl`, and record the result as measured.
+- **AC-07.4 at the point estimate (accepted).** It is recorded the way AC-06.4 and AC-09.1 are. Recall's lower bound, 0.560, is below 0.60, and concepts are the weak type (recall 0.301). The thresholds stay as written.
+- **AC-08.3 not met (closed).** No further keyphrase work is planned. `technical-ngrams-v1` stays the default. Round 2's [misses](#key-terms-ac-083) point to typed identifiers, words from tables and example data, and markup. With 13 to 15 terms and 10 slots, even a perfect top 10 would average 0.696.
 
-The round-1 gold sets need nothing more: they are frozen, and `python datasets/nlp_gold.py check` confirms they still match the corpus. They are now development data.
+Two points carry into later work and change no Phase 9 result:
 
-## Improvements: built, awaiting held-out measurement
+- **Secondary categories (P9-6).** They stay as they are until Phase 10 adds documents without a user category.
+- **Hashed lock (P9-11).** Converting the whole `requirements.lock.txt` to a hashed lock is the separate chore planned for after Phase 9.
 
-Both were recorded on 2026-11-12 as proposed improvements and made a separate implementation task the same day. Both are now built and tested; neither is measured on held-out data yet. Neither changes a criterion, and the results above stand as measured.
+Both rounds are frozen. `python datasets/nlp_gold.py check` and `python datasets/nlp_gold.py --round 2 check` confirm they still match the corpus. Round 2 is scored, so for any later change to the extractor both rounds are development data.
 
-| Criterion | Proposal | Built | Required before acceptance |
+<a id="improvements-built-awaiting-held-out-measurement"></a>
+## Improvements: built and measured on round 2
+
+Both were recorded on 2026-11-12 as proposed improvements and made a separate implementation task the same day. Both were built and tested, then measured once on held-out round 2. Neither changes a criterion.
+
+| Criterion | Proposal | Built | Held-out result (round 2) |
 |---|---|---|---|
-| AC-07.4 | Align the entity conventions, either in the gazetteer and rules or in the guidelines: the type of named Airflow, Spark and PostgreSQL terms, and a path versus a file name | [Entity rules v2](DECISIONS.md#entity-rules-v2): types aligned with the guidelines' table, file names from paths, upper-case SQL keywords. The guidelines now write down the round-1 annotators' conventions. | Measurement on a fresh blind entity sample, never on the sample used to tune: round 2, 32 chunks, not yet drawn |
-| AC-08.3 | Shorter keyphrase candidates, such as n-grams of up to 2 or 3 words or noun phrases; amends P9-5 | [technical-ngrams-v1](DECISIONS.md#technical-ngrams-v1), the new default, with RAKE still selectable | Measurement against a fresh set of key terms: round 2, all 15 unused documents, not yet drawn |
+| AC-07.4 | Align the entity conventions, either in the gazetteer and rules or in the guidelines: the type of named Airflow, Spark and PostgreSQL terms, and a path versus a file name | [Entity rules v2](DECISIONS.md#entity-rules-v2): types aligned with the guidelines' table, file names from paths, upper-case SQL keywords. The guidelines now write down the round-1 annotators' conventions. | 32 chunks: precision 0.892, recall 0.619. Met at the point estimate only (round 1 before: 0.730 and 0.491) |
+| AC-08.3 | Shorter keyphrase candidates, such as n-grams of up to 2 or 3 words or noun phrases; amends P9-5 | [technical-ngrams-v1](DECISIONS.md#technical-ngrams-v1), the new default, with RAKE still selectable | 15 documents: mean 0.239. Not met (round 1 before: 0.000 with RAKE) |
 
-Round 1 is now development data. The changes were made while looking at its labels, so `eval --enrichment` reports any new score on it as tuned, and such a score is never evidence for acceptance. Research behind the n-gram policy: [Short technical keyphrase extraction](../reports/Short%20technical%20keyphrase%20extraction.md). One finding there bounds what to expect: with 14 or 15 gold terms per document, even a perfect top 10 holds at most about 70% of them, so a mean of 0.50 needs about 7 of the top 10 to be gold terms.
+The changes were made while looking at round 1's labels, so `eval --enrichment` reports any new score on round 1 as tuned. Such a score is never evidence for acceptance. Research behind the n-gram policy: [Short technical keyphrase extraction](../reports/Short%20technical%20keyphrase%20extraction.md). One finding there bounds what to expect. With 14 or 15 gold terms per document, even a perfect top 10 holds at most about 70% of them, so a mean of 0.50 needs about 7 of the top 10 to be gold terms. Round 2 gets 3.4 on average.

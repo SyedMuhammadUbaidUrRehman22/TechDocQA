@@ -115,3 +115,20 @@ The owner approved the adopted threshold, the similarity-scale guard and keyphra
 Entities: rules v2 and the 2026-11-12 gazetteer align types with the guidelines' type table (named abstractions `CONCEPT`; commands, classes and SQL commands `IDENTIFIER`), take the file name from a path, and add upper-case SQL keywords. A sentence-final keyword (`ORDER BY.`) was missed at first and is fixed. Keyphrases: `technical-ngrams-v1`, the new default, ranks 1- and 2-word terms by frequency with fixed bonuses, and needs no optional package; RAKE stays selectable. Both were developed on round 1, which is now development data and is reported as tuned. `nlp_gold.py --round 2` draws the held-out test: a new seed, 32 entity chunks apart from round 1 and all 15 unused key-term documents. The guidelines now write down the round-1 annotators' conventions. `eval --enrichment` gained `--fixtures`, a tuned flag for the key-term set and a split by document size.
 
 Not yet done: re-running `enrich` on the real corpus, and drawing, labeling and scoring round 2. AC-07.4 and AC-08.3 stay not met until then. Tests: core 238 passed, 2 skipped; retrieval 106 passed; enrichment 141 passed, with the modules changed afterwards rerun alone. Evidence is in [decisions](docs/DECISIONS.md#entity-rules-v2) and [Phase 9 status](docs/PHASE_9_STATUS.md#improvements-built-awaiting-held-out-measurement).
+
+## 2026-11-13 - Phase 9 complete: held-out round 2 for AC-07.4 and AC-08.3
+
+The user asked to complete Phase 9. The re-run of `enrich` with the new rules was already done in bf55e14, with the smoke fingerprint unchanged (`eval_1ad1444f`), so what remained was round 2. The owner confirmed Fable 5.2 as the round-2 annotator, since Fable 5.1 can no longer be selected. The coordinating session ran on Opus 5.5 and labeled nothing. Four fresh Fable 5.2 sessions labeled the sample blind: 32 entity chunks and the 15 key-term documents not used in round 1. Each saw only copies of the guidelines, its sheet and its texts, and the session transcripts confirm it opened nothing else. Each also consulted its built-in advisor, whose replies are stored encrypted and cannot be checked.
+
+The sessions' packet folder was withdrawn mid-run. One session had written part of its sheet; the others returned their labels in their final reports. The labels were transcribed and checked against those reports. Two entity labels spanned a line break, so they could not be frozen exactly; they went back to the annotator, which dropped them. A dry-run freeze passed, and the gold was frozen and committed (2982ac8) before any score was computed: 268 mentions and 216 key terms.
+
+Scored once (`enrichment_5d0f6cdcc0bd41ddaa2a05dc5bf0f029`, not tuned):
+
+- **AC-07.4 is met at the point estimate only:** precision 0.892 (95% from 0.840) and recall 0.619 (95% from 0.560), against 0.80 and 0.60. Concepts are the weak type (recall 0.301).
+- **AC-08.3 is not met:** a mean of 0.239 of the key terms are in the top 10, against 0.50, and RAKE's former default scores 0.005 on the same set. About a third of the misses are typed identifiers and upper-case SQL keywords (54 of 165), and words from tables, example data and markup also take top-10 places.
+
+Nothing was changed after the score was seen. Only data and documentation changed; no code. Evidence is in [Phase 9 status](docs/PHASE_9_STATUS.md#round-2-held-out-2026-11-13).
+
+## 2026-11-13 - Phase 9 closed by the owner
+
+The owner accepted AC-07.4 as met at the point estimate only (precision 0.892, recall 0.619 on the held-out round 2). They closed AC-08.3 as not met (0.239) with no further work, and moved the project to Phase 10. `technical-ngrams-v1` stays the default keyphrase policy. Only documentation changed: [decisions](docs/DECISIONS.md#phase-9-completion-2026-11-12), [Phase 9 status](docs/PHASE_9_STATUS.md#what-remains) and the roadmap.
