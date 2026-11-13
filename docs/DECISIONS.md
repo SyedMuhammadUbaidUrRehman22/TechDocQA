@@ -7,6 +7,11 @@ The project owner approved decisions P10-1 to P10-12 of the [Phase 10 plan](PHAS
 - **Reranker download authorized (P10-5).** The dependency gate may download one reranker model, preferring a small English cross-encoder on the installed `onnxruntime`, with no torch. Licence, hashes, offline use, determinism, latency and memory are checked before anything depends on it.
 - **Provider demo: full switch (P10-10).** OpenAI chat and embeddings in a second configuration file, with a rebuilt public-only index and its own calibration. DDIA is excluded by construction and by a tested guard. The owner will create the key, set `OPENAI_API_KEY` and set a spend cap.
 - **Reviewers (P10-8, P10-9).** The owner reviews the 20 new benchmark questions and rates the 20 answers, as the requirement intends. No AI reviewer is designated for Phase 10.
+- **Reranker licence caveat accepted (2026-11-13).** The owner accepted `cross-encoder/ms-marco-MiniLM-L6-v2` for TechDocQA. Its weights are published under Apache-2.0, though it was trained on MS MARCO, whose terms describe the data as intended for non-commercial research (step 5 below). No other model is downloaded.
+- **Thresholds adopted (2026-11-13).** The owner adopted both smoke proposals from `eval_a4d00103eb5645a89f93cf78065aecf0`.
+  - Hybrid: gate G1, vector relevance, at 0.858223. It had 0 leave-one-out errors against 1 or 2 for the other three gates, with a margin of 0.021.
+  - Reranked: 0.518618 on the cross-encoder's 0-1 scale over hybrid candidates, with 0 leave-one-out errors and a margin of 0.452.
+  - On smoke, both pass 20 of 20 answerable questions and refuse 10 of 10 unanswerable ones. The smoke negatives are all other technologies, so the full benchmark's four in-domain negatives are the held-out check.
 - **Git.** Work continues on a local branch, `feat/phase-10`, created from `feat/phase-9`, with local commits and nothing pushed.
 
 Implementation, step 1 (metrics and runner):

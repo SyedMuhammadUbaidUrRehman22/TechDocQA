@@ -86,6 +86,27 @@ min_supporting_chunks = 1
 calibration_run_id = "eval_c4ab1f1397fa469489137f611b74cdf7"
 scoring_config_id = "sc_c40598d9e99ee950f32c22d25aff430b6602a18316cb48f50ee5996048005cb2"
 
+# Phase 10, adopted by the project owner on 2026-11-13 from the smoke proposals in
+# reports/evaluation/eval_a4d00103eb5645a89f93cf78065aecf0.md. Hybrid uses gate G1 (vector relevance), chosen by
+# fewest-loo-errors-then-margin-then-order-v1 (P10-3); the reranked section is the cross-encoder's own 0-1 scale on
+# hybrid candidates (P10-4).
+[retrieval.sufficiency.hybrid]
+gate = "vector"
+calibration_run_id = "eval_a4d00103eb5645a89f93cf78065aecf0"
+scoring_config_id = "sc_5a11040be05697c9a1074cdd7b320c85cbb2b0b311a97e3f43251da11bed2395"
+
+[retrieval.sufficiency.hybrid.vector]
+min_top_score = 0.858223
+min_chunk_score = 0.858223
+min_supporting_chunks = 1
+
+[retrieval.sufficiency.reranked]
+min_top_score = 0.518618
+min_chunk_score = 0.518618
+min_supporting_chunks = 1
+calibration_run_id = "eval_a4d00103eb5645a89f93cf78065aecf0"
+scoring_config_id = "sc_0a96b03f5c0e8743553bf33a943845c6a1d23b936e880f22bfcb4939e1f000fb"
+
 [answering]
 max_question_characters = 1000
 strict_citations = true
