@@ -1,6 +1,6 @@
 # Reference corpus
 
-Phase 10 update: [benchmark_full.jsonl](benchmark_full.jsonl) holds 50 questions: the 30 smoke questions, unchanged, plus 20 new `full-*` questions. They are drafted and awaiting the owner's review; see the [review log](review_log.md#full-benchmark-review-log-phase-10). `techdocqa eval` still defaults to the smoke set; pass `--dataset datasets/benchmark_full.jsonl` for the full one.
+Phase 10 update: [benchmark_full.jsonl](benchmark_full.jsonl) holds 50 questions: the 30 smoke questions, unchanged, plus 20 new `full-*` questions. The owner reviewed and accepted the 20 on 2026-11-13, and the file is frozen; see the [review log](review_log.md#full-benchmark-review-log-phase-10). `techdocqa eval` still defaults to the smoke set; pass `--dataset datasets/benchmark_full.jsonl` for the full one.
 
 Phase 6 update: [benchmark_smoke.jsonl](benchmark_smoke.jsonl) holds the 30 smoke questions, and [review_log.md](review_log.md) records their review: all 30 accepted on 2026-11-03. Labels name manifest `source_key`s and verbatim anchors, never chunk IDs. `techdocqa eval` searches only the `evaluation_included` documents below, so DDIA is excluded. See [Phase 6](../docs/PHASE_6_STATUS.md).
 

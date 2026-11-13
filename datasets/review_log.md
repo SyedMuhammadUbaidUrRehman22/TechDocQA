@@ -52,9 +52,11 @@ Benchmark: [benchmark_full.jsonl](benchmark_full.jsonl), 50 questions: the 30 sm
 
 ## Status
 
-**Drafted 2026-11-13, awaiting the owner's review.** Claude Code drafted the 20 new questions from the stored chunk text of the public reference, under P10-8. All 20 are `"review": "draft"`; no review is claimed. The draft's SHA-256 is `2754e5b2a118f151893b7ae999fbddcd5ce9b2e9133342d38ed3610e46a3ca34`.
+**Reviewed and frozen 2026-11-13.** Claude Code drafted the 20 new questions from the stored chunk text of the public reference, under P10-8 (draft SHA-256 `2754e5b2a118f151893b7ae999fbddcd5ce9b2e9133342d38ed3610e46a3ca34`, commit c550a8e). The project owner (Git user SyedMuhammadUbaidUrRehman22) reviewed them the same day and accepted all 20 without changes.
 
-No search in any mode, bm25 and vector included, has been run on the new questions. Labels were checked only with the dataset loader, the runner's label resolution and text search over the chunks. The questions are frozen, with their final hash, when the review is recorded, and before any hybrid or reranker result is computed on them. Calibration keeps using smoke only, so the 20 are the held-out check.
+The owner's stated basis: every `full-*` item was checked against the cited official documentation (the Kafka 4.3 docs, the Airflow stable core-concepts pages and the other sources). The anchors, grades and relevance hold up, and the four unanswerable questions stay correctly unlabeled. The review did not say whether the completeness and paraphrase checks below were applied; those were applied when drafting. Every `full-*` line is now `"review": "reviewed"`. No other byte changed.
+
+**Frozen SHA-256: `15c3bcb21f03a885f6c7878e2e2ab725636a277acb8757e279ff7c6de0b0162a`.** No search in any mode, bm25 and vector included, had been run on the new questions before the freeze. Labels were checked only with the dataset loader, the runner's label resolution and text search over the chunks. Calibration keeps using smoke only, so the 20 are the held-out check.
 
 ## How the 20 were drafted
 
@@ -102,7 +104,7 @@ Grades as in smoke: 2 answers the question, 1 supports or answers part of it.
 
 The four checks for answerable questions in the smoke section above apply here as well. For each in-domain negative, confirm that nothing in the 20 public documents answers it, even though it is about one of the four technologies.
 
-To accept a question, change its `draft` to `reviewed`. To change one, edit it and log the disagreement below. Either edit changes the dataset hash, which is intended. The final hash is recorded here when the file is frozen.
+To accept a question, change its `draft` to `reviewed`. To change one, edit it and log the disagreement below. Either edit changes the dataset hash, which is intended. Any later change makes a new dataset version, which needs its own review.
 
 ## Points for the reviewer
 
@@ -124,3 +126,4 @@ To accept a question, change its `draft` to `reviewed`. To change one, edit it a
 
 | Date | Question | Reviewer's position | Resolution |
 |---|---|---|---|
+| 2026-11-13 | All 20 `full-*` | Accepted as drafted, checked against the cited official documentation | No change |

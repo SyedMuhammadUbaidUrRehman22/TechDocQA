@@ -80,11 +80,12 @@ Implementation, step 3 (reranking interface, with no model yet):
   - The stored-vector lookup was checked on two real queries. Over the 40 chunks vector search ranked, it matched Chroma's relevance to within 2.2e-7.
   - The 8 and 9 chunks in each query's hybrid top 20 that only BM25 ranked got lookup relevances below the lowest vector-ranked score, as an exact search implies. Until steps 2 and 3, the hybrid rows report `failed: MODE_NOT_AVAILABLE`. `--answers` and `--refusal` take a search mode, so they refuse `hybrid+rerank`; reranking there follows the configuration (P10-9).
 
-Implementation, step 4 (full benchmark, drafted and awaiting review):
+Implementation, step 4 (full benchmark, reviewed and frozen):
 
-- **Draft (P10-8).** `datasets/benchmark_full.jsonl` holds the 30 smoke lines byte for byte, then 20 new `full-*` questions: 4 answerable per technology, each set with an identifier and a how-to, plus 4 in-domain negatives. That gives 50 questions, 14 of them unanswerable (28%). Claude Code drafted them on 2026-11-13. All 20 are `draft`, and the draft's SHA-256 is `2754e5b2...46a3ca34`. The [review log](../datasets/review_log.md#full-benchmark-review-log-phase-10) lists every question, label, check and point for the owner.
+- **Draft (P10-8).** `datasets/benchmark_full.jsonl` holds the 30 smoke lines byte for byte, then 20 new `full-*` questions: 4 answerable per technology, each set with an identifier and a how-to, plus 4 in-domain negatives. That gives 50 questions, 14 of them unanswerable (28%). Claude Code drafted them on 2026-11-13 (draft `2754e5b2...46a3ca34`, c550a8e). The [review log](../datasets/review_log.md#full-benchmark-review-log-phase-10) lists every question, label, check and point for the owner.
 - **Checks.** Every anchor resolves to exactly one current chunk, and no two items of one question share a chunk, which would cap nDCG below 1. No question shares a four-word run with a labeled chunk, identifiers aside. The negatives' key terms have no hits in the 816 public chunks. The smoke file's hash is unchanged.
-- **Held out.** No search in any mode has been run on the 20. The owner's review, the switch to `reviewed` and the final hash come in a separate commit. Steps 7 and 8 wait for it; steps 5 and 6 use smoke only.
+- **Review and freeze.** The owner reviewed all 20 the same day against the cited official documentation and accepted them without changes. The only edit is `draft` to `reviewed` on the 20 lines. **Frozen SHA-256 `15c3bcb2...e0b0162a`**.
+- **Held out.** No search in any mode had been run on the 20 before the freeze. Calibration (step 6) still uses smoke only.
 
 ## Phase 9 completion (2026-11-12)
 
