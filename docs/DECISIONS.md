@@ -1,5 +1,14 @@
 # TechDocQA architectural decisions
 
+## Phase 10 contracts (2026-11-13)
+
+The project owner approved decisions P10-1 to P10-12 of the [Phase 10 plan](PHASE_10_PLAN.md#decisions-to-approve-before-coding) on 2026-11-13, as recommended. The plan's rows are the contracts, and they settle D-11 (fusion) and D-12 (reranking). This section records the owner's choices among the plan's options and, later, what implementation changed.
+
+- **Reranker download authorized (P10-5).** The dependency gate may download one reranker model, preferring a small English cross-encoder on the installed `onnxruntime`, with no torch. Licence, hashes, offline use, determinism, latency and memory are checked before anything depends on it.
+- **Provider demo: full switch (P10-10).** OpenAI chat and embeddings in a second configuration file, with a rebuilt public-only index and its own calibration. DDIA is excluded by construction and by a tested guard. The owner will create the key, set `OPENAI_API_KEY` and set a spend cap.
+- **Reviewers (P10-8, P10-9).** The owner reviews the 20 new benchmark questions and rates the 20 answers, as the requirement intends. No AI reviewer is designated for Phase 10.
+- **Git.** Work continues on a local branch, `feat/phase-10`, created from `feat/phase-9`, with local commits and nothing pushed.
+
 ## Phase 9 completion (2026-11-12)
 
 These entries record how the rest of Phase 9 was implemented under the [contracts](#phase-9-contracts-2026-11-07) below. Evidence is in the [Phase 9 report](PHASE_9_STATUS.md). The owner decided the gold-set annotator, AC-07.4 and AC-08.3 on 2026-11-12, and later that day approved the adopted threshold, the similarity-scale guard and keyphrase policy v2, kept the P9-6 rule for secondary categories, and made the two proposed improvements a separate implementation task. On 2026-11-13 the owner confirmed Fable 5.2 as the round-2 annotator, and the held-out round 2 was scored once. The owner then accepted AC-07.4 as met at the point estimate and closed AC-08.3 as not met with no further work, which completes Phase 9. Each entry records its decision.
