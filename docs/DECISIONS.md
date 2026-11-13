@@ -143,6 +143,57 @@ Implementation, step 6 (runs). The protocol below was fixed before the full benc
 - **Refusal with the model.** `eval --refusal` asks the smoke questions, as in Phase 8, in `hybrid` and `hybrid+rerank`. The in-domain negatives are judged at the gate from the full run's relevances; they are not sent to the chat model.
 - **Degraded hybrid.** One `base_url` serves chat and embeddings, so a dead-provider profile would stop chat too. A scratch script instead fails only the embedding call, on smoke, and records the gate that applies (bm25's thresholds) and its verdicts. It is a scripted check, not a CLI run.
 
+Implementation, step 6 (results, 2026-11-13). Nothing below changed a tunable:
+
+- **Full run.** `eval_b8b8c7dbd9684b848d28ad710cd40d8b` ran all four configurations in one invocation at `bc85dc3`, with no tracked file changed. It took 243.0 s, and no configuration failed, so nothing was rerun. Free memory was 1.43 GB before and 2.05 GB after, with `nomic-embed-text` (0.31 GB) and `qwen3:1.7b` (1.78 GB) loaded. Of the 50 questions, 36 are answerable, and the runner counts 20 held out from calibration.
+
+  | Configuration | Recall@5 | MRR | nDCG@5 | Precision@5 | Search p95 |
+  |---|---|---|---|---|---|
+  | bm25 | 0.815 | 0.708 | 0.699 | 0.217 | 0.051 s |
+  | vector | 0.884 | 0.757 | 0.739 | 0.239 | 1.917 s |
+  | hybrid | 0.894 | 0.788 | 0.785 | 0.244 | 1.335 s |
+  | hybrid+rerank | 0.898 | 0.811 | 0.820 | 0.244 | 3.064 s |
+
+- **P10-6 verdicts** (nDCG@5, all 36 answerable questions, candidate minus baseline):
+  - **Hybrid against vector: met.** The mean difference is +0.046, with interval [+0.009, +0.085]; 12 questions are better, 21 tied and 3 worse, and the p95 is 1.335 s. Hybrid is therefore eligible to replace `vector` as the default mode. That change is the owner's decision, and the default stays `vector` until then.
+  - **Hybrid with reranking against hybrid: not met.** The mean difference is +0.035, but the interval [-0.029, +0.099] includes 0 (10 better, 21 tied, 5 worse; p95 3.064 s). `rerank` stays false.
+  - Vector against BM25 (descriptive): +0.040, interval [-0.047, +0.129], 11 better, 14 tied, 11 worse.
+- **Held-out view.** This covers the 16 new answerable questions, from the stored JSON, with smoke's 20 alongside:
+
+  | Configuration | Held-out Recall@5 | Held-out MRR | Held-out nDCG@5 | Smoke nDCG@5 |
+  |---|---|---|---|---|
+  | bm25 | 0.677 | 0.708 | 0.617 | 0.765 |
+  | vector | 0.833 | 0.724 | 0.692 | 0.777 |
+  | hybrid | 0.823 | 0.752 | 0.731 | 0.828 |
+  | hybrid+rerank | 0.802 | 0.762 | 0.740 | 0.884 |
+
+  On nDCG@5, every configuration scores lower on the new questions and keeps its order. Recall@5 does not keep it: there `vector` (0.833) is ahead of `hybrid` (0.823) and `hybrid+rerank` (0.802). BM25's MRR is 0.708 on both sets. The reranker leads hybrid on nDCG@5 by 0.056 on smoke but by only 0.009 on the held-out questions.
+- **Gates on the held-out questions,** from the full run's relevances, with the thresholds in force:
+  - **In-domain negatives.** `bm25`, `vector` and `hybrid` refuse all 4. Under the hybrid gate (vector relevance, 0.858223), their top relevances fall short of the threshold by between 0.0009 and 0.038. The closest is `full-postgresql-05` (pg_dump) at 0.857328.
+  - **Finding: `hybrid+rerank` passes `full-postgresql-05`** at 0.914 on the reranker's scale, against a threshold of 0.518618. Its top chunk is the getting-started tutorial's passage on setting `PGHOST` for a remote server, which says nothing about `pg_dump`. Reranking is off by default, so the default path refuses the question. As fixed in the protocol, this is reported and nothing is recalibrated.
+  - **Answerable questions.** `vector`, `hybrid` and `hybrid+rerank` pass 15 of 16. All three refuse `full-postgresql-02` (`COPY`), though its labeled chunk is retrieved (Recall@5 1.0): its top five reach only 0.836 on vector relevance and 0.019 on the reranker's scale. `full-kafka-02` passes the hybrid gate with a margin of 0.006. `bm25` passes only 7 of 16 at its Phase 8 threshold of 0.297285.
+  - **Smoke negatives.** All four configurations refuse all 10; these are the calibration questions.
+- **Label gap in `full-kafka-04`.** The question asks why Kafka consumers pull rather than have brokers push. Its Recall@5 is 0 in every configuration. Its two labeled anchors are in chunks 29 and 30 of the design page's "Push vs. pull" section. The section's first chunk, chunk 28, is unlabeled, yet it states the choice and a reason for it (a push-based broker controls the rate, which suits diverse consumers poorly). `vector`, `hybrid` and `hybrid+rerank` rank it second, and `bm25` ranks it fourth. The benchmark is frozen, so the labels stand, and this question's scores understate retrieval.
+- **Refusal with the model** (`eval --refusal` on smoke, at `c32b7fd`, with no tracked file changed):
+  - `hybrid`, `refusal_fa0ff07673a0407ab32a411053a49a52`:
+    - **AC-18.1:** 10 of 10 refused (1.0 against 0.9), all at the gate as `LOW_RELEVANCE`, with no chat call.
+    - **AC-18.2:** 18 of 20 answered (0.9 against 0.85). The model returned `INSUFFICIENT_CONTEXT` for `smoke-spark-02` and `NO_VALID_CITATIONS` for `smoke-postgresql-03`.
+    - Search p95 was 1.98 s and total p95 30.5 s.
+  - `hybrid+rerank`, `refusal_62b3e54624284c8c8e18b14da328a873`, with `thresholds_from: reranked`:
+    - The counts are the same: AC-18.1 10 of 10 and AC-18.2 18 of 20.
+    - The two failures were `INSUFFICIENT_CONTEXT` for `smoke-kafka-03` and `NO_VALID_CITATIONS` for `smoke-postgresql-03`.
+    - Search p95 was 3.79 s and total p95 19.1 s.
+- **Degraded hybrid** (the protocol's scratch script, on smoke, at `c32b7fd`). `embed_query` raised, so the vector retriever failed on every question, while chat used the real model. Step 7's code edits began during the run, after the script had loaded the modules it uses.
+  - `hybrid`, `refusal_25281f684f7a46fcb82f6c197a75356e`:
+    - All 30 searches degraded with `EMBEDDING_PROVIDER_UNAVAILABLE`, and every question was judged by BM25's Phase 8 thresholds (0.297285, `thresholds_from: bm25`).
+    - **AC-18.1:** 10 of 10 refused, at the gate with no chat call.
+    - **AC-18.2:** 19 of 20 answered (0.95). The model returned `INSUFFICIENT_CONTEXT` for `smoke-airflow-03`.
+  - `hybrid+rerank`, `refusal_033417cf118148d0b47cada31c35d4dd`:
+    - All 30 degraded in the same way. The reranker ordered BM25's candidates, and its own thresholds judged them (`thresholds_from: reranked`), as step 3 fixed.
+    - **AC-18.1:** 10 of 10 refused.
+    - **AC-18.2:** 17 of 20 answered (0.85, exactly the target). All three misses passed the gate with a top relevance of at least 0.996. The model returned `INSUFFICIENT_CONTEXT` for `smoke-kafka-03` and `smoke-kafka-05`, and `NO_VALID_CITATIONS` for `smoke-postgresql-03`.
+  - **Limits.** Smoke calibrated both BM25's thresholds (Phase 8) and the reranked ones, so these runs check the degraded path, not refusal on new questions. For new questions, the full run gives the evidence: BM25's gate passed only 7 of its 16 held-out answerable questions, and degraded hybrid without reranking uses that gate. The reranked gate over BM25 candidates was not measured on held-out questions. Light scripts ran alongside both runs, so their latencies are not comparable with the other runs'.
+
 ## Phase 9 completion (2026-11-12)
 
 These entries record how the rest of Phase 9 was implemented under the [contracts](#phase-9-contracts-2026-11-07) below. Evidence is in the [Phase 9 report](PHASE_9_STATUS.md). The owner decided the gold-set annotator, AC-07.4 and AC-08.3 on 2026-11-12, and later that day approved the adopted threshold, the similarity-scale guard and keyphrase policy v2, kept the P9-6 rule for secondary categories, and made the two proposed improvements a separate implementation task. On 2026-11-13 the owner confirmed Fable 5.2 as the round-2 annotator, and the held-out round 2 was scored once. The owner then accepted AC-07.4 as met at the point estimate and closed AC-08.3 as not met with no further work, which completes Phase 9. Each entry records its decision.
