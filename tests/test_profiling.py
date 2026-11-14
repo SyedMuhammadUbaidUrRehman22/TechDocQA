@@ -74,6 +74,45 @@ def test_whole_scope_reports_timings_only_never_chunk_text_or_ids(bench, model_s
     assert "private notes" not in text and "replicate" not in text and "kafka-1" in text
 
 
+ingestion_spec = importlib.util.spec_from_file_location("time_ingestion", ROOT / "scripts" / "time_ingestion.py")
+time_ingestion = importlib.util.module_from_spec(ingestion_spec)
+ingestion_spec.loader.exec_module(time_ingestion)
+
+
+def test_ingestion_timing_starts_empty_counts_every_embedding_and_reports_hash_differences(model_settings, embedder,
+                                                                                            inline_workers, tmp_path):
+    sources = tmp_path / "frozen"
+    sources.mkdir()
+    (sources / "kafka.md").write_text("# Kafka guide\n\n" + "Kafka brokers replicate partitions across the cluster. " * 30, encoding="utf-8")
+    (sources / "redis.html").write_text("<html><head><title>Redis guide</title></head><body><h1>Redis</h1><p>"
+                                        + "Redis keeps keys in memory and evicts them by policy. " * 30 + "</p></body></html>", encoding="utf-8")
+    manifest = {"documents": [
+        {"snapshot_path": str(sources / "kafka.md"), "format": "md", "evaluation_included": True, "technology": "Kafka",
+         "category": "Distributed streaming", "version_label": "4.3", "license": "Apache-2.0", "content_hash": "0" * 64},
+        {"snapshot_path": str(sources / "redis.html"), "format": "html", "evaluation_included": False, "technology": "Redis",
+         "category": None, "version_label": None, "license": None, "content_hash": "1" * 64}]}
+    manifest_path = tmp_path / "manifest.json"
+    manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+    scratch = tmp_path / "scratch"
+    settings = model_settings.model_copy(update={"allowed_directories": [str(scratch / "corpus")], "data_directory": str(scratch / "data")})
+    reference = time_ingestion.time_ingestion(settings, manifest_path, scratch, scope="reference", enrich=False)
+    assert reference["documents"] == 1 and reference["formats"]["md"] == 1 and reference["failures"]["process"] == 0
+    assert set(reference["stages_seconds"]) == {"ingest", "process", "chunk", "index"} and reference["with_enrich_seconds"] is None
+    assert reference["chunks"] > 0 and reference["embedding"]["texts"] == reference["distinct_chunk_texts"]
+    assert reference["cache_miss_proved"] and reference["met"]
+    # A content hash that differs from the manifest is reported, never corrected.
+    assert reference["content_hash_matches"] == 0 and len(reference["content_hash_differences"]) == 1
+    scratch = tmp_path / "scratch-all"
+    settings = model_settings.model_copy(update={"allowed_directories": [str(scratch / "corpus")], "data_directory": str(scratch / "data")})
+    both = time_ingestion.time_ingestion(settings, manifest_path, scratch, scope="all", enrich=False)
+    assert both["documents"] == 2 and both["formats"]["html"] == 1 and both["eligible_versions"] == 2
+    assert both["cache_miss_proved"] and both["embedding"]["texts"] == both["distinct_chunk_texts"] > reference["distinct_chunk_texts"]
+    # Counts, flags and timings only: no document text in the report.
+    assert "replicate" not in json.dumps(both) and "evicts" not in json.dumps(both)
+    both.update(code={"commit": "c" * 40, "dirty": False})
+    assert "NFR-04 (at most 30 min" in time_ingestion.render_markdown(both)
+
+
 def fake_response(status, total, *, llm_called, reason=None):
     retrieval = 0.3
     latency = {"retrieval": int(retrieval * 1000), "generation": int((total - retrieval) * 1000) if llm_called else 0,
