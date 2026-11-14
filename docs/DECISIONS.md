@@ -119,6 +119,47 @@ Implementation, step 9 (secret and private-text scan, P11-7):
   - It compared every 40-character normalized window of the private supplement's 1,919 chunks (1,057,952 normalized characters) with the tracked files and commits, and found 0 shared runs of 160 or more.
   - The patterns are anchored, so prose such as "task-scheduling" no longer matches `sk-`. The test keys in `tests/test_scans.py` are built at run time, so no key-shaped literal is ever committed.
 
+Implementation, ingestion timing (NFR-04, P11-4):
+
+- **NFR-04 is met for the 20-document public reference** (`ingestion_0b1f86452aa44155a61acde7dae35afe`, commit `74e2ab9`, `dirty: false`, on AC power, 5.3 GB free). The run started from an empty registry and an empty embedding cache, in a scratch data directory.
+
+  | Stage | Seconds |
+  |---|---|
+  | ingest | 1.7 |
+  | process | 35.6 |
+  | chunk | 19.0 |
+  | index | 152.1 |
+  | **To searchable** | **208.5**, against 1,800 |
+  | enrich, timed apart | 7.8 |
+
+  - It produced 816 chunks with 808 distinct texts, embedded in 35 requests. The empty cache was proved by those requests.
+  - All 20 `content_hash` values equal the manifest, and no stage had a failure.
+  - `nomic-embed-text` ran 100% on the GPU (Ollama 0.40.16).
+- **The whole-corpus run (21 documents, P11-3) did not finish.** It started at 10:08 local time, and the laptop shut itself down from heat while it ran. It wrote no report.
+  - Its scratch folder `.tmp/p11-ingest` was left behind, because the script deletes it only when it finishes. The folder holds copies of the 21 source files, the private supplement included, and is not tracked.
+  - Deleting it is left to the owner.
+
+Owner instruction after the thermal shutdown (2026-11-14): *"My laptop has become so hot that it shut down itself. so skip next phase or QA runs as long as the project runs."*
+
+- **Applied as follows.**
+  - No further measurement, answer or test run in Phase 11.
+  - Phase 12 is not started.
+  - Each skipped item is recorded as **not measured**, never as met or waived, under invariant 2.
+- **Skipped.**
+  - The whole-corpus ingestion timing (NFR-04 at 2.6 times the reference, NFR-01).
+  - `index --rebuild` (NFR-06), which has not been repeated since Phase 5. The repeat half of NFR-06 already has evidence: the four-configuration full benchmark gave `545c0d35...fe650` three times in Phase 11.
+  - The clean-clone setup (NFR-07).
+  - The full grouped test suite after the Phase 11 code changes. The last full record is Phase 10's, 649 passed and 3 skipped. In Phase 11, only the `core` group is recorded, in step 2.
+  - `scripts/cli_smoke.ps1` with the real models.
+  - The consolidated per-AC matrix (P11-10). The Phase 11 report has a table for NFR-01 to NFR-11 and the constraints instead.
+- **Checks after the shutdown that load no model.**
+  - `config-check` exited 0.
+  - `list` exited 0. It shows 22 documents: the 21 indexed ones, and the Spark Data Sources overview rejected on 2026-10-24 ([corpus status](REFERENCE_CORPUS_STATUS.md#rejections-and-duplicate-checks)).
+  - A `bm25` `search` exited 0, and its first result was the PostgreSQL B-tree section.
+  - `verify_corpus.py` passed: 21 documents, 2,735 chunks, 816 of them in the reference.
+  - The Chroma collection holds 2,735 entries, and the git tree was clean.
+  - Hybrid search and `ask` were not run after the shutdown, because Ollama was not running.
+
 ## Phase 10 contracts (2026-11-13)
 
 The project owner approved decisions P10-1 to P10-12 of the [Phase 10 plan](PHASE_10_PLAN.md#decisions-to-approve-before-coding) on 2026-11-13, as recommended. The plan's rows are the contracts, and they settle D-11 (fusion) and D-12 (reranking). This section records the owner's choices among the plan's options and, later, what implementation changed.
