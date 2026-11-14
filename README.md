@@ -85,7 +85,7 @@ stateDiagram-v2
 | 9 | [NLP enrichment](docs/PHASE_9_STATUS.md): entities, keyphrases, categories | 🟡 Complete; AC-08.3 not met |
 | 10 | [Hybrid search, reranking, full benchmark](docs/PHASE_10_STATUS.md) | ✅ Built and rated; hybrid is the default; OpenAI demo withdrawn |
 | 11 | [Operational verification and delivery](docs/PHASE_11_STATUS.md) | 🟡 Closed by the owner 2026-11-14; some runs not measured |
-| 12 | Separately approved P2 work | ⬜ Not selected |
+| 12 | [Retries, health check and logs (FR-24)](docs/PHASE_12_PLAN.md) | 🔄 In progress; web UI and cross-version reuse skipped |
 
 ## Measured results
 
@@ -406,6 +406,7 @@ The source filename says v2, but its contents identify **Revision 3**; those con
 - [Phase 10 implementation checkpoint](docs/PHASE_10_STATUS.md)
 - [Phase 11 plan: operational verification and delivery](docs/PHASE_11_PLAN.md)
 - [Phase 11 report, closed early](docs/PHASE_11_STATUS.md)
+- [Phase 12 plan: retries, health check and logs](docs/PHASE_12_PLAN.md)
 - [Development log](DEVELOPMENT_LOG.md)
 - [LangChain loaders, corpus formats and metadata plan](docs/LANGCHAIN_INGESTION_PLAN.md)
 - [Local development setup](deployment/local_setup.md)
