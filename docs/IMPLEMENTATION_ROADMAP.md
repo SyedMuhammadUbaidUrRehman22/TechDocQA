@@ -164,7 +164,7 @@ Detailed plan proposed and approved on 2026-11-14: [Phase 11 plan](PHASES.md#pha
 
 ## Phase 12 — Separately approved P2 work
 
-**Approved and stopped on 2026-11-14** ([Phase 12 plan](PHASES.md#phase-12-plan), [contracts](DECISIONS.md#phase-12-contracts-2026-11-14)). The owner ended the project after approving the plan; nothing implemented was committed.
+**Approved and stopped on 2026-11-14** ([Phase 12 plan](PHASES.md#phase-12-plan), [contracts](DECISIONS.md#phase-12-contracts-2026-11-14)). The owner ended the project after approving the plan. Its code for logs, `retry` and `check` was committed untested at the owner's request; none of AC-24.1 to AC-24.4 is verified.
 - **Selected:** FR-24, all four acceptance criteria, and evidence only for the URL slice, which Phase 3A built.
 - **Skipped by the owner:** the web UI and cross-version reuse. They stay deferred.
 
@@ -180,7 +180,7 @@ Detailed plan proposed and approved on 2026-11-14: [Phase 11 plan](PHASES.md#pha
 
 **As of 2026-11-14, the owner has closed Phase 11, and `main` holds it** ([release decision](PHASES.md#phase-11-status-release-decision)).
 - The [items not measured](PHASES.md#phase-11-status-not-measured) can be run later, one at a time, on AC power, with the laptop cool.
-- **Phase 12 was stopped on 2026-11-14:** the owner ended the project after approving the [Phase 12 plan](PHASES.md#phase-12-plan) for FR-24. The web UI and cross-version reuse were skipped.
+- **Phase 12 was stopped on 2026-11-14:** the owner ended the project after approving the [Phase 12 plan](PHASES.md#phase-12-plan) for FR-24. Its code is committed but untested. The web UI and cross-version reuse were skipped.
 
 The paragraph below is the earlier history.
 

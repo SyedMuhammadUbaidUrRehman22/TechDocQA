@@ -38,6 +38,16 @@ def deny_unexpected_network(request, monkeypatch):
 
 
 @pytest.fixture(autouse=True)
+def release_log_file():
+    """The CLI points TechDocQA's JSON log at the test's data directory; release it so the next test cannot write there
+    and the temporary directory can be removed."""
+    yield
+    logs = sys.modules.get("techdocqa.logs")
+    if logs is not None:
+        logs.close()
+
+
+@pytest.fixture(autouse=True)
 def release_vector_stores():
     """Chroma caches every client system it creates for the life of the process, so each test's temporary index would
     stay in memory and a full run would grow by hundreds of megabytes per module. Stop and drop them after each test.
