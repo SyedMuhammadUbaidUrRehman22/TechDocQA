@@ -146,7 +146,7 @@ Owner instruction after the thermal shutdown (2026-11-14): *"My laptop has becom
   - Phase 12 is not started.
   - Each skipped item is recorded as **not measured**, never as met or waived, under invariant 2.
 - **Skipped.**
-  - The whole-corpus ingestion timing (NFR-04 at 2.6 times the reference, NFR-01).
+  - The whole-corpus ingestion timing, 2,735 chunks or 3.35 times the reference (NFR-04 and the ingestion half of NFR-01).
   - `index --rebuild` (NFR-06), which has not been repeated since Phase 5. The repeat half of NFR-06 already has evidence: the four-configuration full benchmark gave `545c0d35...fe650` three times in Phase 11.
   - The clean-clone setup (NFR-07).
   - The full grouped test suite after the Phase 11 code changes. The last full record is Phase 10's, 649 passed and 3 skipped. In Phase 11, only the `core` group is recorded, in step 2.
