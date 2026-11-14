@@ -47,6 +47,22 @@ Implementation, step 2 (dependencies, P11-8):
   - **setuptools 82.0.1** (2): build-time only, in MANIFEST.in filtering and a Windows legacy wheel path. The project builds only its own source.
   - **soupsieve 3.0.3** (1): slow matching of descendant-combinator selectors. `ingestion/html.py` has five `select()` calls, all lists of type and attribute selectors with no descendant combinator. Phase 10's "the one selector" was imprecise. soupsieve's version is also part of the recorded HTML extraction identity.
 
+Implementation, steps 3 and 4 (NFR-02 and the fix that preserves results, P11-2):
+
+- **As measured, NFR-02 was missed by vector and hybrid search** (`latency_c2a89d0d934e43a6b9e2b85b33e1a724`, evaluation scope, 150 searches each). The p95s were bm25 0.039 s, vector 1.155 s, hybrid 1.954 s and hybrid+rerank 2.213 s, against 1 s and 5 s.
+- **Diagnosis from the stage timings.** Building the query embedder took a mean of 0.74 to 0.89 s per vector or hybrid search, about 81% of the search time. Each build lists Ollama's installed models to check the pinned digest. The embedding call itself took about 0.13 s, and Chroma's search about 0.01 s.
+- **Fix (`c6d6e2f`).** One verified query embedder is reused per process (`embeddings.query_embedder`).
+  - It is rebuilt, and so verified again, for other model settings, when `build_embeddings` has been replaced, and after any failed query embedding.
+  - A model swapped while a long process runs is caught at its next failure or the next process start. The CLI starts one process per command, so a command still verifies.
+  - `index` still builds its own embedder once per run. A test covers the reuse, the rebuilds and a changed digest.
+- **Proof that no result moved.**
+  - The full benchmark in four configurations gave `545c0d35...fe650` at `1aa05fe` before the fix (`eval_a4609731d28b41219ade45b3716ed491`), and again twice after it (`eval_b2134852c8f94473b7e83e007de62ad5`, `eval_ab0a5b06ef5b4210b07c1c1d0fc13a02`). This is the same fingerprint as Phase 10's full run (`eval_b8b8c7db...`), and it hashes every score and relevance.
+  - The smoke `eval` gives `48ce89dc...a3af410` (`eval_ea842ee86ced47a5a4813ba80623d076`).
+  - All runs were `dirty: false`.
+- **After the fix, NFR-02 is met in all four configurations** on the evaluation scope (`latency_6a9e5bcbcc7c405aaefa9b2a3093754a`, commit `c6d6e2f`). The p95s are bm25 0.044 s, vector 0.148 s, hybrid 0.145 s and hybrid+rerank 1.090 s, with 0 degraded searches and 0 changed rankings. The full benchmark now takes 64 s instead of 176 s.
+- **Not changed.** `ask` still verifies the chat model on each question (`check_installed`). That cost falls in generation time, which NFR-03 judges against 60 s.
+- **The whole-index run (P11-3) was stopped** on 2026-11-14 by Claude Code's low-memory guard while the session was idle. It produced no report and is to be repeated when memory allows.
+
 ## Phase 10 contracts (2026-11-13)
 
 The project owner approved decisions P10-1 to P10-12 of the [Phase 10 plan](PHASE_10_PLAN.md#decisions-to-approve-before-coding) on 2026-11-13, as recommended. The plan's rows are the contracts, and they settle D-11 (fusion) and D-12 (reranking). This section records the owner's choices among the plan's options and, later, what implementation changed.
