@@ -1,0 +1,1781 @@
+{
+  "run_id": "latency_dc326e2c905047daa558eeff511138b8",
+  "kind": "retrieval",
+  "procedure": "p11-latency-v1",
+  "started_at": "2026-11-14T04:44:43.096673+00:00",
+  "finished_at": "2026-11-14T04:49:49.213730+00:00",
+  "duration_seconds": 306.117,
+  "scope": "whole",
+  "scope_sources": null,
+  "passes": 3,
+  "dataset": {
+    "dataset_id": "benchmark_full",
+    "sha256": "15c3bcb21f03a885f6c7878e2e2ab725636a277acb8757e279ff7c6de0b0162a",
+    "questions": 50
+  },
+  "runtime_before": {
+    "python": "3.13.3",
+    "platform": "Windows-11-10.0.26300-SP0",
+    "libraries": {
+      "langchain-core": "1.6.9",
+      "langchain-community": "0.4.2",
+      "langchain-chroma": "1.1.0",
+      "langchain-ollama": "1.1.0",
+      "langchain-text-splitters": "1.1.3",
+      "chromadb": "1.5.9",
+      "rank-bm25": "0.2.2",
+      "pydantic": "2.14.0",
+      "numpy": "2.5.4",
+      "ollama": "0.6.3",
+      "onnxruntime": "1.31.1",
+      "tokenizers": "0.23.3",
+      "pypdf": "6.21.4"
+    },
+    "ollama": {
+      "version": "0.40.16",
+      "loaded": [
+        {
+          "model": "nomic-embed-text:latest",
+          "size": 335743549,
+          "size_vram": 335743549,
+          "processor": "100% GPU"
+        }
+      ]
+    },
+    "machine": {
+      "processor": "Intel64 Family 6 Model 140 Stepping 1, GenuineIntel",
+      "machine": "AMD64",
+      "logical_cpus": 8,
+      "ram_total_bytes": 12639526912,
+      "ram_available_bytes": 3413200896,
+      "ac_power": true
+    }
+  },
+  "runtime_after": {
+    "python": "3.13.3",
+    "platform": "Windows-11-10.0.26300-SP0",
+    "libraries": {
+      "langchain-core": "1.6.9",
+      "langchain-community": "0.4.2",
+      "langchain-chroma": "1.1.0",
+      "langchain-ollama": "1.1.0",
+      "langchain-text-splitters": "1.1.3",
+      "chromadb": "1.5.9",
+      "rank-bm25": "0.2.2",
+      "pydantic": "2.14.0",
+      "numpy": "2.5.4",
+      "ollama": "0.6.3",
+      "onnxruntime": "1.31.1",
+      "tokenizers": "0.23.3",
+      "pypdf": "6.21.4"
+    },
+    "ollama": {
+      "version": "0.40.16",
+      "loaded": [
+        {
+          "model": "nomic-embed-text:latest",
+          "size": 335743549,
+          "size_vram": 335743549,
+          "processor": "100% GPU"
+        }
+      ]
+    },
+    "machine": {
+      "processor": "Intel64 Family 6 Model 140 Stepping 1, GenuineIntel",
+      "machine": "AMD64",
+      "logical_cpus": 8,
+      "ram_total_bytes": 12639526912,
+      "ram_available_bytes": 2950623232,
+      "ac_power": false
+    }
+  },
+  "configurations": [
+    {
+      "configuration": "bm25",
+      "target_seconds": 1.0,
+      "warm_up_seconds": 1.5575,
+      "latency_seconds": {
+        "n": 150,
+        "median": 0.0367,
+        "p95": 0.0603,
+        "max": 0.0775,
+        "mean": 0.0389
+      },
+      "met": true,
+      "degraded_searches": 0,
+      "changed_rankings": 0,
+      "stages": {
+        "registry_read": {
+          "n": 150,
+          "median": 0.019,
+          "p95": 0.0327,
+          "max": 0.0584,
+          "mean": 0.0209,
+          "calls_per_query": 1.0,
+          "share_of_mean": 0.537,
+          "inside": null
+        },
+        "bm25_search": {
+          "n": 150,
+          "median": 0.0172,
+          "p95": 0.0252,
+          "max": 0.0331,
+          "mean": 0.0175,
+          "calls_per_query": 1.0,
+          "share_of_mean": 0.45,
+          "inside": null
+        },
+        "config_id": {
+          "n": 150,
+          "median": 0.0001,
+          "p95": 0.0001,
+          "max": 0.0002,
+          "mean": 0.0001,
+          "calls_per_query": 1.0,
+          "share_of_mean": 0.003,
+          "inside": null
+        },
+        "unattributed": {
+          "n": 150,
+          "median": 0.0004,
+          "p95": 0.0006,
+          "max": 0.0008,
+          "mean": 0.0004,
+          "calls_per_query": null,
+          "share_of_mean": 0.01,
+          "inside": null
+        }
+      }
+    },
+    {
+      "configuration": "vector",
+      "target_seconds": 1.0,
+      "warm_up_seconds": 1.8795,
+      "latency_seconds": {
+        "n": 150,
+        "median": 0.1016,
+        "p95": 0.1238,
+        "max": 0.3351,
+        "mean": 0.1064
+      },
+      "met": true,
+      "degraded_searches": 0,
+      "changed_rankings": 0,
+      "stages": {
+        "registry_read": {
+          "n": 150,
+          "median": 0.019,
+          "p95": 0.0234,
+          "max": 0.0393,
+          "mean": 0.0194,
+          "calls_per_query": 1.0,
+          "share_of_mean": 0.182,
+          "inside": null
+        },
+        "embedding_profile": {
+          "n": 150,
+          "median": 0.0,
+          "p95": 0.0,
+          "max": 0.0,
+          "mean": 0.0,
+          "calls_per_query": 1.0,
+          "share_of_mean": 0.0,
+          "inside": null
+        },
+        "vector_store_open": {
+          "n": 150,
+          "median": 0.0045,
+          "p95": 0.0051,
+          "max": 0.0097,
+          "mean": 0.0046,
+          "calls_per_query": 1.0,
+          "share_of_mean": 0.043,
+          "inside": null
+        },
+        "vector_store_empty_check": {
+          "n": 150,
+          "median": 0.001,
+          "p95": 0.0016,
+          "max": 0.002,
+          "mean": 0.0011,
+          "calls_per_query": 1.0,
+          "share_of_mean": 0.01,
+          "inside": null
+        },
+        "query_embedding": {
+          "n": 150,
+          "median": 0.0592,
+          "p95": 0.0813,
+          "max": 0.2876,
+          "mean": 0.0639,
+          "calls_per_query": 1.0,
+          "share_of_mean": 0.6,
+          "inside": null
+        },
+        "vector_search": {
+          "n": 150,
+          "median": 0.0164,
+          "p95": 0.021,
+          "max": 0.0263,
+          "mean": 0.0168,
+          "calls_per_query": 1.0,
+          "share_of_mean": 0.158,
+          "inside": null
+        },
+        "config_id": {
+          "n": 150,
+          "median": 0.0001,
+          "p95": 0.0001,
+          "max": 0.0001,
+          "mean": 0.0001,
+          "calls_per_query": 1.0,
+          "share_of_mean": 0.001,
+          "inside": null
+        },
+        "unattributed": {
+          "n": 150,
+          "median": 0.0005,
+          "p95": 0.0006,
+          "max": 0.0008,
+          "mean": 0.0005,
+          "calls_per_query": null,
+          "share_of_mean": 0.005,
+          "inside": null
+        }
+      }
+    },
+    {
+      "configuration": "hybrid",
+      "target_seconds": 1.0,
+      "warm_up_seconds": 0.1639,
+      "latency_seconds": {
+        "n": 150,
+        "median": 0.1229,
+        "p95": 0.1422,
+        "max": 0.2272,
+        "mean": 0.1247
+      },
+      "met": true,
+      "degraded_searches": 0,
+      "changed_rankings": 0,
+      "stages": {
+        "registry_read": {
+          "n": 150,
+          "median": 0.0196,
+          "p95": 0.0234,
+          "max": 0.1095,
+          "mean": 0.0205,
+          "calls_per_query": 1.0,
+          "share_of_mean": 0.164,
+          "inside": null
+        },
+        "embedding_profile": {
+          "n": 150,
+          "median": 0.0,
+          "p95": 0.0,
+          "max": 0.0,
+          "mean": 0.0,
+          "calls_per_query": 1.0,
+          "share_of_mean": 0.0,
+          "inside": null
+        },
+        "bm25_search": {
+          "n": 150,
+          "median": 0.0176,
+          "p95": 0.0226,
+          "max": 0.0576,
+          "mean": 0.0181,
+          "calls_per_query": 1.0,
+          "share_of_mean": 0.145,
+          "inside": null
+        },
+        "bm25_rescore": {
+          "n": 150,
+          "median": 0.0,
+          "p95": 0.0112,
+          "max": 0.0159,
+          "mean": 0.0023,
+          "calls_per_query": 0.26,
+          "share_of_mean": 0.018,
+          "inside": null
+        },
+        "vector_store_open": {
+          "n": 150,
+          "median": 0.0047,
+          "p95": 0.0055,
+          "max": 0.0063,
+          "mean": 0.0048,
+          "calls_per_query": 1.0,
+          "share_of_mean": 0.039,
+          "inside": null
+        },
+        "vector_store_empty_check": {
+          "n": 150,
+          "median": 0.001,
+          "p95": 0.0014,
+          "max": 0.0019,
+          "mean": 0.0011,
+          "calls_per_query": 1.0,
+          "share_of_mean": 0.009,
+          "inside": null
+        },
+        "query_embedding": {
+          "n": 150,
+          "median": 0.0592,
+          "p95": 0.0614,
+          "max": 0.0789,
+          "mean": 0.0587,
+          "calls_per_query": 1.0,
+          "share_of_mean": 0.471,
+          "inside": null
+        },
+        "vector_search": {
+          "n": 150,
+          "median": 0.0167,
+          "p95": 0.0207,
+          "max": 0.0268,
+          "mean": 0.0167,
+          "calls_per_query": 1.0,
+          "share_of_mean": 0.134,
+          "inside": null
+        },
+        "stored_relevances": {
+          "n": 150,
+          "median": 0.0,
+          "p95": 0.0091,
+          "max": 0.0145,
+          "mean": 0.0017,
+          "calls_per_query": 1.0,
+          "share_of_mean": 0.014,
+          "inside": null
+        },
+        "config_id": {
+          "n": 150,
+          "median": 0.0001,
+          "p95": 0.0002,
+          "max": 0.0003,
+          "mean": 0.0002,
+          "calls_per_query": 1.0,
+          "share_of_mean": 0.002,
+          "inside": null
+        },
+        "unattributed": {
+          "n": 150,
+          "median": 0.0006,
+          "p95": 0.0007,
+          "max": 0.001,
+          "mean": 0.0007,
+          "calls_per_query": null,
+          "share_of_mean": 0.006,
+          "inside": null
+        }
+      }
+    },
+    {
+      "configuration": "hybrid+rerank",
+      "target_seconds": 5.0,
+      "warm_up_seconds": 0.968,
+      "latency_seconds": {
+        "n": 150,
+        "median": 0.8812,
+        "p95": 2.3886,
+        "max": 84.0338,
+        "mean": 1.7348
+      },
+      "met": true,
+      "degraded_searches": 0,
+      "changed_rankings": 0,
+      "stages": {
+        "registry_read": {
+          "n": 150,
+          "median": 0.0347,
+          "p95": 0.094,
+          "max": 0.1126,
+          "mean": 0.0406,
+          "calls_per_query": 1.0,
+          "share_of_mean": 0.023,
+          "inside": null
+        },
+        "embedding_profile": {
+          "n": 150,
+          "median": 0.0,
+          "p95": 0.0001,
+          "max": 0.0002,
+          "mean": 0.0,
+          "calls_per_query": 1.0,
+          "share_of_mean": 0.0,
+          "inside": null
+        },
+        "bm25_search": {
+          "n": 150,
+          "median": 0.0284,
+          "p95": 0.0551,
+          "max": 0.0774,
+          "mean": 0.031,
+          "calls_per_query": 1.0,
+          "share_of_mean": 0.018,
+          "inside": null
+        },
+        "bm25_rescore": {
+          "n": 150,
+          "median": 0.0127,
+          "p95": 0.0249,
+          "max": 0.0417,
+          "mean": 0.0138,
+          "calls_per_query": 1.0,
+          "share_of_mean": 0.008,
+          "inside": null
+        },
+        "vector_store_open": {
+          "n": 150,
+          "median": 0.0078,
+          "p95": 0.0208,
+          "max": 0.0243,
+          "mean": 0.0089,
+          "calls_per_query": 1.0,
+          "share_of_mean": 0.005,
+          "inside": null
+        },
+        "vector_store_empty_check": {
+          "n": 150,
+          "median": 0.0015,
+          "p95": 0.0035,
+          "max": 0.0309,
+          "mean": 0.0019,
+          "calls_per_query": 1.0,
+          "share_of_mean": 0.001,
+          "inside": null
+        },
+        "query_embedding": {
+          "n": 150,
+          "median": 0.1027,
+          "p95": 0.2773,
+          "max": 0.3797,
+          "mean": 0.1287,
+          "calls_per_query": 1.0,
+          "share_of_mean": 0.074,
+          "inside": null
+        },
+        "vector_search": {
+          "n": 150,
+          "median": 0.0171,
+          "p95": 0.051,
+          "max": 0.0602,
+          "mean": 0.0212,
+          "calls_per_query": 1.0,
+          "share_of_mean": 0.012,
+          "inside": null
+        },
+        "stored_relevances": {
+          "n": 150,
+          "median": 0.0126,
+          "p95": 0.0351,
+          "max": 0.0457,
+          "mean": 0.0155,
+          "calls_per_query": 1.0,
+          "share_of_mean": 0.009,
+          "inside": null
+        },
+        "rerank": {
+          "n": 150,
+          "median": 0.6451,
+          "p95": 1.8134,
+          "max": 83.3974,
+          "mean": 1.4715,
+          "calls_per_query": 1.0,
+          "share_of_mean": 0.848,
+          "inside": null
+        },
+        "config_id": {
+          "n": 150,
+          "median": 0.0003,
+          "p95": 0.0008,
+          "max": 0.0012,
+          "mean": 0.0004,
+          "calls_per_query": 1.0,
+          "share_of_mean": 0.0,
+          "inside": null
+        },
+        "unattributed": {
+          "n": 150,
+          "median": 0.0012,
+          "p95": 0.0031,
+          "max": 0.0033,
+          "mean": 0.0014,
+          "calls_per_query": null,
+          "share_of_mean": 0.001,
+          "inside": null
+        }
+      }
+    }
+  ],
+  "questions": [
+    {
+      "id": "smoke-kafka-01",
+      "seconds": {
+        "bm25": [
+          0.0421,
+          0.0661,
+          0.0658
+        ],
+        "vector": [
+          0.3351,
+          0.3038,
+          0.2891
+        ],
+        "hybrid": [
+          0.1288,
+          0.127,
+          0.1303
+        ],
+        "hybrid+rerank": [
+          0.6229,
+          0.676,
+          0.7064
+        ]
+      }
+    },
+    {
+      "id": "smoke-kafka-02",
+      "seconds": {
+        "bm25": [
+          0.0361,
+          0.067,
+          0.068
+        ],
+        "vector": [
+          0.133,
+          0.1342,
+          0.1524
+        ],
+        "hybrid": [
+          0.1162,
+          0.1203,
+          0.1212
+        ],
+        "hybrid+rerank": [
+          0.9011,
+          0.9636,
+          0.9984
+        ]
+      }
+    },
+    {
+      "id": "smoke-kafka-03",
+      "seconds": {
+        "bm25": [
+          0.0317,
+          0.0525,
+          0.0771
+        ],
+        "vector": [
+          0.1238,
+          0.1172,
+          0.104
+        ],
+        "hybrid": [
+          0.1097,
+          0.1159,
+          0.1213
+        ],
+        "hybrid+rerank": [
+          0.8314,
+          0.8737,
+          0.9446
+        ]
+      }
+    },
+    {
+      "id": "smoke-kafka-04",
+      "seconds": {
+        "bm25": [
+          0.0311,
+          0.0462,
+          0.0433
+        ],
+        "vector": [
+          0.1193,
+          0.1133,
+          0.104
+        ],
+        "hybrid": [
+          0.1223,
+          0.1178,
+          0.1194
+        ],
+        "hybrid+rerank": [
+          0.8904,
+          0.8733,
+          0.9872
+        ]
+      }
+    },
+    {
+      "id": "smoke-kafka-05",
+      "seconds": {
+        "bm25": [
+          0.0372,
+          0.0495,
+          0.0517
+        ],
+        "vector": [
+          0.0996,
+          0.0995,
+          0.1006
+        ],
+        "hybrid": [
+          0.1313,
+          0.1209,
+          0.121
+        ],
+        "hybrid+rerank": [
+          0.8264,
+          1.0231,
+          1.064
+        ]
+      }
+    },
+    {
+      "id": "smoke-airflow-01",
+      "seconds": {
+        "bm25": [
+          0.0342,
+          0.0466,
+          0.0482
+        ],
+        "vector": [
+          0.0976,
+          0.0988,
+          0.1007
+        ],
+        "hybrid": [
+          0.1179,
+          0.121,
+          0.1202
+        ],
+        "hybrid+rerank": [
+          0.8445,
+          0.9703,
+          3.0546
+        ]
+      }
+    },
+    {
+      "id": "smoke-airflow-02",
+      "seconds": {
+        "bm25": [
+          0.0331,
+          0.0421,
+          0.0433
+        ],
+        "vector": [
+          0.0956,
+          0.0995,
+          0.1072
+        ],
+        "hybrid": [
+          0.1096,
+          0.1208,
+          0.1177
+        ],
+        "hybrid+rerank": [
+          0.7802,
+          0.9368,
+          2.6274
+        ]
+      }
+    },
+    {
+      "id": "smoke-airflow-03",
+      "seconds": {
+        "bm25": [
+          0.0334,
+          0.0384,
+          0.0375
+        ],
+        "vector": [
+          0.0959,
+          0.0996,
+          0.1016
+        ],
+        "hybrid": [
+          0.1102,
+          0.1136,
+          0.1152
+        ],
+        "hybrid+rerank": [
+          0.7871,
+          0.9962,
+          2.43
+        ]
+      }
+    },
+    {
+      "id": "smoke-airflow-04",
+      "seconds": {
+        "bm25": [
+          0.0331,
+          0.0398,
+          0.0398
+        ],
+        "vector": [
+          0.0985,
+          0.1,
+          0.1012
+        ],
+        "hybrid": [
+          0.1151,
+          0.1176,
+          0.1187
+        ],
+        "hybrid+rerank": [
+          0.7187,
+          1.0647,
+          2.4
+        ]
+      }
+    },
+    {
+      "id": "smoke-airflow-05",
+      "seconds": {
+        "bm25": [
+          0.0293,
+          0.0369,
+          0.0391
+        ],
+        "vector": [
+          0.0591,
+          0.0632,
+          0.0617
+        ],
+        "hybrid": [
+          0.0748,
+          0.0803,
+          0.0761
+        ],
+        "hybrid+rerank": [
+          0.7035,
+          0.675,
+          1.9455
+        ]
+      }
+    },
+    {
+      "id": "smoke-spark-01",
+      "seconds": {
+        "bm25": [
+          0.0331,
+          0.0368,
+          0.0367
+        ],
+        "vector": [
+          0.0975,
+          0.1032,
+          0.1053
+        ],
+        "hybrid": [
+          0.1169,
+          0.1217,
+          0.1169
+        ],
+        "hybrid+rerank": [
+          0.7263,
+          0.7501,
+          2.205
+        ]
+      }
+    },
+    {
+      "id": "smoke-spark-02",
+      "seconds": {
+        "bm25": [
+          0.0311,
+          0.0341,
+          0.0354
+        ],
+        "vector": [
+          0.1014,
+          0.1008,
+          0.1062
+        ],
+        "hybrid": [
+          0.114,
+          0.1181,
+          0.1172
+        ],
+        "hybrid+rerank": [
+          0.6899,
+          0.7031,
+          2.082
+        ]
+      }
+    },
+    {
+      "id": "smoke-spark-03",
+      "seconds": {
+        "bm25": [
+          0.0336,
+          0.0363,
+          0.0379
+        ],
+        "vector": [
+          0.1008,
+          0.1011,
+          0.1069
+        ],
+        "hybrid": [
+          0.1195,
+          0.1184,
+          0.1185
+        ],
+        "hybrid+rerank": [
+          0.7178,
+          0.8521,
+          2.2531
+        ]
+      }
+    },
+    {
+      "id": "smoke-spark-04",
+      "seconds": {
+        "bm25": [
+          0.038,
+          0.0386,
+          0.0409
+        ],
+        "vector": [
+          0.1033,
+          0.1018,
+          0.1094
+        ],
+        "hybrid": [
+          0.1261,
+          0.1239,
+          0.1223
+        ],
+        "hybrid+rerank": [
+          0.8357,
+          0.8977,
+          2.5976
+        ]
+      }
+    },
+    {
+      "id": "smoke-spark-05",
+      "seconds": {
+        "bm25": [
+          0.032,
+          0.0348,
+          0.0439
+        ],
+        "vector": [
+          0.1016,
+          0.1,
+          0.1009
+        ],
+        "hybrid": [
+          0.1251,
+          0.1178,
+          0.1188
+        ],
+        "hybrid+rerank": [
+          0.7896,
+          0.8439,
+          2.3886
+        ]
+      }
+    },
+    {
+      "id": "smoke-postgresql-01",
+      "seconds": {
+        "bm25": [
+          0.031,
+          0.0342,
+          0.0498
+        ],
+        "vector": [
+          0.0998,
+          0.1007,
+          0.1049
+        ],
+        "hybrid": [
+          0.13,
+          0.1174,
+          0.119
+        ],
+        "hybrid+rerank": [
+          0.7283,
+          0.7384,
+          2.2238
+        ]
+      }
+    },
+    {
+      "id": "smoke-postgresql-02",
+      "seconds": {
+        "bm25": [
+          0.033,
+          0.0342,
+          0.0423
+        ],
+        "vector": [
+          0.0986,
+          0.1008,
+          0.1032
+        ],
+        "hybrid": [
+          0.1282,
+          0.1211,
+          0.1179
+        ],
+        "hybrid+rerank": [
+          0.7765,
+          0.7744,
+          2.362
+        ]
+      }
+    },
+    {
+      "id": "smoke-postgresql-03",
+      "seconds": {
+        "bm25": [
+          0.0346,
+          0.0368,
+          0.039
+        ],
+        "vector": [
+          0.0992,
+          0.105,
+          0.1037
+        ],
+        "hybrid": [
+          0.1336,
+          0.1199,
+          0.1334
+        ],
+        "hybrid+rerank": [
+          0.7751,
+          0.8273,
+          84.0338
+        ]
+      }
+    },
+    {
+      "id": "smoke-postgresql-04",
+      "seconds": {
+        "bm25": [
+          0.0294,
+          0.0312,
+          0.0467
+        ],
+        "vector": [
+          0.0995,
+          0.1015,
+          0.1016
+        ],
+        "hybrid": [
+          0.1219,
+          0.1185,
+          0.1588
+        ],
+        "hybrid+rerank": [
+          0.751,
+          0.8249,
+          26.1871
+        ]
+      }
+    },
+    {
+      "id": "smoke-postgresql-05",
+      "seconds": {
+        "bm25": [
+          0.0329,
+          0.0347,
+          0.0441
+        ],
+        "vector": [
+          0.1027,
+          0.1015,
+          0.1026
+        ],
+        "hybrid": [
+          0.1311,
+          0.1262,
+          0.128
+        ],
+        "hybrid+rerank": [
+          0.7916,
+          0.7598,
+          1.8346
+        ]
+      }
+    },
+    {
+      "id": "smoke-ood-01",
+      "seconds": {
+        "bm25": [
+          0.0307,
+          0.032,
+          0.037
+        ],
+        "vector": [
+          0.0969,
+          0.1008,
+          0.1054
+        ],
+        "hybrid": [
+          0.1236,
+          0.1145,
+          0.1149
+        ],
+        "hybrid+rerank": [
+          0.7517,
+          0.7374,
+          1.1394
+        ]
+      }
+    },
+    {
+      "id": "smoke-ood-02",
+      "seconds": {
+        "bm25": [
+          0.0355,
+          0.0352,
+          0.0431
+        ],
+        "vector": [
+          0.0984,
+          0.1009,
+          0.1037
+        ],
+        "hybrid": [
+          0.1454,
+          0.1369,
+          0.1353
+        ],
+        "hybrid+rerank": [
+          0.7852,
+          0.7374,
+          1.3971
+        ]
+      }
+    },
+    {
+      "id": "smoke-ood-03",
+      "seconds": {
+        "bm25": [
+          0.0303,
+          0.0329,
+          0.0354
+        ],
+        "vector": [
+          0.0993,
+          0.1013,
+          0.1021
+        ],
+        "hybrid": [
+          0.1479,
+          0.1257,
+          0.1307
+        ],
+        "hybrid+rerank": [
+          0.8009,
+          0.8077,
+          1.099
+        ]
+      }
+    },
+    {
+      "id": "smoke-ood-04",
+      "seconds": {
+        "bm25": [
+          0.0309,
+          0.0332,
+          0.0367
+        ],
+        "vector": [
+          0.1027,
+          0.1016,
+          0.1019
+        ],
+        "hybrid": [
+          0.1323,
+          0.1282,
+          0.1354
+        ],
+        "hybrid+rerank": [
+          0.7733,
+          0.6997,
+          1.1053
+        ]
+      }
+    },
+    {
+      "id": "smoke-ood-05",
+      "seconds": {
+        "bm25": [
+          0.0297,
+          0.031,
+          0.0352
+        ],
+        "vector": [
+          0.1257,
+          0.1,
+          0.1001
+        ],
+        "hybrid": [
+          0.1314,
+          0.1251,
+          0.1251
+        ],
+        "hybrid+rerank": [
+          0.9048,
+          0.7938,
+          1.2678
+        ]
+      }
+    },
+    {
+      "id": "smoke-ood-06",
+      "seconds": {
+        "bm25": [
+          0.0354,
+          0.0339,
+          0.0375
+        ],
+        "vector": [
+          0.099,
+          0.1021,
+          0.1022
+        ],
+        "hybrid": [
+          0.1794,
+          0.1292,
+          0.1309
+        ],
+        "hybrid+rerank": [
+          0.9695,
+          0.7972,
+          1.0695
+        ]
+      }
+    },
+    {
+      "id": "smoke-ood-07",
+      "seconds": {
+        "bm25": [
+          0.0301,
+          0.0314,
+          0.0338
+        ],
+        "vector": [
+          0.0976,
+          0.1035,
+          0.1017
+        ],
+        "hybrid": [
+          0.1158,
+          0.1104,
+          0.112
+        ],
+        "hybrid+rerank": [
+          0.812,
+          0.742,
+          1.1156
+        ]
+      }
+    },
+    {
+      "id": "smoke-ood-08",
+      "seconds": {
+        "bm25": [
+          0.029,
+          0.0314,
+          0.0351
+        ],
+        "vector": [
+          0.0973,
+          0.1005,
+          0.1012
+        ],
+        "hybrid": [
+          0.1322,
+          0.1215,
+          0.1226
+        ],
+        "hybrid+rerank": [
+          0.7722,
+          0.7603,
+          0.9563
+        ]
+      }
+    },
+    {
+      "id": "smoke-ood-09",
+      "seconds": {
+        "bm25": [
+          0.0342,
+          0.0389,
+          0.0382
+        ],
+        "vector": [
+          0.0959,
+          0.1006,
+          0.1019
+        ],
+        "hybrid": [
+          0.1428,
+          0.1377,
+          0.1373
+        ],
+        "hybrid+rerank": [
+          0.8079,
+          0.7542,
+          1.095
+        ]
+      }
+    },
+    {
+      "id": "smoke-ood-10",
+      "seconds": {
+        "bm25": [
+          0.0295,
+          0.0323,
+          0.034
+        ],
+        "vector": [
+          0.0991,
+          0.1,
+          0.1016
+        ],
+        "hybrid": [
+          0.1287,
+          0.1234,
+          0.1258
+        ],
+        "hybrid+rerank": [
+          0.8463,
+          0.8443,
+          1.007
+        ]
+      }
+    },
+    {
+      "id": "full-kafka-01",
+      "seconds": {
+        "bm25": [
+          0.0368,
+          0.0381,
+          0.0483
+        ],
+        "vector": [
+          0.1004,
+          0.1011,
+          0.1042
+        ],
+        "hybrid": [
+          0.2272,
+          0.1203,
+          0.1215
+        ],
+        "hybrid+rerank": [
+          0.9787,
+          0.8516,
+          1.0959
+        ]
+      }
+    },
+    {
+      "id": "full-kafka-02",
+      "seconds": {
+        "bm25": [
+          0.035,
+          0.036,
+          0.0624
+        ],
+        "vector": [
+          0.0997,
+          0.1056,
+          0.1019
+        ],
+        "hybrid": [
+          0.1238,
+          0.1195,
+          0.1245
+        ],
+        "hybrid+rerank": [
+          0.8777,
+          0.781,
+          1.0358
+        ]
+      }
+    },
+    {
+      "id": "full-kafka-03",
+      "seconds": {
+        "bm25": [
+          0.0373,
+          0.0396,
+          0.0503
+        ],
+        "vector": [
+          0.098,
+          0.1049,
+          0.1021
+        ],
+        "hybrid": [
+          0.1292,
+          0.1246,
+          0.1265
+        ],
+        "hybrid+rerank": [
+          0.9826,
+          0.8452,
+          1.073
+        ]
+      }
+    },
+    {
+      "id": "full-kafka-04",
+      "seconds": {
+        "bm25": [
+          0.0341,
+          0.0775,
+          0.0402
+        ],
+        "vector": [
+          0.095,
+          0.1043,
+          0.1156
+        ],
+        "hybrid": [
+          0.1227,
+          0.1231,
+          0.1229
+        ],
+        "hybrid+rerank": [
+          0.9025,
+          0.8232,
+          0.895
+        ]
+      }
+    },
+    {
+      "id": "full-kafka-05",
+      "seconds": {
+        "bm25": [
+          0.0329,
+          0.0352,
+          0.0385
+        ],
+        "vector": [
+          0.1021,
+          0.1017,
+          0.1039
+        ],
+        "hybrid": [
+          0.1305,
+          0.1315,
+          0.1296
+        ],
+        "hybrid+rerank": [
+          0.8254,
+          0.8258,
+          1.0248
+        ]
+      }
+    },
+    {
+      "id": "full-airflow-01",
+      "seconds": {
+        "bm25": [
+          0.0362,
+          0.0376,
+          0.0415
+        ],
+        "vector": [
+          0.0981,
+          0.1034,
+          0.1031
+        ],
+        "hybrid": [
+          0.121,
+          0.1215,
+          0.123
+        ],
+        "hybrid+rerank": [
+          0.8581,
+          0.935,
+          0.9961
+        ]
+      }
+    },
+    {
+      "id": "full-airflow-02",
+      "seconds": {
+        "bm25": [
+          0.037,
+          0.0367,
+          0.0401
+        ],
+        "vector": [
+          0.0955,
+          0.1051,
+          0.103
+        ],
+        "hybrid": [
+          0.1221,
+          0.1229,
+          0.1242
+        ],
+        "hybrid+rerank": [
+          0.9868,
+          0.8474,
+          0.9944
+        ]
+      }
+    },
+    {
+      "id": "full-airflow-03",
+      "seconds": {
+        "bm25": [
+          0.0388,
+          0.0365,
+          0.0402
+        ],
+        "vector": [
+          0.0987,
+          0.1072,
+          0.1027
+        ],
+        "hybrid": [
+          0.1218,
+          0.1237,
+          0.124
+        ],
+        "hybrid+rerank": [
+          0.804,
+          0.8066,
+          0.8876
+        ]
+      }
+    },
+    {
+      "id": "full-airflow-04",
+      "seconds": {
+        "bm25": [
+          0.0385,
+          0.0359,
+          0.0385
+        ],
+        "vector": [
+          0.0992,
+          0.1018,
+          0.1025
+        ],
+        "hybrid": [
+          0.1194,
+          0.1207,
+          0.123
+        ],
+        "hybrid+rerank": [
+          0.7299,
+          0.8991,
+          1.0115
+        ]
+      }
+    },
+    {
+      "id": "full-airflow-05",
+      "seconds": {
+        "bm25": [
+          0.0332,
+          0.0358,
+          0.0445
+        ],
+        "vector": [
+          0.0967,
+          0.1011,
+          0.1023
+        ],
+        "hybrid": [
+          0.1319,
+          0.1309,
+          0.1364
+        ],
+        "hybrid+rerank": [
+          0.7813,
+          0.8579,
+          0.9618
+        ]
+      }
+    },
+    {
+      "id": "full-spark-01",
+      "seconds": {
+        "bm25": [
+          0.035,
+          0.0367,
+          0.0417
+        ],
+        "vector": [
+          0.0963,
+          0.1047,
+          0.1016
+        ],
+        "hybrid": [
+          0.1213,
+          0.1216,
+          0.1258
+        ],
+        "hybrid+rerank": [
+          0.865,
+          0.8978,
+          1.2144
+        ]
+      }
+    },
+    {
+      "id": "full-spark-02",
+      "seconds": {
+        "bm25": [
+          0.0339,
+          0.0344,
+          0.05
+        ],
+        "vector": [
+          0.0952,
+          0.1005,
+          0.1036
+        ],
+        "hybrid": [
+          0.1207,
+          0.118,
+          0.1238
+        ],
+        "hybrid+rerank": [
+          0.7237,
+          0.7732,
+          0.9861
+        ]
+      }
+    },
+    {
+      "id": "full-spark-03",
+      "seconds": {
+        "bm25": [
+          0.0365,
+          0.0383,
+          0.0546
+        ],
+        "vector": [
+          0.0981,
+          0.1004,
+          0.1015
+        ],
+        "hybrid": [
+          0.1234,
+          0.122,
+          0.1278
+        ],
+        "hybrid+rerank": [
+          0.7499,
+          0.9129,
+          1.0677
+        ]
+      }
+    },
+    {
+      "id": "full-spark-04",
+      "seconds": {
+        "bm25": [
+          0.0372,
+          0.0354,
+          0.0603
+        ],
+        "vector": [
+          0.1029,
+          0.1022,
+          0.1037
+        ],
+        "hybrid": [
+          0.1257,
+          0.1241,
+          0.124
+        ],
+        "hybrid+rerank": [
+          0.7733,
+          0.8672,
+          0.9723
+        ]
+      }
+    },
+    {
+      "id": "full-spark-05",
+      "seconds": {
+        "bm25": [
+          0.0348,
+          0.0348,
+          0.0392
+        ],
+        "vector": [
+          0.0985,
+          0.1006,
+          0.1019
+        ],
+        "hybrid": [
+          0.1422,
+          0.1381,
+          0.1405
+        ],
+        "hybrid+rerank": [
+          0.6943,
+          0.8557,
+          1.0651
+        ]
+      }
+    },
+    {
+      "id": "full-postgresql-01",
+      "seconds": {
+        "bm25": [
+          0.035,
+          0.037,
+          0.0425
+        ],
+        "vector": [
+          0.1005,
+          0.1219,
+          0.1023
+        ],
+        "hybrid": [
+          0.1176,
+          0.1166,
+          0.1221
+        ],
+        "hybrid+rerank": [
+          0.6893,
+          0.9723,
+          1.029
+        ]
+      }
+    },
+    {
+      "id": "full-postgresql-02",
+      "seconds": {
+        "bm25": [
+          0.0371,
+          0.0396,
+          0.0421
+        ],
+        "vector": [
+          0.1013,
+          0.1086,
+          0.1075
+        ],
+        "hybrid": [
+          0.1413,
+          0.1417,
+          0.1439
+        ],
+        "hybrid+rerank": [
+          0.8637,
+          1.229,
+          1.1149
+        ]
+      }
+    },
+    {
+      "id": "full-postgresql-03",
+      "seconds": {
+        "bm25": [
+          0.0355,
+          0.0364,
+          0.0397
+        ],
+        "vector": [
+          0.1011,
+          0.1012,
+          0.1032
+        ],
+        "hybrid": [
+          0.1243,
+          0.1228,
+          0.1319
+        ],
+        "hybrid+rerank": [
+          0.7735,
+          0.8973,
+          0.9898
+        ]
+      }
+    },
+    {
+      "id": "full-postgresql-04",
+      "seconds": {
+        "bm25": [
+          0.0345,
+          0.0362,
+          0.0402
+        ],
+        "vector": [
+          0.0991,
+          0.1032,
+          0.1023
+        ],
+        "hybrid": [
+          0.1248,
+          0.1229,
+          0.1251
+        ],
+        "hybrid+rerank": [
+          0.9736,
+          0.9851,
+          1.2069
+        ]
+      }
+    },
+    {
+      "id": "full-postgresql-05",
+      "seconds": {
+        "bm25": [
+          0.0363,
+          0.0364,
+          0.0387
+        ],
+        "vector": [
+          0.1072,
+          0.1015,
+          0.1122
+        ],
+        "hybrid": [
+          0.1209,
+          0.1218,
+          0.1238
+        ],
+        "hybrid+rerank": [
+          0.9032,
+          0.8847,
+          1.1192
+        ]
+      }
+    }
+  ],
+  "code": {
+    "package": "0.1.0",
+    "commit": "09666f2ce0733af0ca21b74c1a84084b98c3401a",
+    "dirty": false
+  },
+  "inventory": {
+    "cpu": "11th Gen Intel(R) Core(TM) i7-1165G7 @ 2.80GHz",
+    "cores": 4,
+    "threads": 8,
+    "gpus": [
+      "Intel(R) Iris(R) Xe Graphics",
+      "NVIDIA GeForce MX450"
+    ],
+    "ram_total_bytes": 12639526912,
+    "pytest_processes": 0
+  },
+  "forced_below_min_free": false
+}

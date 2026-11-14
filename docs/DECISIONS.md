@@ -61,7 +61,56 @@ Implementation, steps 3 and 4 (NFR-02 and the fix that preserves results, P11-2)
   - All runs were `dirty: false`.
 - **After the fix, NFR-02 is met in all four configurations** on the evaluation scope (`latency_6a9e5bcbcc7c405aaefa9b2a3093754a`, commit `c6d6e2f`). The p95s are bm25 0.044 s, vector 0.148 s, hybrid 0.145 s and hybrid+rerank 1.090 s, with 0 degraded searches and 0 changed rankings. The full benchmark now takes 64 s instead of 176 s.
 - **Not changed.** `ask` still verifies the chat model on each question (`check_installed`). That cost falls in generation time, which NFR-03 judges against 60 s.
-- **The whole-index run (P11-3) did not complete.** On 2026-11-14, Claude Code's low-memory guard killed the shell that started it, but the profiler's processes kept running. They were found 4 minutes later and stopped by hand, because the secret scan had been running alongside them and their timings were no longer valid. The profiler writes only when it finishes, so no report exists. The run is to be repeated when memory allows.
+- **The whole-index run (P11-3) did not complete.** On 2026-11-14, Claude Code's low-memory guard killed the shell that started it, but the profiler's processes kept running. They were found 4 minutes later and stopped by hand, because the secret scan had been running alongside them and their timings were no longer valid. The profiler writes only when it finishes, so no report exists. It was repeated in step 5.
+
+Implementation, step 5 (whole-index headroom and cold start, P11-3 and P11-1):
+
+- **NFR-02 holds on the whole local index** (`latency_2fef1c3ae3ad460da6b28c8e104476aa`, commit `09666f2`, `dirty: false`, on AC power throughout, 3.1 GB free). The index holds 2,735 chunks, 3.4 times the evaluation scope's 816. Over 150 searches each, the p95s were:
+
+  | Configuration | p95 | Target |
+  |---|---|---|
+  | bm25 | 0.041 s | 1 s |
+  | vector | 0.129 s | 1 s |
+  | hybrid | 0.134 s | 1 s |
+  | hybrid+rerank | 0.841 s | 5 s |
+
+  There were 0 degraded searches and 0 changed rankings.
+- **Stage timings.**
+  - The query embedding takes about 0.06 s at both scopes.
+  - BM25 grows with the corpus: 0.005 s on the evaluation scope, 0.015–0.017 s over the whole index.
+  - Chroma's search takes about 0.015 s, and the registry read about 0.02 s.
+  - The reranker takes 0.49 s of the 0.68 s mean reranked search.
+  - At 3.4 times the corpus, every stage stays far below its target.
+- **Two earlier whole-index runs are not the record.**
+  - `latency_af03d370...` ran with an uncommitted one-line edit to `deployment/local_setup.md` (`dirty: true`). Its p95s were bm25 0.049 s, vector 0.130 s, hybrid 0.203 s and reranked 0.958 s.
+  - `latency_dc326e2c...` was clean, but the laptop went from AC to battery during it. In the third pass, the reranked searches of two questions took 84.0 s and 26.2 s, against about 0.8 s in the first two passes.
+  - Both still met NFR-02. From then on, the profile runs on AC power, which every report records at start and end.
+- **Cold start** (`latency_5ff02e34d2f54f769469a0c7e9a952f1`, `dirty: false`), reported apart from the p95 (P11-1):
+
+  | Configuration | First search in a new process, model loaded | Model unloaded | Second search |
+  |---|---|---|---|
+  | bm25 | 0.96 s | not used | 0.02 s |
+  | vector | 1.89 s | 3.51 s | 0.13 s |
+  | hybrid | 2.64 s | 4.35 s | 0.12 s |
+  | hybrid+rerank | 3.68 s | 5.38 s | 0.66 s |
+
+  The first search includes the one digest check and opening the indexes.
+  - A one-off CLI `search` takes 2.6 s with bm25 and 4.7 s with hybrid, the default, including the Python start (three runs each, every exit 0).
+  - Imports take about 0.45 s and settings plus the registry about 0.8 s.
+
+Implementation, step 6 (QA latency, NFR-03, P11-1):
+
+- **NFR-03 is met** (`latency_caca243a24f94e829bcd16378b36c4f3`, commit `09666f2`, `dirty: false`, on AC power). The run used `answer_question` in the default hybrid mode, without reranking, over the 36 answerable questions of `benchmark_full`, after one uncounted warm-up of 7.2 s.
+  - 35 questions reached generation, and none timed out. Over those 35, the p95 was 22.0 s and the maximum 27.8 s, against 60 s. The median was 10.8 s.
+  - Generation itself had a p95 of 21.7 s, and retrieval a p95 of 0.34 s.
+  - Of those 35, 31 were answered and 4 were `no_evidence`: 3 `NO_VALID_CITATIONS` and 1 `INSUFFICIENT_CONTEXT`. None was a `generation_error`.
+  - 1 question was refused at the gate with no model call, in 0.31 s, and is not in the p95.
+- **Where the models ran.** `qwen3:1.7b` ran 78% on the CPU and 22% on the GPU, and `nomic-embed-text` 100% on the GPU (Ollama 0.40.16).
+  - While both are loaded, the query embedding averages 0.24 s instead of 0.06 s, as they share the MX450's 2 GB.
+  - Free RAM fell from 3.2 GB to 0.3 GB with the chat model loaded, so `qwen3` was unloaded (`ollama stop`) before the next run.
+- **Known cost, left as it is.** Each `ask` checks the chat model's digest (`chat_model_build`, a mean of 0.73 s), which is 3% of the p95.
+- **The first question's retrieval took 4.7 s**, the cold start measured in step 5.
+- **The run appended 36 lines to the real `data/logs/qa.jsonl`**, one per question, as `eval --answers` and `eval --refusal` do. Each line holds hashes of the question and the answer, chunk IDs and timings. This is the one Phase 11 run that wrote outside a scratch directory.
 
 Implementation, step 9 (secret and private-text scan, P11-7):
 
