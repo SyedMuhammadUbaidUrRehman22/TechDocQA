@@ -61,7 +61,14 @@ Implementation, steps 3 and 4 (NFR-02 and the fix that preserves results, P11-2)
   - All runs were `dirty: false`.
 - **After the fix, NFR-02 is met in all four configurations** on the evaluation scope (`latency_6a9e5bcbcc7c405aaefa9b2a3093754a`, commit `c6d6e2f`). The p95s are bm25 0.044 s, vector 0.148 s, hybrid 0.145 s and hybrid+rerank 1.090 s, with 0 degraded searches and 0 changed rankings. The full benchmark now takes 64 s instead of 176 s.
 - **Not changed.** `ask` still verifies the chat model on each question (`check_installed`). That cost falls in generation time, which NFR-03 judges against 60 s.
-- **The whole-index run (P11-3) was stopped** on 2026-11-14 by Claude Code's low-memory guard while the session was idle. It produced no report and is to be repeated when memory allows.
+- **The whole-index run (P11-3) did not complete.** On 2026-11-14, Claude Code's low-memory guard killed the shell that started it, but the profiler's processes kept running. They were found 4 minutes later and stopped by hand, because the secret scan had been running alongside them and their timings were no longer valid. The profiler writes only when it finishes, so no report exists. The run is to be repeated when memory allows.
+
+Implementation, step 9 (secret and private-text scan, P11-7):
+
+- **`scripts/scan_secrets.py` found nothing** at `3e6df0e`. It checked 188 tracked files, all 65 commits reachable from any ref, and the 14 local run outputs in `data/logs` and `data/evaluation`, for the 9 key patterns.
+  - It found 0 key-shaped strings.
+  - It compared every 40-character normalized window of the private supplement's 1,919 chunks (1,057,952 normalized characters) with the tracked files and commits, and found 0 shared runs of 160 or more.
+  - The patterns are anchored, so prose such as "task-scheduling" no longer matches `sk-`. The test keys in `tests/test_scans.py` are built at run time, so no key-shaped literal is ever committed.
 
 ## Phase 10 contracts (2026-11-13)
 

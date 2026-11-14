@@ -1,8 +1,9 @@
 """Phase 11 secret and private-text scan (P11-7, AC-23.4).
 
-Usage: python scripts/scan_secrets.py [--config FILE] [--json]
+Usage: python scripts/scan_secrets.py [--config FILE] [--manifest FILE] [--min-run N]
 
-1. Secrets: key-shaped strings in every tracked file, the whole git history (`git log -p --all`), and the local
+1. Secrets: key-shaped strings in every tracked file, every commit reachable from any ref (`git show -p`
+   per commit of `git rev-list --all`), and the local
    runtime outputs under <data>/logs and <data>/evaluation. A hit is reported by place and pattern, with the
    matched value masked, so the scan never prints a secret again. Every hit is reviewed by hand.
 2. Private supplement: no passage of any chunk of a document outside the frozen evaluation manifest may appear in a
