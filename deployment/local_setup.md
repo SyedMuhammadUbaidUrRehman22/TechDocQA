@@ -103,7 +103,7 @@ TechDocQA uses no hosted model API, and no API key is needed. The OpenAI chat ad
 
 - Chroma runs embedded in the process with its anonymized telemetry turned off.
 - Set `TECHDOCQA_OFFLINE=1` to stop any fetch outside the tests.
-- **LangSmith tracing must stay off.** `langchain-core` installs the LangSmith client, which sends nothing unless `LANGSMITH_TRACING` or `LANGCHAIN_TRACING_V2` is set to `true`. Leave both unset. If they are set with an API key, LangChain sends each prompt, which holds the question and the retrieved chunk text, to LangSmith's hosted service.
+- **LangSmith tracing must stay off.** `langchain-core` installs the LangSmith client, which sends nothing unless one of `LANGSMITH_TRACING_V2`, `LANGCHAIN_TRACING_V2`, `LANGSMITH_TRACING` or `LANGCHAIN_TRACING` is set to `true`. Leave all four unset. If one is set together with an API key, LangChain sends each prompt, which holds the question and the retrieved chunk text, to LangSmith's hosted service.
 - Search results print chunk text to the terminal.
 - `data\logs\qa.jsonl` stores chunk IDs, configuration IDs, the sufficiency result and timings. The question and the answer appear there only as hashes.
 - Evaluation reports hold chunk IDs, never chunk text.
