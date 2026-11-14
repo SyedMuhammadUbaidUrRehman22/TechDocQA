@@ -675,6 +675,41 @@ def test_provider_preflight_detects_digest_change_and_outage(model_settings, mon
     assert error.value.response.error.code == 'PROVIDER_NOT_AVAILABLE'
 
 
+def test_query_embedder_is_verified_once_per_process_and_again_after_any_failure(model_settings, monkeypatch):
+    # Phase 11, P11-2: building the embedder verifies the pinned digest, so it is reused, not rebuilt per query.
+    built = []
+    def builder(settings):
+        built.append(CountingEmbeddings())
+        return built[-1]
+    monkeypatch.setattr(embeddings, 'build_embeddings', builder)
+    profile = embeddings.embedding_profile(model_settings.model)
+    first = embeddings.embed_query('journals', model_settings, profile)
+    for _ in range(3):
+        assert embeddings.embed_query('journals', model_settings, profile) == first
+    assert len(built) == 1 and built[0].queries == 4
+    # A failed embedding drops the embedder, so the next query builds, and so verifies, a new one.
+    built[0].fail = True
+    with pytest.raises(TechDocQAError) as error:
+        embeddings.embed_query('journals', model_settings, profile)
+    assert error.value.response.error.code == 'EMBEDDING_PROVIDER_UNAVAILABLE'
+    embeddings.embed_query('journals', model_settings, profile)
+    assert len(built) == 2
+    # Other model settings, or a replaced builder, also build a new one.
+    model_settings.model.timeout_seconds += 1
+    embeddings.embed_query('journals', model_settings, profile)
+    assert len(built) == 3
+    def changed(settings):
+        raise TechDocQAError('EMBEDDING_MODEL_CHANGED', 'The installed embedding model does not match the pinned digest.', stage='embedding')
+    monkeypatch.setattr(embeddings, 'build_embeddings', changed)
+    with pytest.raises(TechDocQAError) as error:
+        embeddings.embed_query('journals', model_settings, profile)
+    assert error.value.response.error.code == 'EMBEDDING_MODEL_CHANGED'
+    # An embedder passed in is used as given, and the index pipeline still builds its own once per run.
+    passed = CountingEmbeddings()
+    embeddings.embed_query('journals', model_settings, profile, passed)
+    assert passed.queries == 1
+
+
 def test_unselected_embedding_profile_refuses_vector_work(settings, registry):
     with pytest.raises(TechDocQAError) as error:
         query(settings, registry, 'keys', mode='vector')

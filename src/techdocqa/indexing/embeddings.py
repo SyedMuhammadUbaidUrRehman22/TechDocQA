@@ -69,11 +69,30 @@ def build_embeddings(settings: Settings):
     return OllamaEmbeddings(model=model.embedding_model, base_url=model.base_url, client_kwargs=client_kwargs)
 
 
+# One verified query embedder per process (Phase 11, P11-2). Building one lists Ollama's installed models to check the
+# pinned digest, which took about 0.75 s of every vector or hybrid search. It is rebuilt, and so verified again, for
+# other model settings, when build_embeddings has been replaced, and after any failed query embedding. A model swapped
+# while a process runs is therefore caught at that process's next failure or at the next process start.
+_query_embedder = None
+
+
+def query_embedder(settings: Settings):
+    global _query_embedder
+    model = settings.model
+    key = (model.provider, model.base_url, model.embedding_model, model.embedding_model_digest, model.timeout_seconds)
+    if _query_embedder is None or _query_embedder[0] != key or _query_embedder[1] is not build_embeddings:
+        _query_embedder = None
+        _query_embedder = (key, build_embeddings, build_embeddings(settings))
+    return _query_embedder[2]
+
+
 def embed_query(query: str, settings: Settings, profile: dict, embedder=None) -> list[float]:
-    embedder = embedder or build_embeddings(settings)
+    global _query_embedder
+    embedder = embedder or query_embedder(settings)
     try:
         vector = embedder.embed_query(settings.model.embedding_query_prefix + query)
     except Exception:
+        _query_embedder = None
         raise TechDocQAError("EMBEDDING_PROVIDER_UNAVAILABLE", "The query could not be embedded.", stage="embedding", retryable=True) from None
     if invalid_reason(vector, profile):
         raise TechDocQAError("INVALID_EMBEDDING", "The provider returned an invalid query vector.", stage="embedding")
