@@ -164,6 +164,10 @@ Detailed plan proposed and approved on 2026-11-14: [Phase 11 plan](PHASE_11_PLAN
 
 ## Phase 12 — Separately approved P2 work
 
+**In progress since 2026-11-14** ([Phase 12 plan](PHASE_12_PLAN.md), [contracts](DECISIONS.md#phase-12-contracts-2026-11-14)).
+- **Selected:** FR-24, all four acceptance criteria, and evidence only for the URL slice, which Phase 3A built.
+- **Skipped by the owner:** the web UI and cross-version reuse. They stay deferred.
+
 - Objective: choose only wanted optional reliability/polish features.
 - FRs: FR-24; URL slices FR-01/23; web UI FR-22; cross-version reuse FR-05/11.
 - Files: existing CLI/logging/pipeline/settings modules plus minimal optional URL/UI module only if selected; test_observability.py and feature-specific tests/documentation.
@@ -176,7 +180,7 @@ Detailed plan proposed and approved on 2026-11-14: [Phase 11 plan](PHASE_11_PLAN
 
 **As of 2026-11-14, the owner has closed Phase 11, and `main` holds it** ([release decision](PHASE_11_STATUS.md#release-decision)).
 - The [items not measured](PHASE_11_STATUS.md#not-measured) can be run later, one at a time, on AC power, with the laptop cool.
-- Phase 12, the P2 work, is not selected. It needs its own scope approval.
+- **Phase 12 is in progress:** FR-24 under the [Phase 12 plan](PHASE_12_PLAN.md), approved on 2026-11-14. The web UI and cross-version reuse are skipped.
 
 The paragraph below is the earlier history.
 

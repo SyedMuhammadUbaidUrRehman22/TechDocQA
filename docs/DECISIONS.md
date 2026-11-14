@@ -1,5 +1,17 @@
 # TechDocQA architectural decisions
 
+## Phase 12 contracts (2026-11-14)
+
+The owner approved the [Phase 12 plan](PHASE_12_PLAN.md#decisions-to-approve-before-building) on 2026-11-14 with *"approved and push as you go"*. The plan's rows P12-1 to P12-5 are the contracts as written. P12-6 is amended by those words.
+
+- **Scope.** FR-24 (AC-24.1 to AC-24.4), and evidence only for the URL slice of FR-01 and FR-23.
+  - The owner skipped the web UI (FR-22, P2) and cross-version reuse (FR-05 and FR-11, P2) with *"skip web ui and reuse"*. They stay deferred.
+  - The hosted-API parts of FR-24 are not applicable, local-only by the decision of 2026-11-13: AC-24.3's "API key removed" case and behaviour 4's cost summary.
+- **Retry (P12-1, P12-2): a manual `retry` command.** It reruns the retryable failures of a run through the existing stage functions. It reports failures that aren't retryable as `permanent` and never reruns them. `ErrorDetail` is unchanged; `permanent` appears only in `retry`'s output and the logs.
+- **Health (P12-3): a `check` command.** It covers the registry, the vector store, BM25, the embedding and chat models, and the reranker when reranking is enabled. It reports `ok`, `degraded` or `down`. It only lists Ollama's models, never loads one, and exits 1 unless the result is `ok`. `config-check` is unchanged.
+- **Logs (P12-4).** Every line has `timestamp`, `level`, `component`, `run_id`, `document_id` and `request_id`. That covers a new `data/logs/techdocqa.jsonl` and the existing `qa.jsonl`, which gains the missing four fields. Third-party loggers stay out.
+- **Delivery (P12-6), as amended: push as the work proceeds.** Commits go on `feat/phase-12`, created from `main` at `b041c0b`, and are pushed as they are made. The scripted secret scan (`scripts/scan_secrets.py`) runs before each push. The merge into `main` follows at the end of the phase.
+
 ## Phase 11 contracts (2026-11-14)
 
 The project owner approved the [Phase 11 plan](PHASE_11_PLAN.md#decisions-to-approve-before-measuring) on 2026-11-14. On its four owner questions the owner chose the recommended option; the other decisions, P11-1, P11-4 to P11-7 and P11-9 to P11-11, stand as proposed under the owner's instruction to proceed. The plan's rows are the contracts.
