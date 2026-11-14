@@ -23,6 +23,7 @@ import uuid
 from techdocqa.answering.generation import generation_config_id, model_id
 from techdocqa.errors import TechDocQAError
 from techdocqa.evaluation.dataset import load_dataset
+from techdocqa.evaluation.runtime import runtime, summary_line
 from techdocqa.evaluation.runner import code_version, corpus_state, label_questions, load_manifest
 
 RATINGS = ("yes", "partly", "no")
@@ -73,7 +74,7 @@ def dataset_summary(dataset) -> dict:
 
 def answer_environment(settings) -> dict:
     model = settings.model
-    return {"code": code_version(), "provider": model.provider, "model_id": model_id(model),
+    return {"code": code_version(), **runtime(settings), "provider": model.provider, "model_id": model_id(model),
             "generation_config_id": generation_config_id(settings), "context_window": model.context_window,
             "max_output_tokens": model.max_output_tokens, "temperature": model.temperature,
             "timeout_seconds": model.timeout_seconds, "strict_citations": settings.answering.strict_citations}
@@ -222,6 +223,7 @@ def render_markdown(report: dict, chunk_text: dict | None = None) -> str:
              f"window {environment['context_window']}, output {environment['max_output_tokens']}, temperature {environment['temperature']}",
              f"- Dataset: `{report['dataset']['dataset_id']}` sha256 `{report['dataset']['sha256']}`; corpus fingerprint `{report['corpus']['corpus_fingerprint']}`",
              f"- Code: {environment['code']['commit']} (dirty: {environment['code']['dirty']})",
+             summary_line(environment),
              f"- Selection: {report['selection']}", "",
              "| Check | Result |", "|---|---|", *answered,
              "| Statuses | " + ", ".join(f"{name} {value}" for name, value in summary["statuses"].items()) + " |",
@@ -454,7 +456,8 @@ def render_refusal_markdown(report: dict) -> str:
              f"- Thresholds: {thresholds}",
              f"- Dataset: `{report['dataset']['dataset_id']}` sha256 `{report['dataset']['sha256']}`; "
              f"corpus fingerprint `{report['corpus']['corpus_fingerprint']}`",
-             f"- Code: {environment['code']['commit']} (dirty: {environment['code']['dirty']})", "",
+             f"- Code: {environment['code']['commit']} (dirty: {environment['code']['dirty']})",
+             summary_line(environment), "",
              "| Check | Result |", "|---|---|",
              f"| AC-18.1 unanswerable refused (`no_evidence`) | {first['no_evidence']} of {first['questions']} = {first['rate']}, "
              f"target {first['target']} ({'met' if first['met'] else 'NOT met'}) |",

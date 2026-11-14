@@ -283,6 +283,48 @@ def test_run_reports_both_modes_with_dataset_corpus_and_configuration_identity(b
     assert by_id["kafka-1"]["results"]["bm25"]["first_relevant_rank"] == 1
 
 
+# Run records (NFR-05, P11-5)
+
+def test_runtime_is_recorded_offline_and_never_enters_the_fingerprint(bench, model_settings, registry, monkeypatch):
+    from techdocqa.evaluation import runtime
+    first = run(bench, model_settings, registry)
+    recorded = first["environment"]
+    # Offline the server is never contacted; the socket guard would fail the test if it were.
+    assert recorded["ollama"] == {"version": None, "loaded": None, "note": "offline: not contacted"}
+    assert {"processor", "logical_cpus", "ram_total_bytes", "ram_available_bytes", "ac_power"} <= set(recorded["machine"])
+    assert recorded["libraries"]["onnxruntime"] and recorded["libraries"]["tokenizers"] and recorded["python"]
+    monkeypatch.setattr(runtime, "machine", lambda: {"logical_cpus": 1})
+    monkeypatch.setattr(runtime, "ollama_state", lambda base_url: {"version": "9.9.9", "loaded": []})
+    second = run(bench, model_settings, registry)
+    assert second["environment"]["ollama"]["version"] == "9.9.9"
+    assert second["results_fingerprint"] == first["results_fingerprint"]
+    assert "- Runtime: Python " in render_markdown(second) and "Ollama 9.9.9" in render_markdown(second)
+
+
+def test_ollama_state_reads_version_and_loaded_processors(monkeypatch):
+    import httpx
+    from techdocqa.evaluation.runtime import ollama_state, processor_split, summary_line
+    real = httpx.Client
+    def handler(request):
+        if request.url.path == "/api/version":
+            return httpx.Response(200, json={"version": "0.40.16"})
+        return httpx.Response(200, json={"models": [{"name": "qwen3:1.7b", "size": 200, "size_vram": 100},
+                                                    {"name": "nomic-embed-text:latest", "size": 600, "size_vram": 0}]})
+    monkeypatch.delenv("TECHDOCQA_OFFLINE")
+    monkeypatch.setattr(httpx, "Client", lambda **kwargs: real(transport=httpx.MockTransport(handler), **kwargs))
+    state = ollama_state("http://127.0.0.1:11434")
+    assert state["version"] == "0.40.16"
+    assert [(item["model"], item["processor"]) for item in state["loaded"]] == [("nomic-embed-text:latest", "100% CPU"),
+                                                                                ("qwen3:1.7b", "50%/50% CPU/GPU")]
+    assert processor_split(10, 10) == "100% GPU" and processor_split(0, 0) == "unknown"
+    def refused(request):
+        raise httpx.ConnectError("refused")
+    monkeypatch.setattr(httpx, "Client", lambda **kwargs: real(transport=httpx.MockTransport(refused), **kwargs))
+    assert ollama_state("http://127.0.0.1:11434") == {"version": None, "loaded": None, "note": "unreachable"}
+    # Reports from before Phase 11 have no runtime record and are re-rendered by --record-review.
+    assert summary_line({"code": {}}) == "- Runtime: not recorded (run before Phase 11)"
+
+
 def test_private_documents_outside_the_manifest_never_appear(bench, model_settings, registry):
     report = run(bench, model_settings, registry)
     private = {chunk["chunk_id"] for chunk in active_chunks(bench["versions"]["private.md"].version_id, model_settings, registry)}

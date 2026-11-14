@@ -56,6 +56,10 @@ def release_vector_stores():
     if search is not None:
         # The process-wide BM25 cache holds the last test's chunks.
         search._lexical = None
+    embeddings = sys.modules.get("techdocqa.indexing.embeddings")
+    if embeddings is not None:
+        # The process-wide query embedder holds the last test's fake.
+        embeddings._query_embedder = None
 
 
 @pytest.fixture

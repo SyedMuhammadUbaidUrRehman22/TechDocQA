@@ -1,5 +1,176 @@
 # TechDocQA architectural decisions
 
+## Phase 11 contracts (2026-11-14)
+
+The project owner approved the [Phase 11 plan](PHASE_11_PLAN.md#decisions-to-approve-before-measuring) on 2026-11-14. On its four owner questions the owner chose the recommended option; the other decisions, P11-1, P11-4 to P11-7 and P11-9 to P11-11, stand as proposed under the owner's instruction to proceed. The plan's rows are the contracts.
+
+- **Local-only scope.** Every OpenAI step is excluded, following the decision of 2026-11-13.
+  - The OpenAI halves of NFR-03, NFR-04, NFR-08, NFR-09 and C-06 are not applicable.
+  - C-07 and AC-22.4 stay open by owner decision.
+  - No local substitute for the provider switch is built.
+- **Entry gate (2026-11-14).** Ollama had updated itself to 0.40.16; earlier phases recorded 0.40.10 and 0.40.13.
+  - The smoke `eval` still gives the P0 fingerprint `48ce89dc...a3af410`, which hashes every score and relevance, with the same `bm25` and `vector` IDs (`eval_7b0630eadcf14cb39a739bdf4cff0c93`, written outside the repository).
+  - `verify_index.py --compare` against `.tmp/p9-top5-before-enrich.json` passed.
+- **NFR-02 miss policy (P11-2): fixes that preserve results only.** Each fix must leave the smoke P0 fingerprint and the full benchmark's four-configuration fingerprint identical. A fix that changes results, or an amended target, goes back to the owner.
+- **Headroom (P11-3): the whole local index.** That is 2,735 chunks, 3.35x the 816-chunk public reference by chunks and 1.78x by bytes, used for search latency and for ingestion, with no configuration change. Tracked reports from these runs hold counts and timings only.
+- **Advisories (P11-8): upgrade the two reachable packages.** `pypdf` goes to 6.21.4 and `certifi` to 2026.10.18, with the lock rehashed.
+  - The upgrade stands only if `verify_corpus.py`, the tests and the fingerprints pass; otherwise it is reverted and recorded.
+  - Chroma's server-side advisories, `pip`, `soupsieve` and `setuptools` are documented, not upgraded.
+- **Delivery (P11-12): local only.** Work is committed on `feat/phase-11`, created from `main` at `19c838b`, and merged into `main` locally. Nothing is pushed until the owner says so.
+
+Implementation, step 1 (run records and the profiler):
+
+- **Run hygiene (P11-11).** `research_notes/` is now in `.git/info/exclude`, so runs record `dirty: false`. The folder is unchanged and nothing is committed for it.
+- **Runtime record (P11-5).** Every eval, enrichment, answer and refusal run records the following, outside its fingerprint (`evaluation/runtime.py`):
+  - the Ollama server version, read from `/api/version`;
+  - each loaded model and where it sits, read from `/api/ps`, as `ollama ps` shows it;
+  - the logical CPUs, free RAM and AC power;
+  - five more library versions: `langchain-text-splitters`, `ollama`, `onnxruntime`, `tokenizers` and `pypdf`.
+
+  With `TECHDOCQA_OFFLINE=1`, as in the test suite, the server is not contacted. On the real index the smoke `eval` still gives `48ce89dc...a3af410` (`eval_ed8aa413e5034927a62451a21c1e4b39`, commit `c04fd7c`, `dirty: false`).
+- **Finding: the embedding model runs on the GPU.** That run recorded `nomic-embed-text:latest` at **100% GPU**, on the NVIDIA MX450. The Phase 10 report's "no GPU" is therefore wrong for embeddings. Where the chat model sits is recorded by the QA latency run.
+- **Profiler (P11-1).** `scripts/profile_latency.py` wraps the stage functions only while a profile runs and restores them afterwards; a test checks both.
+  - Its reports hold question IDs, counts and timings only.
+  - A test checks that a profile leaves the benchmark fingerprint unchanged, and that a whole-index report contains no chunk ID or text.
+  - It refuses to start with less than 1.5 GB of RAM free, or while a `pytest` process is running.
+
+Implementation, step 2 (dependencies, P11-8):
+
+- **Upgraded:** `pypdf` 6.21.1 to 6.21.4 and `certifi` 2026.7.22 to 2026.10.18.
+  - Both are pure-Python wheels whose SHA-256 matched PyPI's published digest. Neither adds a required dependency on Python 3.13, and their licences are unchanged (BSD-3-Clause, MPL-2.0).
+  - The lock keeps 142 hashed pins, and the venv matches all of them.
+  - The `pyproject.toml` floors were raised to `pypdf>=6.21.4` and `certifi>=2026.10.18`, so a fresh resolve cannot select the vulnerable versions.
+- **Extraction unchanged.** In a scratch data directory, the three corpus PDFs were registered and processed again, first under 6.21.1, which checks the method, and then under 6.21.4. Both times all three gave their manifest `content_hash`. `verify_corpus.py` passed (21 documents, 2,735 chunks, 816 in the reference), as did the `core` test group, and the smoke `eval` still gives `48ce89dc...a3af410`.
+- **`pip-audit` 2.10.1:** from 33 records in 6 packages down to 21 in 4. The rest stay documented, not upgraded:
+  - **chromadb 1.5.9** (4 advisories, no fix released): code injection through `trust_remote_code` in the server API, RBAC that ignores tenants, and cross-tenant access. All concern Chroma's HTTP server; TechDocQA uses only the embedded client.
+  - **pip 25.0.1** (6 advisories): each needs a malicious archive or index. Installing from the lock runs in hash-checking mode, which admits only the pinned files.
+  - **setuptools 82.0.1** (2): build-time only, in MANIFEST.in filtering and a Windows legacy wheel path. The project builds only its own source.
+  - **soupsieve 3.0.3** (1): slow matching of descendant-combinator selectors. `ingestion/html.py` has five `select()` calls, all lists of type and attribute selectors with no descendant combinator. Phase 10's "the one selector" was imprecise. soupsieve's version is also part of the recorded HTML extraction identity.
+
+Implementation, steps 3 and 4 (NFR-02 and the fix that preserves results, P11-2):
+
+- **As measured, NFR-02 was missed by vector and hybrid search** (`latency_c2a89d0d934e43a6b9e2b85b33e1a724`, evaluation scope, 150 searches each). The p95s were bm25 0.039 s, vector 1.155 s, hybrid 1.954 s and hybrid+rerank 2.213 s, against 1 s and 5 s.
+- **Diagnosis from the stage timings.** Building the query embedder took a mean of 0.74 to 0.89 s per vector or hybrid search, about 81% of the search time. Each build lists Ollama's installed models to check the pinned digest. The embedding call itself took about 0.13 s, and Chroma's search about 0.01 s.
+- **Fix (`c6d6e2f`).** One verified query embedder is reused per process (`embeddings.query_embedder`).
+  - It is rebuilt, and so verified again, for other model settings, when `build_embeddings` has been replaced, and after any failed query embedding.
+  - A model swapped while a long process runs is caught at its next failure or the next process start. The CLI starts one process per command, so a command still verifies.
+  - `index` still builds its own embedder once per run. A test covers the reuse, the rebuilds and a changed digest.
+- **Proof that no result moved.**
+  - The full benchmark in four configurations gave `545c0d35...fe650` at `1aa05fe` before the fix (`eval_a4609731d28b41219ade45b3716ed491`), and again twice after it (`eval_b2134852c8f94473b7e83e007de62ad5`, `eval_ab0a5b06ef5b4210b07c1c1d0fc13a02`). This is the same fingerprint as Phase 10's full run (`eval_b8b8c7db...`), and it hashes every score and relevance.
+  - The smoke `eval` gives `48ce89dc...a3af410` (`eval_ea842ee86ced47a5a4813ba80623d076`).
+  - All runs were `dirty: false`.
+- **After the fix, NFR-02 is met in all four configurations** on the evaluation scope (`latency_6a9e5bcbcc7c405aaefa9b2a3093754a`, commit `c6d6e2f`). The p95s are bm25 0.044 s, vector 0.148 s, hybrid 0.145 s and hybrid+rerank 1.090 s, with 0 degraded searches and 0 changed rankings. The full benchmark now takes 64 s instead of 176 s.
+- **Not changed.** `ask` still verifies the chat model on each question (`check_installed`). That cost falls in generation time, which NFR-03 judges against 60 s.
+- **The whole-index run (P11-3) did not complete.** On 2026-11-14, Claude Code's low-memory guard killed the shell that started it, but the profiler's processes kept running. They were found 4 minutes later and stopped by hand, because the secret scan had been running alongside them and their timings were no longer valid. The profiler writes only when it finishes, so no report exists. It was repeated in step 5.
+
+Implementation, step 5 (whole-index headroom and cold start, P11-3 and P11-1):
+
+- **NFR-02 holds on the whole local index** (`latency_2fef1c3ae3ad460da6b28c8e104476aa`, commit `09666f2`, `dirty: false`, on AC power throughout, 3.1 GB free). The index holds 2,735 chunks, 3.4 times the evaluation scope's 816. Over 150 searches each, the p95s were:
+
+  | Configuration | p95 | Target |
+  |---|---|---|
+  | bm25 | 0.041 s | 1 s |
+  | vector | 0.129 s | 1 s |
+  | hybrid | 0.134 s | 1 s |
+  | hybrid+rerank | 0.841 s | 5 s |
+
+  There were 0 degraded searches and 0 changed rankings.
+- **Stage timings.**
+  - The query embedding takes about 0.06 s at both scopes.
+  - BM25 grows with the corpus: 0.005 s on the evaluation scope, 0.015–0.017 s over the whole index.
+  - Chroma's search takes about 0.015 s, and the registry read about 0.02 s.
+  - The reranker takes 0.49 s of the 0.68 s mean reranked search.
+  - At 3.4 times the corpus, every stage stays far below its target.
+- **Two earlier whole-index runs are not the record.**
+  - `latency_af03d370...` ran with an uncommitted one-line edit to `deployment/local_setup.md` (`dirty: true`). Its p95s were bm25 0.049 s, vector 0.130 s, hybrid 0.203 s and reranked 0.958 s.
+  - `latency_dc326e2c...` was clean, but the laptop went from AC to battery during it. In the third pass, the reranked searches of two questions took 84.0 s and 26.2 s, against about 0.8 s in the first two passes.
+  - Both still met NFR-02. From then on, the profile runs on AC power, which every report records at start and end.
+- **Cold start** (`latency_5ff02e34d2f54f769469a0c7e9a952f1`, `dirty: false`), reported apart from the p95 (P11-1):
+
+  | Configuration | First search in a new process, model loaded | Model unloaded | Second search |
+  |---|---|---|---|
+  | bm25 | 0.96 s | not used | 0.02 s |
+  | vector | 1.89 s | 3.51 s | 0.13 s |
+  | hybrid | 2.64 s | 4.35 s | 0.12 s |
+  | hybrid+rerank | 3.68 s | 5.38 s | 0.66 s |
+
+  The first search includes the one digest check and opening the indexes.
+  - A one-off CLI `search` takes 2.6 s with bm25 and 4.7 s with hybrid, the default, including the Python start (three runs each, every exit 0).
+  - Imports take about 0.45 s and settings plus the registry about 0.8 s.
+
+Implementation, step 6 (QA latency, NFR-03, P11-1):
+
+- **NFR-03 is met** (`latency_caca243a24f94e829bcd16378b36c4f3`, commit `09666f2`, `dirty: false`, on AC power). The run used `answer_question` in the default hybrid mode, without reranking, over the 36 answerable questions of `benchmark_full`, after one uncounted warm-up of 7.2 s.
+  - 35 questions reached generation, and none timed out. Over those 35, the p95 was 22.0 s and the maximum 27.8 s, against 60 s. The median was 10.8 s.
+  - Generation itself had a p95 of 21.7 s, and retrieval a p95 of 0.34 s.
+  - Of those 35, 31 were answered and 4 were `no_evidence`: 3 `NO_VALID_CITATIONS` and 1 `INSUFFICIENT_CONTEXT`. None was a `generation_error`.
+  - 1 question was refused at the gate with no model call, in 0.31 s, and is not in the p95.
+- **Where the models ran.** `qwen3:1.7b` ran 78% on the CPU and 22% on the GPU, and `nomic-embed-text` 100% on the GPU (Ollama 0.40.16).
+  - While both are loaded, the query embedding averages 0.24 s instead of 0.06 s, as they share the MX450's 2 GB.
+  - Free RAM fell from 3.2 GB to 0.3 GB with the chat model loaded, so `qwen3` was unloaded (`ollama stop`) before the next run.
+- **Known cost, left as it is.** Each `ask` checks the chat model's digest (`chat_model_build`, a mean of 0.73 s), which is 3% of the p95.
+- **The first question's retrieval took 4.7 s**, the cold start measured in step 5.
+- **The run appended 36 lines to the real `data/logs/qa.jsonl`**, one per question, as `eval --answers` and `eval --refusal` do. Each line holds hashes of the question and the answer, chunk IDs and timings. This is the one Phase 11 run that wrote outside a scratch directory.
+
+Implementation, step 9 (secret and private-text scan, P11-7):
+
+- **`scripts/scan_secrets.py` found nothing** at `3e6df0e`. It checked 188 tracked files, all 65 commits reachable from any ref, and the 14 local run outputs in `data/logs` and `data/evaluation`, for the 9 key patterns.
+  - It found 0 key-shaped strings.
+  - It compared every 40-character normalized window of the private supplement's 1,919 chunks (1,057,952 normalized characters) with the tracked files and commits, and found 0 shared runs of 160 or more.
+  - The patterns are anchored, so prose such as "task-scheduling" no longer matches `sk-`. The test keys in `tests/test_scans.py` are built at run time, so no key-shaped literal is ever committed.
+
+Implementation, ingestion timing (NFR-04, P11-4):
+
+- **NFR-04 is met for the 20-document public reference** (`ingestion_0b1f86452aa44155a61acde7dae35afe`, commit `74e2ab9`, `dirty: false`, on AC power, 5.3 GB free). The run started from an empty registry and an empty embedding cache, in a scratch data directory.
+
+  | Stage | Seconds |
+  |---|---|
+  | ingest | 1.7 |
+  | process | 35.6 |
+  | chunk | 19.0 |
+  | index | 152.1 |
+  | **To searchable** | **208.5**, against 1,800 |
+  | enrich, timed apart | 7.8 |
+
+  - It produced 816 chunks with 808 distinct texts, embedded in 35 requests. The empty cache was proved by those requests.
+  - All 20 `content_hash` values equal the manifest, and no stage had a failure.
+  - `nomic-embed-text` ran 100% on the GPU (Ollama 0.40.16).
+- **The whole-corpus run (21 documents, P11-3) did not finish.** It started at 10:08 local time and wrote no report. Windows rebooted at 10:14 after an unclean shutdown (Kernel-Power event 41), and the owner reports that the laptop shut itself down from heat. Event 6008 dates the shutdown at 10:02, but files were written after that, so its timestamp is stale.
+  - Its scratch folder `.tmp/p11-ingest` was left behind, because the script deletes it only when it finishes. The folder holds copies of the 21 source files, the private supplement included, and is not tracked.
+  - Deleting it is left to the owner.
+
+Owner instruction after the thermal shutdown (2026-11-14): *"My laptop has become so hot that it shut down itself. so skip next phase or QA runs as long as the project runs."*
+
+- **Applied as follows.**
+  - No further measurement, answer or test run in Phase 11.
+  - Phase 12 is not started.
+  - Each skipped item is recorded as **not measured**, never as met or waived, under invariant 2.
+- **Skipped.**
+  - The whole-corpus ingestion timing, 2,735 chunks or 3.35 times the reference (NFR-04 and the ingestion half of NFR-01).
+  - `index --rebuild` (NFR-06), which has not been repeated since Phase 5. The repeat half of NFR-06 already has evidence: the four-configuration full benchmark gave `545c0d35...fe650` three times in Phase 11.
+  - The clean-clone setup (NFR-07).
+  - The full grouped test suite after the Phase 11 code changes. The last full record is Phase 10's, 649 passed and 3 skipped. In Phase 11, only the `core` group is recorded, in step 2.
+  - `scripts/cli_smoke.ps1` with the real models.
+  - A second secret scan, covering the commits after `3e6df0e`. AC-23.4 is met at that commit.
+- **Not done, and not covered by the instruction:** the consolidated per-AC matrix and the NFR-11 component map (P11-10). Both are documentation only. The Phase 11 report has a table for NFR-01 to NFR-11 and the constraints instead.
+- **Checks after the shutdown that load no model.**
+  - `config-check` exited 0.
+  - `list` exited 0. It shows 22 documents: the 21 indexed ones, and the Spark Data Sources overview rejected in corpus review ([corpus status](REFERENCE_CORPUS_STATUS.md#rejections-and-duplicate-checks)).
+  - A `bm25` `search` exited 0, and its first result was the PostgreSQL B-tree section.
+  - `verify_corpus.py` passed: 21 documents, 2,735 chunks, 816 of them in the reference.
+  - The Chroma collection holds 2,735 entries, and the git tree was clean.
+  - A vector query with a stored embedding loaded the HNSW index and returned that chunk at rank 1, at distance 0.
+  - Hybrid search and `ask` were not run after the shutdown, because Ollama was not running.
+
+Release decision (step 11, P11-12), 2026-11-14: **the owner closed Phase 11** with *"it's closed, push also"*.
+
+- **The items not measured are accepted as they are.** They stay recorded as not measured, and none is upgraded.
+- **AC-23.4 now covers the later commits.** Before the push, `scan_secrets.py`'s own functions ran over the 8 commits after `3e6df0e`, up to `4b96465`.
+  - They found 0 key-shaped strings, for all 9 patterns.
+  - They found no shared run of 160 or more characters with the private supplement's 1,919 chunks.
+- **Merged and pushed.** `feat/phase-11` is merged into `main` locally, and the owner asked for both to be pushed to `origin`. P11-12 required that instruction before any push.
+- **Phase 12 is not selected.** It needs its own scope approval.
+
 ## Phase 10 contracts (2026-11-13)
 
 The project owner approved decisions P10-1 to P10-12 of the [Phase 10 plan](PHASE_10_PLAN.md#decisions-to-approve-before-coding) on 2026-11-13, as recommended. The plan's rows are the contracts, and they settle D-11 (fusion) and D-12 (reranking). This section records the owner's choices among the plan's options and, later, what implementation changed.

@@ -1,0 +1,855 @@
+{
+  "run_id": "latency_caca243a24f94e829bcd16378b36c4f3",
+  "kind": "qa",
+  "procedure": "p11-latency-v1",
+  "started_at": "2026-11-14T04:56:19.960768+00:00",
+  "finished_at": "2026-11-14T05:03:30.377829+00:00",
+  "duration_seconds": 430.417,
+  "mode": "hybrid",
+  "rerank": false,
+  "warm_up": {
+    "loaded": true,
+    "ms": 7175,
+    "code": null
+  },
+  "dataset": {
+    "dataset_id": "benchmark_full",
+    "sha256": "15c3bcb21f03a885f6c7878e2e2ab725636a277acb8757e279ff7c6de0b0162a",
+    "answerable": 36
+  },
+  "runtime_before": {
+    "python": "3.13.3",
+    "platform": "Windows-11-10.0.26300-SP0",
+    "libraries": {
+      "langchain-core": "1.6.9",
+      "langchain-community": "0.4.2",
+      "langchain-chroma": "1.1.0",
+      "langchain-ollama": "1.1.0",
+      "langchain-text-splitters": "1.1.3",
+      "chromadb": "1.5.9",
+      "rank-bm25": "0.2.2",
+      "pydantic": "2.14.0",
+      "numpy": "2.5.4",
+      "ollama": "0.6.3",
+      "onnxruntime": "1.31.1",
+      "tokenizers": "0.23.3",
+      "pypdf": "6.21.4"
+    },
+    "ollama": {
+      "version": "0.40.16",
+      "loaded": [
+        {
+          "model": "nomic-embed-text:latest",
+          "size": 335743549,
+          "size_vram": 335743549,
+          "processor": "100% GPU"
+        }
+      ]
+    },
+    "machine": {
+      "processor": "Intel64 Family 6 Model 140 Stepping 1, GenuineIntel",
+      "machine": "AMD64",
+      "logical_cpus": 8,
+      "ram_total_bytes": 12639526912,
+      "ram_available_bytes": 3477004288,
+      "ac_power": true
+    }
+  },
+  "runtime_after": {
+    "python": "3.13.3",
+    "platform": "Windows-11-10.0.26300-SP0",
+    "libraries": {
+      "langchain-core": "1.6.9",
+      "langchain-community": "0.4.2",
+      "langchain-chroma": "1.1.0",
+      "langchain-ollama": "1.1.0",
+      "langchain-text-splitters": "1.1.3",
+      "chromadb": "1.5.9",
+      "rank-bm25": "0.2.2",
+      "pydantic": "2.14.0",
+      "numpy": "2.5.4",
+      "ollama": "0.6.3",
+      "onnxruntime": "1.31.1",
+      "tokenizers": "0.23.3",
+      "pypdf": "6.21.4"
+    },
+    "ollama": {
+      "version": "0.40.16",
+      "loaded": [
+        {
+          "model": "nomic-embed-text:latest",
+          "size": 335743549,
+          "size_vram": 335743549,
+          "processor": "100% GPU"
+        },
+        {
+          "model": "qwen3:1.7b",
+          "size": 2389945875,
+          "size_vram": 530988400,
+          "processor": "78%/22% CPU/GPU"
+        }
+      ]
+    },
+    "machine": {
+      "processor": "Intel64 Family 6 Model 140 Stepping 1, GenuineIntel",
+      "machine": "AMD64",
+      "logical_cpus": 8,
+      "ram_total_bytes": 12639526912,
+      "ram_available_bytes": 318070784,
+      "ac_power": true
+    }
+  },
+  "target_seconds": 60.0,
+  "reached_generation": 35,
+  "timed_out": 0,
+  "seconds": {
+    "retrieval": {
+      "n": 35,
+      "median": 0.26,
+      "p95": 0.338,
+      "max": 4.684,
+      "mean": 0.3738
+    },
+    "generation": {
+      "n": 35,
+      "median": 9.874,
+      "p95": 21.71,
+      "max": 27.561,
+      "mean": 11.5491
+    },
+    "total": {
+      "n": 35,
+      "median": 10.762,
+      "p95": 22.03,
+      "max": 27.822,
+      "mean": 12.0435
+    }
+  },
+  "met": true,
+  "gate_refused": {
+    "questions": 1,
+    "total_seconds": {
+      "n": 1,
+      "median": 0.311,
+      "p95": 0.311,
+      "max": 0.311,
+      "mean": 0.311
+    }
+  },
+  "statuses": {
+    "answered": 31,
+    "no_evidence": 5,
+    "generation_error": 0
+  },
+  "stages": {
+    "registry_read": {
+      "n": 35,
+      "median": 0.0792,
+      "p95": 0.1109,
+      "max": 0.1228,
+      "mean": 0.0803,
+      "calls_per_query": 1.971,
+      "share_of_mean": 0.007,
+      "inside": null
+    },
+    "embedding_profile": {
+      "n": 35,
+      "median": 0.0001,
+      "p95": 0.0001,
+      "max": 0.0001,
+      "mean": 0.0001,
+      "calls_per_query": 2.0,
+      "share_of_mean": 0.0,
+      "inside": null
+    },
+    "bm25_search": {
+      "n": 35,
+      "median": 0.0076,
+      "p95": 0.0138,
+      "max": 1.137,
+      "mean": 0.04,
+      "calls_per_query": 1.0,
+      "share_of_mean": 0.003,
+      "inside": null
+    },
+    "bm25_index_build": {
+      "n": 35,
+      "median": 0.0,
+      "p95": 0.0,
+      "max": 0.2192,
+      "mean": 0.0063,
+      "calls_per_query": 0.029,
+      "share_of_mean": 0.001,
+      "inside": "bm25_search"
+    },
+    "bm25_rescore": {
+      "n": 35,
+      "median": 0.0,
+      "p95": 0.0,
+      "max": 0.0019,
+      "mean": 0.0001,
+      "calls_per_query": 0.029,
+      "share_of_mean": 0.0,
+      "inside": null
+    },
+    "vector_store_open": {
+      "n": 35,
+      "median": 0.0073,
+      "p95": 0.0142,
+      "max": 0.9162,
+      "mean": 0.0335,
+      "calls_per_query": 1.0,
+      "share_of_mean": 0.003,
+      "inside": null
+    },
+    "vector_store_empty_check": {
+      "n": 35,
+      "median": 0.0013,
+      "p95": 0.0025,
+      "max": 0.1997,
+      "mean": 0.007,
+      "calls_per_query": 1.0,
+      "share_of_mean": 0.001,
+      "inside": null
+    },
+    "query_embedding": {
+      "n": 35,
+      "median": 0.1928,
+      "p95": 0.2549,
+      "max": 2.2739,
+      "mean": 0.2396,
+      "calls_per_query": 1.0,
+      "share_of_mean": 0.02,
+      "inside": null
+    },
+    "embedder_build": {
+      "n": 35,
+      "median": 0.0,
+      "p95": 0.0,
+      "max": 0.7325,
+      "mean": 0.0209,
+      "calls_per_query": 0.029,
+      "share_of_mean": 0.002,
+      "inside": "query_embedding"
+    },
+    "vector_search": {
+      "n": 35,
+      "median": 0.0103,
+      "p95": 0.0178,
+      "max": 0.0829,
+      "mean": 0.0127,
+      "calls_per_query": 1.0,
+      "share_of_mean": 0.001,
+      "inside": null
+    },
+    "stored_relevances": {
+      "n": 35,
+      "median": 0.0,
+      "p95": 0.0,
+      "max": 0.0051,
+      "mean": 0.0001,
+      "calls_per_query": 1.0,
+      "share_of_mean": 0.0,
+      "inside": null
+    },
+    "config_id": {
+      "n": 35,
+      "median": 0.0002,
+      "p95": 0.0005,
+      "max": 0.0005,
+      "mean": 0.0002,
+      "calls_per_query": 1.0,
+      "share_of_mean": 0.0,
+      "inside": null
+    },
+    "chat_model_build": {
+      "n": 35,
+      "median": 0.7002,
+      "p95": 0.9172,
+      "max": 1.0546,
+      "mean": 0.7298,
+      "calls_per_query": 1.0,
+      "share_of_mean": 0.061,
+      "inside": null
+    },
+    "generation_call": {
+      "n": 35,
+      "median": 9.1569,
+      "p95": 21.0274,
+      "max": 26.8014,
+      "mean": 10.8191,
+      "calls_per_query": 1.0,
+      "share_of_mean": 0.898,
+      "inside": null
+    },
+    "unattributed": {
+      "n": 35,
+      "median": 0.0869,
+      "p95": 0.1198,
+      "max": 0.1377,
+      "mean": 0.081,
+      "calls_per_query": null,
+      "share_of_mean": 0.007,
+      "inside": null
+    }
+  },
+  "questions": [
+    {
+      "id": "smoke-kafka-01",
+      "technology": "Apache Kafka",
+      "status": "answered",
+      "reason": null,
+      "llm_called": true,
+      "timed_out": false,
+      "mode": "hybrid",
+      "degraded": false,
+      "seconds": {
+        "retrieval": 4.684,
+        "generation": 8.834,
+        "total": 13.629
+      }
+    },
+    {
+      "id": "smoke-kafka-02",
+      "technology": "Apache Kafka",
+      "status": "answered",
+      "reason": null,
+      "llm_called": true,
+      "timed_out": false,
+      "mode": "hybrid",
+      "degraded": false,
+      "seconds": {
+        "retrieval": 0.213,
+        "generation": 11.488,
+        "total": 11.792
+      }
+    },
+    {
+      "id": "smoke-kafka-03",
+      "technology": "Apache Kafka",
+      "status": "answered",
+      "reason": null,
+      "llm_called": true,
+      "timed_out": false,
+      "mode": "hybrid",
+      "degraded": false,
+      "seconds": {
+        "retrieval": 0.302,
+        "generation": 10.489,
+        "total": 10.895
+      }
+    },
+    {
+      "id": "smoke-kafka-04",
+      "technology": "Apache Kafka",
+      "status": "answered",
+      "reason": null,
+      "llm_called": true,
+      "timed_out": false,
+      "mode": "hybrid",
+      "degraded": false,
+      "seconds": {
+        "retrieval": 0.236,
+        "generation": 6.113,
+        "total": 6.45
+      }
+    },
+    {
+      "id": "smoke-kafka-05",
+      "technology": "Apache Kafka",
+      "status": "answered",
+      "reason": null,
+      "llm_called": true,
+      "timed_out": false,
+      "mode": "hybrid",
+      "degraded": false,
+      "seconds": {
+        "retrieval": 0.127,
+        "generation": 7.413,
+        "total": 7.654
+      }
+    },
+    {
+      "id": "smoke-airflow-01",
+      "technology": "Apache Airflow",
+      "status": "answered",
+      "reason": null,
+      "llm_called": true,
+      "timed_out": false,
+      "mode": "hybrid",
+      "degraded": false,
+      "seconds": {
+        "retrieval": 0.164,
+        "generation": 12.177,
+        "total": 12.448
+      }
+    },
+    {
+      "id": "smoke-airflow-02",
+      "technology": "Apache Airflow",
+      "status": "answered",
+      "reason": null,
+      "llm_called": true,
+      "timed_out": false,
+      "mode": "hybrid",
+      "degraded": false,
+      "seconds": {
+        "retrieval": 0.28,
+        "generation": 10.702,
+        "total": 11.083
+      }
+    },
+    {
+      "id": "smoke-airflow-03",
+      "technology": "Apache Airflow",
+      "status": "answered",
+      "reason": null,
+      "llm_called": true,
+      "timed_out": false,
+      "mode": "hybrid",
+      "degraded": false,
+      "seconds": {
+        "retrieval": 0.271,
+        "generation": 9.216,
+        "total": 9.627
+      }
+    },
+    {
+      "id": "smoke-airflow-04",
+      "technology": "Apache Airflow",
+      "status": "answered",
+      "reason": null,
+      "llm_called": true,
+      "timed_out": false,
+      "mode": "hybrid",
+      "degraded": false,
+      "seconds": {
+        "retrieval": 0.242,
+        "generation": 8.692,
+        "total": 9.067
+      }
+    },
+    {
+      "id": "smoke-airflow-05",
+      "technology": "Apache Airflow",
+      "status": "answered",
+      "reason": null,
+      "llm_called": true,
+      "timed_out": false,
+      "mode": "hybrid",
+      "degraded": false,
+      "seconds": {
+        "retrieval": 0.185,
+        "generation": 6.951,
+        "total": 7.262
+      }
+    },
+    {
+      "id": "smoke-spark-01",
+      "technology": "Apache Spark",
+      "status": "answered",
+      "reason": null,
+      "llm_called": true,
+      "timed_out": false,
+      "mode": "hybrid",
+      "degraded": false,
+      "seconds": {
+        "retrieval": 0.148,
+        "generation": 9.705,
+        "total": 9.968
+      }
+    },
+    {
+      "id": "smoke-spark-02",
+      "technology": "Apache Spark",
+      "status": "no_evidence",
+      "reason": "INSUFFICIENT_CONTEXT",
+      "llm_called": true,
+      "timed_out": false,
+      "mode": "hybrid",
+      "degraded": false,
+      "seconds": {
+        "retrieval": 0.26,
+        "generation": 27.561,
+        "total": 27.822
+      }
+    },
+    {
+      "id": "smoke-spark-03",
+      "technology": "Apache Spark",
+      "status": "answered",
+      "reason": null,
+      "llm_called": true,
+      "timed_out": false,
+      "mode": "hybrid",
+      "degraded": false,
+      "seconds": {
+        "retrieval": 0.298,
+        "generation": 7.377,
+        "total": 7.813
+      }
+    },
+    {
+      "id": "smoke-spark-04",
+      "technology": "Apache Spark",
+      "status": "answered",
+      "reason": null,
+      "llm_called": true,
+      "timed_out": false,
+      "mode": "hybrid",
+      "degraded": false,
+      "seconds": {
+        "retrieval": 0.137,
+        "generation": 7.672,
+        "total": 7.934
+      }
+    },
+    {
+      "id": "smoke-spark-05",
+      "technology": "Apache Spark",
+      "status": "answered",
+      "reason": null,
+      "llm_called": true,
+      "timed_out": false,
+      "mode": "hybrid",
+      "degraded": false,
+      "seconds": {
+        "retrieval": 0.199,
+        "generation": 21.71,
+        "total": 22.03
+      }
+    },
+    {
+      "id": "smoke-postgresql-01",
+      "technology": "PostgreSQL",
+      "status": "answered",
+      "reason": null,
+      "llm_called": true,
+      "timed_out": false,
+      "mode": "hybrid",
+      "degraded": false,
+      "seconds": {
+        "retrieval": 0.299,
+        "generation": 6.416,
+        "total": 6.844
+      }
+    },
+    {
+      "id": "smoke-postgresql-02",
+      "technology": "PostgreSQL",
+      "status": "answered",
+      "reason": null,
+      "llm_called": true,
+      "timed_out": false,
+      "mode": "hybrid",
+      "degraded": false,
+      "seconds": {
+        "retrieval": 0.128,
+        "generation": 10.984,
+        "total": 11.234
+      }
+    },
+    {
+      "id": "smoke-postgresql-03",
+      "technology": "PostgreSQL",
+      "status": "no_evidence",
+      "reason": "NO_VALID_CITATIONS",
+      "llm_called": true,
+      "timed_out": false,
+      "mode": "hybrid",
+      "degraded": false,
+      "seconds": {
+        "retrieval": 0.312,
+        "generation": 12.781,
+        "total": 13.124
+      }
+    },
+    {
+      "id": "smoke-postgresql-04",
+      "technology": "PostgreSQL",
+      "status": "answered",
+      "reason": null,
+      "llm_called": true,
+      "timed_out": false,
+      "mode": "hybrid",
+      "degraded": false,
+      "seconds": {
+        "retrieval": 0.241,
+        "generation": 8.994,
+        "total": 9.376
+      }
+    },
+    {
+      "id": "smoke-postgresql-05",
+      "technology": "PostgreSQL",
+      "status": "answered",
+      "reason": null,
+      "llm_called": true,
+      "timed_out": false,
+      "mode": "hybrid",
+      "degraded": false,
+      "seconds": {
+        "retrieval": 0.257,
+        "generation": 12.888,
+        "total": 13.257
+      }
+    },
+    {
+      "id": "full-kafka-01",
+      "technology": "Apache Kafka",
+      "status": "answered",
+      "reason": null,
+      "llm_called": true,
+      "timed_out": false,
+      "mode": "hybrid",
+      "degraded": false,
+      "seconds": {
+        "retrieval": 0.325,
+        "generation": 9.316,
+        "total": 9.82
+      }
+    },
+    {
+      "id": "full-kafka-02",
+      "technology": "Apache Kafka",
+      "status": "no_evidence",
+      "reason": "NO_VALID_CITATIONS",
+      "llm_called": true,
+      "timed_out": false,
+      "mode": "hybrid",
+      "degraded": false,
+      "seconds": {
+        "retrieval": 0.287,
+        "generation": 15.243,
+        "total": 15.57
+      }
+    },
+    {
+      "id": "full-kafka-03",
+      "technology": "Apache Kafka",
+      "status": "answered",
+      "reason": null,
+      "llm_called": true,
+      "timed_out": false,
+      "mode": "hybrid",
+      "degraded": false,
+      "seconds": {
+        "retrieval": 0.274,
+        "generation": 13.869,
+        "total": 14.305
+      }
+    },
+    {
+      "id": "full-kafka-04",
+      "technology": "Apache Kafka",
+      "status": "answered",
+      "reason": null,
+      "llm_called": true,
+      "timed_out": false,
+      "mode": "hybrid",
+      "degraded": false,
+      "seconds": {
+        "retrieval": 0.274,
+        "generation": 10.333,
+        "total": 10.762
+      }
+    },
+    {
+      "id": "full-airflow-01",
+      "technology": "Apache Airflow",
+      "status": "answered",
+      "reason": null,
+      "llm_called": true,
+      "timed_out": false,
+      "mode": "hybrid",
+      "degraded": false,
+      "seconds": {
+        "retrieval": 0.295,
+        "generation": 13.556,
+        "total": 13.969
+      }
+    },
+    {
+      "id": "full-airflow-02",
+      "technology": "Apache Airflow",
+      "status": "answered",
+      "reason": null,
+      "llm_called": true,
+      "timed_out": false,
+      "mode": "hybrid",
+      "degraded": false,
+      "seconds": {
+        "retrieval": 0.269,
+        "generation": 18.47,
+        "total": 18.865
+      }
+    },
+    {
+      "id": "full-airflow-03",
+      "technology": "Apache Airflow",
+      "status": "answered",
+      "reason": null,
+      "llm_called": true,
+      "timed_out": false,
+      "mode": "hybrid",
+      "degraded": false,
+      "seconds": {
+        "retrieval": 0.248,
+        "generation": 7.327,
+        "total": 7.718
+      }
+    },
+    {
+      "id": "full-airflow-04",
+      "technology": "Apache Airflow",
+      "status": "answered",
+      "reason": null,
+      "llm_called": true,
+      "timed_out": false,
+      "mode": "hybrid",
+      "degraded": false,
+      "seconds": {
+        "retrieval": 0.199,
+        "generation": 9.874,
+        "total": 10.253
+      }
+    },
+    {
+      "id": "full-spark-01",
+      "technology": "Apache Spark",
+      "status": "answered",
+      "reason": null,
+      "llm_called": true,
+      "timed_out": false,
+      "mode": "hybrid",
+      "degraded": false,
+      "seconds": {
+        "retrieval": 0.338,
+        "generation": 9.409,
+        "total": 9.87
+      }
+    },
+    {
+      "id": "full-spark-02",
+      "technology": "Apache Spark",
+      "status": "answered",
+      "reason": null,
+      "llm_called": true,
+      "timed_out": false,
+      "mode": "hybrid",
+      "degraded": false,
+      "seconds": {
+        "retrieval": 0.256,
+        "generation": 8.518,
+        "total": 8.908
+      }
+    },
+    {
+      "id": "full-spark-03",
+      "technology": "Apache Spark",
+      "status": "answered",
+      "reason": null,
+      "llm_called": true,
+      "timed_out": false,
+      "mode": "hybrid",
+      "degraded": false,
+      "seconds": {
+        "retrieval": 0.279,
+        "generation": 12.975,
+        "total": 13.389
+      }
+    },
+    {
+      "id": "full-spark-04",
+      "technology": "Apache Spark",
+      "status": "answered",
+      "reason": null,
+      "llm_called": true,
+      "timed_out": false,
+      "mode": "hybrid",
+      "degraded": false,
+      "seconds": {
+        "retrieval": 0.302,
+        "generation": 8.913,
+        "total": 9.379
+      }
+    },
+    {
+      "id": "full-postgresql-01",
+      "technology": "PostgreSQL",
+      "status": "answered",
+      "reason": null,
+      "llm_called": true,
+      "timed_out": false,
+      "mode": "hybrid",
+      "degraded": false,
+      "seconds": {
+        "retrieval": 0.249,
+        "generation": 9.841,
+        "total": 10.226
+      }
+    },
+    {
+      "id": "full-postgresql-02",
+      "technology": "PostgreSQL",
+      "status": "no_evidence",
+      "reason": "LOW_RELEVANCE",
+      "llm_called": false,
+      "timed_out": false,
+      "mode": "hybrid",
+      "degraded": false,
+      "seconds": {
+        "retrieval": 0.31,
+        "generation": 0.0,
+        "total": 0.311
+      }
+    },
+    {
+      "id": "full-postgresql-03",
+      "technology": "PostgreSQL",
+      "status": "no_evidence",
+      "reason": "NO_VALID_CITATIONS",
+      "llm_called": true,
+      "timed_out": false,
+      "mode": "hybrid",
+      "degraded": false,
+      "seconds": {
+        "retrieval": 0.19,
+        "generation": 21.645,
+        "total": 21.872
+      }
+    },
+    {
+      "id": "full-postgresql-04",
+      "technology": "PostgreSQL",
+      "status": "answered",
+      "reason": null,
+      "llm_called": true,
+      "timed_out": false,
+      "mode": "hybrid",
+      "degraded": false,
+      "seconds": {
+        "retrieval": 0.316,
+        "generation": 16.765,
+        "total": 17.306
+      }
+    }
+  ],
+  "code": {
+    "package": "0.1.0",
+    "commit": "09666f2ce0733af0ca21b74c1a84084b98c3401a",
+    "dirty": false
+  },
+  "inventory": {
+    "cpu": "11th Gen Intel(R) Core(TM) i7-1165G7 @ 2.80GHz",
+    "cores": 4,
+    "threads": 8,
+    "gpus": [
+      "Intel(R) Iris(R) Xe Graphics",
+      "NVIDIA GeForce MX450"
+    ],
+    "ram_total_bytes": 12639526912,
+    "pytest_processes": 0
+  },
+  "forced_below_min_free": false
+}

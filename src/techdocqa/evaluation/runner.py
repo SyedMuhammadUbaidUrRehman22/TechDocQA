@@ -8,10 +8,8 @@ and the benchmark file is never changed (FR-21, AC-21.3).
 from collections import Counter
 from datetime import datetime, timezone
 import hashlib
-from importlib import metadata
 import json
 from pathlib import Path
-import platform
 import statistics
 import subprocess
 import time
@@ -20,6 +18,7 @@ import uuid
 from techdocqa import __version__
 from techdocqa.errors import TechDocQAError
 from techdocqa.evaluation.dataset import load_dataset
+from techdocqa.evaluation.runtime import runtime, summary_line
 from techdocqa.evaluation.metrics import (BOOTSTRAP_CONFIDENCE, BOOTSTRAP_POLICY, BOOTSTRAP_RESAMPLES, BOOTSTRAP_SEED, K_VALUES,
                                           METRIC_POLICY, METRICS, P0_METRICS, macro_average, p95, paired_bootstrap, question_metrics)
 from techdocqa.ingestion.chunks import stored_chunks
@@ -39,7 +38,6 @@ LATENCY_LIMIT_SECONDS = 5.0
 # and leaving them out keeps the P0 baseline 48ce89dc...a3af410 comparable across phases.
 P0_SUMMARY_KEYS = ("mode", "status", "error", "retrieval_config_id", "evaluated_questions", "excluded_questions", "metrics",
                    "by_technology", "answerable_top_score", "answerable_top_relevance", "unanswerable", "refusal_calibration")
-LIBRARIES = ("langchain-core", "langchain-community", "langchain-chroma", "langchain-ollama", "chromadb", "rank-bm25", "pydantic", "numpy")
 SCORE_DIGITS = 6
 # P10-8: FR-18 thresholds are calibrated on the smoke benchmark only, kept beside the corpus manifest. Questions of
 # another dataset that smoke does not contain are held out, and proposals computed on them are not for adoption.
@@ -355,17 +353,11 @@ def code_version() -> dict:
 
 
 def environment(settings, modes) -> dict:
+    """Outside the fingerprint. runtime() adds the Ollama server version, its loaded models and the machine (P11-5)."""
     from techdocqa.retrieval.lexical import TOKENIZER_POLICY
     from techdocqa.retrieval.search import fusion_values
-    versions = {}
-    for name in LIBRARIES:
-        try:
-            versions[name] = metadata.version(name)
-        except metadata.PackageNotFoundError:
-            versions[name] = None
     model = settings.model
-    values = {"code": code_version(), "python": platform.python_version(), "platform": platform.platform(),
-              "libraries": versions, "provider": model.provider, "bm25": {"k1": settings.retrieval.bm25_k1,
+    values = {"code": code_version(), **runtime(settings), "provider": model.provider, "bm25": {"k1": settings.retrieval.bm25_k1,
               "b": settings.retrieval.bm25_b, "tokenizer": TOKENIZER_POLICY}, "candidate_depth": settings.retrieval.candidate_depth}
     if any(name in modes for name in ("hybrid", "hybrid+rerank")):
         values["fusion"] = fusion_values(settings)
@@ -584,6 +576,7 @@ def render_markdown(report: dict) -> str:
              f"{corpus['searchable_chunks']} chunks, fingerprint `{corpus['corpus_fingerprint']}`",
              f"- Code: {report['environment']['code']['commit']} (dirty: {report['environment']['code']['dirty']}), "
              f"metric policy `{report['metric_policy']['id']}`",
+             summary_line(report["environment"]),
              f"- Results fingerprint: `{report['results_fingerprint']}`", "",
              "| Configuration | Config ID | Evaluated | Excluded | " + " | ".join(names) + " | p95 latency (s) |",
              "|---|---|---|---|" + "---|" * len(names) + "---|"]

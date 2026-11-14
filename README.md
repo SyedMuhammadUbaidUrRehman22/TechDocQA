@@ -3,7 +3,16 @@ TechDocQA is a domain-specific RAG project for answering software and data engin
 
 ## Current status
 
-Phases 1-10 are implemented. You can ingest local files and approved web pages, normalize and chunk them, build a local index, search it by BM25, vector similarity or both fused (hybrid), optionally reranked, ask questions with `ask`, withdraw or delete documents, and measure retrieval and refusal with `eval`.
+Phases 1-10 are implemented, and Phase 11 is closed. You can ingest local files and approved web pages, normalize and chunk them, build a local index, search it by BM25, vector similarity or both fused (hybrid), optionally reranked, ask questions with `ask`, withdraw or delete documents, and measure retrieval and refusal with `eval`.
+
+**Phase 11 (operational verification) was closed early on 2026-11-14** after the laptop shut itself down from heat. The owner skipped the remaining runs and closed the phase. Measured and met:
+- search p95 in all four modes, after a fix that preserves results: hybrid 0.145 s against 1 s;
+- the same targets on the whole index, 3.35 times the reference;
+- answers, p95 22.0 s against 60 s;
+- ingesting the reference from empty, 208.5 s against 30 min;
+- a clean secret scan.
+
+Not measured: whole-corpus ingestion, the rebuild check, a clean-clone setup, and the full test suite and CLI smoke run after the Phase 11 changes. See the [Phase 11 report](docs/PHASE_11_STATUS.md).
 
 **Phase 10 (P1 hybrid search, reranking and full evaluation) is implemented. Hybrid is now the default search mode.** `search --mode hybrid` fuses BM25 and vector rankings by reciprocal rank. If one retriever fails, it answers from the other and says so. `--rerank` reorders the candidates with a small local cross-encoder, which is pinned by hash and off by default. On the full benchmark of 50 reviewed questions, hybrid beat vector search on nDCG@5 by +0.046 (95% interval +0.009 to +0.085), and the owner made it the default for `search` and `ask`. Reranking added +0.035, but its interval includes 0, so it stays off. Both new modes refuse 10 of 10 out-of-domain smoke questions and answer 18 of 20 answerable ones. The owner rated 20 hybrid-mode answers: 17 fully faithful to their citations and 3 partly, with all 20 relevant. The OpenAI provider demo was withdrawn by the owner, so TechDocQA stays local-only. See the [Phase 10 report](docs/PHASE_10_STATUS.md).
 
@@ -13,7 +22,7 @@ Phases 1-10 are implemented. You can ingest local files and approved web pages, 
 
 On the 30-question smoke benchmark, BM25 reaches Recall@5 0.925 and MRR 0.708, and vector search reaches Recall@5 0.925 and MRR 0.783. A run takes 35 to 63 s and repeats exactly. The questions were reviewed and accepted by the project owner on 2026-11-03. See the [Phase 6 report](docs/PHASE_6_STATUS.md).
 
-All 2,735 chunks are indexed: 816 from the 20-document public reference and 1,919 from the private DDIA supplement. Results survive a restart and a full rebuild unchanged. The index returns the same top 3 as exact search on 143 of 143 sentence queries, which meets AC-12.1 as amended. A lone sentence finds its own chunk in the top 3 112 of 143 times with vector search and 143 of 143 with BM25. Warm vector search has a p95 of 1.377 s against a 1 s target (NFR-02). See the [Phase 5 report](docs/PHASE_5_STATUS.md).
+All 2,735 chunks are indexed: 816 from the 20-document public reference and 1,919 from the private DDIA supplement. Results survive a restart and a full rebuild unchanged. The index returns the same top 3 as exact search on 143 of 143 sentence queries, which meets AC-12.1 as amended. A lone sentence finds its own chunk in the top 3 112 of 143 times with vector search and 143 of 143 with BM25. In Phase 5, warm vector search had a p95 of 1.377 s against a 1 s target (NFR-02). Phase 11 brought it to 0.148 s, with no result changed. See the [Phase 5 report](docs/PHASE_5_STATUS.md).
 
 The selected local models are Ollama `qwen3:1.7b` and `nomic-embed-text:latest`. Installed metadata verifies the embedding model's BERT tokenizer family and 2,048-token input limit; its advertised `num_ctx=8192` does not override the API's metadata clamp. Exact provider token counting is unavailable, so chunks use recorded character counting plus a conservative UTF-8 bound: at most 1000 characters and 2,029 bytes, overlap 150, minimum 100. The generation tokenizer is independent. Offline tests and chunking never call a provider; embedding runs through local Ollama. OpenAI chunking profiles are accepted with `embedding_tokenizer = "tiktoken"` and a context window. The OpenAI chat adapter is wired, but its LangChain package is not installed, and OpenAI embeddings are not implemented.
 
@@ -75,7 +84,8 @@ stateDiagram-v2
 | 8 | [Calibrated refusal and P0 release gate](docs/PHASE_8_STATUS.md) | ✅ Built, P0 release gate passed 2026-11-07 |
 | 9 | [NLP enrichment](docs/PHASE_9_STATUS.md): entities, keyphrases, categories | 🟡 Complete; AC-08.3 not met |
 | 10 | [Hybrid search, reranking, full benchmark](docs/PHASE_10_STATUS.md) | ✅ Built and rated; hybrid is the default; OpenAI demo withdrawn |
-| 11-12 | Operational verification, optional extras | ⬜ Planned |
+| 11 | [Operational verification and delivery](docs/PHASE_11_STATUS.md) | 🟡 Closed by the owner 2026-11-14; some runs not measured |
+| 12 | Separately approved P2 work | ⬜ Not selected |
 
 ## Measured results
 
@@ -84,9 +94,16 @@ stateDiagram-v2
 | Top-5 after restart and rebuild | Identical | Identical | ✅ |
 | Model calls on a repeat `index` or rebuild | 0 | 0 | ✅ |
 | Technical identifiers at rank 1 | All tested | 8 of 8 | ✅ |
-| BM25 warm p95 | At most 1 s | 0.138 s | ✅ |
-| Vector warm p95 | At most 1 s | 1.377 s | ❌ |
-| Sentence query finds its chunk in the top 3 | All | 124 of 152 | ❌ |
+| BM25 warm p95, Phase 5 | At most 1 s | 0.138 s | ✅ |
+| Vector warm p95, Phase 5 | At most 1 s | 1.377 s | ❌ fixed in Phase 11 |
+| Search p95, bm25 / vector / hybrid, Phase 11 (NFR-02) | At most 1 s | 0.044 / 0.148 / 0.145 s | ✅ |
+| Reranked hybrid p95, Phase 11 (NFR-02) | At most 5 s | 1.090 s | ✅ |
+| Search p95 on the whole index, 3.35x the reference (NFR-01) | Same targets | 0.041 / 0.129 / 0.134 / 0.841 s | ✅ |
+| Answer p95, local (NFR-03) | At most 60 s | 22.0 s | ✅ |
+| Reference ingestion from empty (NFR-04) | At most 30 min | 208.5 s | ✅ |
+| Whole-corpus ingestion, rebuild, clean clone (NFR-04, NFR-06, NFR-07) | Measured | Skipped after the thermal shutdown | ⬜ |
+| Key-shaped strings or private text in files and history (AC-23.4) | None | None | ✅ |
+| Index top 3 equal to exact search (AC-12.1 as amended) | At least 0.99 | 143 of 143 | ✅ |
 | Smoke benchmark, both modes | Under 5 min | 35 to 63 s | ✅ |
 | Two benchmark runs, same inputs | Identical metrics | Identical | ✅ |
 | Benchmark reviewed by a second person | Reviewed | All 30 accepted | ✅ |
@@ -163,7 +180,9 @@ py -3.13 -m venv .venv
 
 `config-check` validates settings without contacting providers. `config-check --require-models` succeeds for the selected default profile; it verifies selection, not connectivity or model quality. TOML settings are in [config/default.toml](config/default.toml). TECHDOCQA_CHAT_MODEL and TECHDOCQA_EMBEDDING_MODEL override model names. Changing embeddings requires a verified context/tokenizer/digest profile and explicit re-chunking; unsupported profiles fail safely. Relative paths resolve against the base configuration file.
 
-Keep credentials out of TOML, logs and version control. Local runtime data and virtual environments are ignored. Phase 3A uses LangChain's pinned `BSHTMLLoader`, BeautifulSoup, urllib3 and certifi. The archived loader package is a documented maintenance limitation; its network client is never used. The lock also installs spaCy and `rake-nltk`, the optional `nlp` extra used for keyphrases and the spaCy segmentation policy; without them, `enrich` reports keyphrases as unavailable. Reranking remains later work.
+Keep credentials out of TOML, logs and version control. Local runtime data and virtual environments are ignored. Phase 3A uses LangChain's pinned `BSHTMLLoader`, BeautifulSoup, urllib3 and certifi. The archived loader package is a documented maintenance limitation; its network client is never used. The lock also installs spaCy and `rake-nltk`, the optional `nlp` extra used for keyphrases and the spaCy segmentation policy; without them, `enrich` reports keyphrases as unavailable. Reranking needs the model files that `scriptsetch_reranker.py` downloads once (see [Indexing and search](#indexing-and-search)).
+
+The [local setup guide](deployment/local_setup.md) covers installing Ollama and the pinned models, checking their digests, the grouped test run, and everything that touches the network.
 
 </details>
 
@@ -195,7 +214,7 @@ The registry is `data/registry.sqlite3` under the configured data directory. Aft
 <details>
 <summary><strong>Controlled online ingestion</strong></summary>
 
-The single source catalog is `[[online.sources]]` in [config/default.toml](config/default.toml). Kafka and Airflow are enabled; PostgreSQL, Spark, Redis and Docker are catalogued but disabled. There is no crawling, sitemap expansion, page-link discovery or JavaScript execution. Kafka's redirect-only entry is retained, while its default page is the explicitly configured official 4.3 introduction.
+The single source catalog is `[[online.sources]]` in [config/default.toml](config/default.toml). Kafka, Airflow, PostgreSQL and Spark are enabled; Redis and Docker are catalogued but disabled. There is no crawling, sitemap expansion, page-link discovery or JavaScript execution. Kafka's redirect-only entry is retained, while its default page is the explicitly configured official 4.3 introduction.
 
 ```powershell
 .\.venv\Scripts\techdocqa.exe ingest --source apache_kafka --json
@@ -266,7 +285,7 @@ Requires the local Ollama service with the pinned `nomic-embed-text:latest` for 
 
 `--rerank` sends at most 20 candidates to the cross-encoder `cross-encoder/ms-marco-MiniLM-L6-v2` and reorders them by its score. It runs on CPU through `onnxruntime`, with no torch. `scripts\fetch_reranker.py` downloads the model's three pinned files once, from huggingface.co at the pinned revision, into `data\models`, and checks each SHA-256. After that, reranking runs offline. A missing or altered file, or any reranker error, leaves the unreranked order with `degraded: true`. Reranking is off unless `[retrieval] rerank` or `--rerank` turns it on. The model's weights are Apache-2.0, but it was trained on MS MARCO, whose terms describe the data as for non-commercial research.
 
-`index` embeds only chunks without a stored vector, so a repeat run needs no provider. `--rebuild` restores the whole vector index from stored vectors, also with no model call. BM25 needs no provider and serves chunked versions straight away; vector search needs `index` first. Filters are `--document-id`, `--technology`, `--category` and `--entity`; `--entity` matches only after `enrich` has run (see [NLP enrichment](#nlp-enrichment)). Unfiltered search includes every active document, including any private ones you have indexed. `hybrid` is not implemented yet. After changing the embedding model, run `chunk` and then `index`; each model keeps its own collection.
+`index` embeds only chunks without a stored vector, so a repeat run needs no provider. `--rebuild` restores the whole vector index from stored vectors, also with no model call. BM25 needs no provider and serves chunked versions straight away; vector search needs `index` first. Filters are `--document-id`, `--technology`, `--category` and `--entity`; `--entity` matches only after `enrich` has run (see [NLP enrichment](#nlp-enrichment)). Unfiltered search includes every active document, including any private ones you have indexed. After changing the embedding model, run `chunk` and then `index`; each model keeps its own collection.
 
 `search` prints matching chunk text. Everything stays on this machine under the Ollama profile. A one-off CLI search takes about 4 to 5 seconds, including startup. Known limits and measured results are in the [Phase 5 report](docs/PHASE_5_STATUS.md).
 
@@ -383,6 +402,10 @@ The source filename says v2, but its contents identify **Revision 3**; those con
 - [Phase 8 implementation checkpoint and P0 reconciliation](docs/PHASE_8_STATUS.md)
 - [Phase 9 plan: P1 NLP enrichment](docs/PHASE_9_PLAN.md)
 - [Phase 9 implementation checkpoint](docs/PHASE_9_STATUS.md)
+- [Phase 10 plan: hybrid search, reranking and the full benchmark](docs/PHASE_10_PLAN.md)
+- [Phase 10 implementation checkpoint](docs/PHASE_10_STATUS.md)
+- [Phase 11 plan: operational verification and delivery](docs/PHASE_11_PLAN.md)
+- [Phase 11 report, closed early](docs/PHASE_11_STATUS.md)
 - [Development log](DEVELOPMENT_LOG.md)
 - [LangChain loaders, corpus formats and metadata plan](docs/LANGCHAIN_INGESTION_PLAN.md)
 - [Local development setup](deployment/local_setup.md)
