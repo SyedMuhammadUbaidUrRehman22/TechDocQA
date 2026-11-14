@@ -1,5 +1,23 @@
 # TechDocQA architectural decisions
 
+## Phase 11 contracts (2026-11-14)
+
+The project owner approved the [Phase 11 plan](PHASE_11_PLAN.md#decisions-to-approve-before-measuring) on 2026-11-14. On its four owner questions the owner chose the recommended option; the other decisions, P11-1, P11-4 to P11-7 and P11-9 to P11-11, stand as proposed under the owner's instruction to proceed. The plan's rows are the contracts.
+
+- **Local-only scope.** Every OpenAI step is excluded, following the decision of 2026-11-13.
+  - The OpenAI halves of NFR-03, NFR-04, NFR-08, NFR-09 and C-06 are not applicable.
+  - C-07 and AC-22.4 stay open by owner decision.
+  - No local substitute for the provider switch is built.
+- **Entry gate (2026-11-14).** Ollama had updated itself to 0.40.16; earlier phases recorded 0.40.10 and 0.40.13.
+  - The smoke `eval` still gives the P0 fingerprint `48ce89dc...a3af410`, which hashes every score and relevance, with the same `bm25` and `vector` IDs (`eval_7b0630eadcf14cb39a739bdf4cff0c93`, written outside the repository).
+  - `verify_index.py --compare` against `.tmp/p9-top5-before-enrich.json` passed.
+- **NFR-02 miss policy (P11-2): fixes that preserve results only.** Each fix must leave the smoke P0 fingerprint and the full benchmark's four-configuration fingerprint identical. A fix that changes results, or an amended target, goes back to the owner.
+- **Headroom (P11-3): the whole local index.** That is 2,735 chunks, 3.35x the 816-chunk public reference by chunks and 1.78x by bytes, used for search latency and for ingestion, with no configuration change. Tracked reports from these runs hold counts and timings only.
+- **Advisories (P11-8): upgrade the two reachable packages.** `pypdf` goes to 6.21.4 and `certifi` to 2026.10.18, with the lock rehashed.
+  - The upgrade stands only if `verify_corpus.py`, the tests and the fingerprints pass; otherwise it is reverted and recorded.
+  - Chroma's server-side advisories, `pip`, `soupsieve` and `setuptools` are documented, not upgraded.
+- **Delivery (P11-12): local only.** Work is committed on `feat/phase-11`, created from `main` at `19c838b`, and merged into `main` locally. Nothing is pushed until the owner says so.
+
 ## Phase 10 contracts (2026-11-13)
 
 The project owner approved decisions P10-1 to P10-12 of the [Phase 10 plan](PHASE_10_PLAN.md#decisions-to-approve-before-coding) on 2026-11-13, as recommended. The plan's rows are the contracts, and they settle D-11 (fusion) and D-12 (reranking). This section records the owner's choices among the plan's options and, later, what implementation changed.

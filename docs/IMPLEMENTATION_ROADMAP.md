@@ -146,6 +146,8 @@ Detailed plan proposed 2026-11-04, revised after a risk assessment and approved 
 
 ## Phase 11 — Required operational verification and delivery
 
+Detailed plan proposed and approved on 2026-11-14: [Phase 11 plan](PHASE_11_PLAN.md). TechDocQA is local-only, so the plan excludes every OpenAI step; C-07 and AC-22.4 stay open by owner decision.
+
 - Objective: verify required safety, reproducibility, performance, cost/privacy and clean-machine setup; keep optional FR-24 separate.
 - FRs: cumulative P0/P1 regression, especially FR-11/12/19/20/21/22/23; C-06/07, NFR-01–NFR-11.
 - Files: README, deployment/local_setup.md, exact dependency lock/config snapshots, reports and traceability status updates; targeted failure/restart tests if remaining risks require them.
