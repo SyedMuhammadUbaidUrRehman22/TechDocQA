@@ -2,7 +2,7 @@
 
 ## Phase 12 contracts (2026-11-14)
 
-The owner approved the [Phase 12 plan](PHASE_12_PLAN.md#decisions-to-approve-before-building) on 2026-11-14 with *"approved and push as you go"*. The plan's rows P12-1 to P12-5 are the contracts as written. P12-6 is amended by those words.
+The owner approved the [Phase 12 plan](PHASES.md#phase-12-plan-decisions-to-approve-before-building) on 2026-11-14 with *"approved and push as you go"*. The plan's rows P12-1 to P12-5 are the contracts as written. P12-6 is amended by those words.
 
 - **Scope.** FR-24 (AC-24.1 to AC-24.4), and evidence only for the URL slice of FR-01 and FR-23.
   - The owner skipped the web UI (FR-22, P2) and cross-version reuse (FR-05 and FR-11, P2) with *"skip web ui and reuse"*. They stay deferred.
@@ -14,7 +14,7 @@ The owner approved the [Phase 12 plan](PHASE_12_PLAN.md#decisions-to-approve-bef
 
 ## Phase 11 contracts (2026-11-14)
 
-The project owner approved the [Phase 11 plan](PHASE_11_PLAN.md#decisions-to-approve-before-measuring) on 2026-11-14. On its four owner questions the owner chose the recommended option; the other decisions, P11-1, P11-4 to P11-7 and P11-9 to P11-11, stand as proposed under the owner's instruction to proceed. The plan's rows are the contracts.
+The project owner approved the [Phase 11 plan](PHASES.md#phase-11-plan-decisions-to-approve-before-measuring) on 2026-11-14. On its four owner questions the owner chose the recommended option; the other decisions, P11-1, P11-4 to P11-7 and P11-9 to P11-11, stand as proposed under the owner's instruction to proceed. The plan's rows are the contracts.
 
 - **Local-only scope.** Every OpenAI step is excluded, following the decision of 2026-11-13.
   - The OpenAI halves of NFR-03, NFR-04, NFR-08, NFR-09 and C-06 are not applicable.
@@ -185,7 +185,7 @@ Release decision (step 11, P11-12), 2026-11-14: **the owner closed Phase 11** wi
 
 ## Phase 10 contracts (2026-11-13)
 
-The project owner approved decisions P10-1 to P10-12 of the [Phase 10 plan](PHASE_10_PLAN.md#decisions-to-approve-before-coding) on 2026-11-13, as recommended. The plan's rows are the contracts, and they settle D-11 (fusion) and D-12 (reranking). This section records the owner's choices among the plan's options and, later, what implementation changed.
+The project owner approved decisions P10-1 to P10-12 of the [Phase 10 plan](PHASES.md#phase-10-plan-decisions-to-approve-before-coding) on 2026-11-13, as recommended. The plan's rows are the contracts, and they settle D-11 (fusion) and D-12 (reranking). This section records the owner's choices among the plan's options and, later, what implementation changed.
 
 - **Reranker download authorized (P10-5).** The dependency gate may download one reranker model, preferring a small English cross-encoder on the installed `onnxruntime`, with no torch. Licence, hashes, offline use, determinism, latency and memory are checked before anything depends on it.
 - **Provider demo: full switch (P10-10). Withdrawn on 2026-11-13; see the revision below.** OpenAI chat and embeddings in a second configuration file, with a rebuilt public-only index and its own calibration. DDIA is excluded by construction and by a tested guard. The owner will create the key, set `OPENAI_API_KEY` and set a spend cap.
@@ -425,7 +425,7 @@ Implementation, step 7 (answer review for FR-19.3). This was fixed before any an
 
 ## Phase 9 completion (2026-11-12)
 
-These entries record how the rest of Phase 9 was implemented under the [contracts](#phase-9-contracts-2026-11-07) below. Evidence is in the [Phase 9 report](PHASE_9_STATUS.md). The owner decided the gold-set annotator, AC-07.4 and AC-08.3 on 2026-11-12, and later that day approved the adopted threshold, the similarity-scale guard and keyphrase policy v2, kept the P9-6 rule for secondary categories, and made the two proposed improvements a separate implementation task. On 2026-11-13 the owner confirmed Fable 5.2 as the round-2 annotator, and the held-out round 2 was scored once. The owner then accepted AC-07.4 as met at the point estimate and closed AC-08.3 as not met with no further work, which completes Phase 9. Each entry records its decision.
+These entries record how the rest of Phase 9 was implemented under the [contracts](#phase-9-contracts-2026-11-07) below. Evidence is in the [Phase 9 report](PHASES.md#phase-9-status). The owner decided the gold-set annotator, AC-07.4 and AC-08.3 on 2026-11-12, and later that day approved the adopted threshold, the similarity-scale guard and keyphrase policy v2, kept the P9-6 rule for secondary categories, and made the two proposed improvements a separate implementation task. On 2026-11-13 the owner confirmed Fable 5.2 as the round-2 annotator, and the held-out round 2 was scored once. The owner then accepted AC-07.4 as met at the point estimate and closed AC-08.3 as not met with no further work, which completes Phase 9. Each entry records its decision.
 
 - **Migration backup (P9-8, implementation corrected).** SQLite refuses to back up from a connection in a write transaction (`SQLITE_BUSY`, which Python's `backup()` retries forever), so the v1 and v2 upgrades hung. The copy is now read through a second, read-only connection while the migrating connection holds `BEGIN IMMEDIATE` and has written nothing. The contract is unchanged: one transaction holds the write lock from before the copy until the commit, and nothing can commit in between.
 - **Similarity scale (P9-6, extended).** `unclassified_threshold` is set together with `calibration_run_id` and a new `similarity_config_id`. That ID hashes the classifier policy, the embedding profile and every category name and description. The threshold applies only while it matches the active configuration; otherwise documents are `not_calibrated` and `enrich` warns `CLASSIFICATION_CALIBRATION_STALE`. This binds the threshold to its scale the way Q-07 binds the Phase 8 thresholds. Without it, a new embedding model or an edited description would silently reuse a threshold chosen on another scale. **Approved by the owner on 2026-11-12.**
@@ -462,7 +462,7 @@ These entries record how the rest of Phase 9 was implemented under the [contract
 
 ## Phase 9 contracts (2026-11-07)
 
-The project owner approved decisions P9-1 to P9-12 of the [Phase 9 plan](PHASE_9_PLAN.md#decisions-to-approve-before-coding) on 2026-11-07, as revised after the [risk assessment](PHASE_9_PLAN.md#risk-assessment-2026-11-07). The plan's rows are the contracts; this section records what implementation changed.
+The project owner approved decisions P9-1 to P9-12 of the [Phase 9 plan](PHASES.md#phase-9-plan-decisions-to-approve-before-coding) on 2026-11-07, as revised after the [risk assessment](PHASES.md#phase-9-plan-risk-assessment-2026-11-07). The plan's rows are the contracts; this section records what implementation changed.
 
 - **Dependency gate (step 1), passed with a substitution.** spaCy 3.8.18 passed. **YAKE 0.7.3 failed:** its package metadata says `LGPLv3`, but the license file it ships is the **GNU Affero GPL v3** with a commercial alternative. The plan accepted LGPLv3 only, so by its gate rule FR-08 uses the named alternative, **RAKE through `rake-nltk` 1.0.6** (MIT, with NLTK 3.10.4 under Apache-2.0). RAKE is given its own stop-word list, sentence spans and the technical tokenizer, so NLTK needs no data download. RAKE scores are higher-is-better, so the descending `score` is the RAKE score itself. Ties are broken by phrase text, because RAKE does not order them.
 - **Gate evidence.** The current lock plus the two packages resolve with every existing pin unchanged, and `pip check` is clean. The 24 new wheels, 27 MB as downloaded, are pinned in `requirements.lock.txt`, and their SHA-256 hashes are in `requirements.nlp.hashes.txt`. Every new wheel's license file reads MIT, BSD, Apache-2.0 or PSF. All 141 wheels were reinstalled offline with `--no-index --require-hashes` into a fresh environment. Three runs with different hash seeds, with network calls blocked by an audit hook and an empty `NLTK_DATA`, gave identical sentence spans and phrases. The spaCy model wheel is not needed yet: the rule-based `sentencizer` runs without it, and P9-2 measures first.
@@ -475,7 +475,7 @@ The project owner approved decisions P9-1 to P9-12 of the [Phase 9 plan](PHASE_9
 
 ## P0 approvals (2026-11-07)
 
-The project owner approved the following on 2026-11-07. With these, every P0 release condition in the [Phase 8 reconciliation](PHASE_8_STATUS.md#p0-acceptance-reconciliation) is settled.
+The project owner approved the following on 2026-11-07. With these, every P0 release condition in the [Phase 8 reconciliation](PHASES.md#phase-8-status-p0-acceptance-reconciliation) is settled.
 
 - **Both 2026-11-04 amendments confirmed:** AC-12.1 as index fidelity and Claude as the AC-16.6 reviewer, as described below.
 - **Q-07 approved as implemented.** The policy IDs `cosine-distance-half-v1`, `bm25-query-max-v1` and `balanced-accuracy-midpoint-v1` name the policies themselves and carry no "proposed" marker, so they are kept. Changing them would change every `scoring_config_id` and make the adopted thresholds stale with no change in behavior. The thresholds of calibration run `eval_c4ab1f1397fa469489137f611b74cdf7` stay in force.
@@ -490,7 +490,7 @@ The project owner made two changes to the P0 release gate after the Phase 8 repo
 
 ## Phase 8 contracts (2026-11-04)
 
-These rules implement FR-18 and the FR-21 QA slice, and resolve Q-07 for the two P0 modes. Q-07 was approved as implemented on 2026-11-07, with its policy IDs unchanged ([approvals](#p0-approvals-2026-11-07)); they are recorded in every score, threshold and report, and a later amendment changes them. Evidence is in [Phase 8](PHASE_8_STATUS.md).
+These rules implement FR-18 and the FR-21 QA slice, and resolve Q-07 for the two P0 modes. Q-07 was approved as implemented on 2026-11-07, with its policy IDs unchanged ([approvals](#p0-approvals-2026-11-07)); they are recorded in every score, threshold and report, and a later amendment changes them. Evidence is in [Phase 8](PHASES.md#phase-8-status).
 
 - **Q-07 score scales.** Each mode has its own 0-1 relevance, returned as `relevance` on every search result; raw scores stay in `scores`. Vector relevance is the FR-12 score, `(cosine + 1) / 2` (`cosine-distance-half-v1`). BM25 relevance is the raw score divided by the most that query could score, `(k1 + 1)` times the sum of its tokens' IDF, with a token the corpus lacks counted at the IDF of an unseen term, `log((N + 0.5) / 0.5)` (`bm25-query-max-v1`). The divisor is fixed per query, so the BM25 ranking is unchanged. Counting absent words is what keeps a question about Terraform from looking relevant on its few common words. A tiny corpus can give negative IDFs, so the value is clamped to 0-1. Hybrid and reranker scales are not defined; they are P1 and need their own calibration.
 - **Thresholds per mode.** `[retrieval.sufficiency.bm25]` and `[retrieval.sufficiency.vector]` each hold `min_top_score`, `min_chunk_score`, `min_supporting_chunks`, `calibration_run_id` and `scoring_config_id`. The scoring ID hashes what fixes a relevance value: the mode plus the embedding profile and score policy, or `k1`, `b`, the tokenizer and the BM25 relevance policy. Thresholds apply only while it matches the active configuration. A mismatch gives the warning `SUFFICIENCY_CALIBRATION_STALE`, and a missing section gives `SUFFICIENCY_NOT_CALIBRATED`. Either way the mode answers ungated and says so, and no mode ever uses another mode's thresholds. Top-k and candidate depth are not part of the scale.
@@ -504,7 +504,7 @@ These rules implement FR-18 and the FR-21 QA slice, and resolve Q-07 for the two
 
 ## Phase 7 contracts (2026-11-03)
 
-These rules implement FR-16, FR-17 and the FR-23 prompt slice, and resolve the QA parts of Q-08 and Q-15. Q-07 is untouched: no score threshold is applied in any mode until Phase 8 calibrates one. Evidence is in [Phase 7](PHASE_7_STATUS.md).
+These rules implement FR-16, FR-17 and the FR-23 prompt slice, and resolve the QA parts of Q-08 and Q-15. Q-07 is untouched: no score threshold is applied in any mode until Phase 8 calibrates one. Evidence is in [Phase 7](PHASES.md#phase-7-status).
 
 - **Chain (C-01).** `ChatPromptTemplate | ChatOllama`, streamed, with prompt version `grounded-qa-v1`. Retrieval stays the registry-gated `search()`. Custom code covers only context fitting, citation verification and the query log.
 - **Token bound.** `chat_tokenizer = "byte-bpe"` is allowed only after the model's tokenizer is verified as byte-level BPE. For `qwen3:1.7b` the installed metadata says `tokenizer.ggml.model = gpt2`. The bound is the UTF-8 bytes of the message contents plus `chat_template_reserve_tokens` (96; the installed template adds at most about 60). Other tokenizers need their own verified bound. `context_window` (8192) is sent as `num_ctx` and `max_output_tokens` (512) as `num_predict`. The prompt must fit `context_window - max_output_tokens`.
@@ -520,7 +520,7 @@ These rules implement FR-16, FR-17 and the FR-23 prompt slice, and resolve the Q
 
 ## Phase 6 contracts (2026-11-03)
 
-These rules implement the Q-12 and Q-13 proposals as written. Both were approved on 2026-11-07, and each run since then records the policy ID `q13-v1`; earlier runs recorded `q13-proposed-v1` ([approvals](#p0-approvals-2026-11-07)). A later amendment changes the ID. Evidence is in [Phase 6](PHASE_6_STATUS.md).
+These rules implement the Q-12 and Q-13 proposals as written. Both were approved on 2026-11-07, and each run since then records the policy ID `q13-v1`; earlier runs recorded `q13-proposed-v1` ([approvals](#p0-approvals-2026-11-07)). A later amendment changes the ID. Evidence is in [Phase 6](PHASES.md#phase-6-status).
 
 - **Q-12.** The smoke set is exactly 20 answerable and 10 unanswerable questions. Every report checks this, along with DS-06's 30 to 50 questions and FR-19's minimum of 10 unanswerable.
 - **Q-13 labels.** A relevant item is a manifest `source_key` plus a verbatim `anchor` or a `section` heading path, graded 0, 1 or 2. Anchors match case-insensitively with whitespace collapsed, against the current chunks of the active version, on every run. Grades 1 and 2 count as relevant in P0. Grade 0 never counts.
@@ -532,7 +532,7 @@ These rules implement the Q-12 and Q-13 proposals as written. Both were approved
 
 ## Phase 5 contracts (2026-11-02)
 
-These rules resolve the Phase 5 portions of Q-02, Q-03, Q-06, Q-08, Q-15 and Q-16, and take precedence over earlier wording. Evidence is in [Phase 5](PHASE_5_STATUS.md).
+These rules resolve the Phase 5 portions of Q-02, Q-03, Q-06, Q-08, Q-15 and Q-16, and take precedence over earlier wording. Evidence is in [Phase 5](PHASES.md#phase-5-status).
 
 - **Q-03, departs from the wording of FR-12.2.** Stored vectors are keyed by the source-defined `chunk_key` (text hash, chunking config, embedding model), so repeated text is embedded once. Vector store entries are keyed by occurrence `chunk_id` and carry `chunk_key`. One entry per `chunk_key` would lose provenance and break document filters when two sources share text. Upserts stay idempotent, and AC-12.3 and AC-11.1 hold.
 - **Q-02.** `embedding_failed` is a per-chunk outcome, not a version status. A version moves `chunked -> embedded -> indexed` only when every chunk has a valid vector and entry. A failure leaves it `chunked`, and vectors already validated are kept for the retry.
@@ -554,7 +554,7 @@ Reprocessing is explicit through `chunk [version_ids ...]`. Verified immutable a
 
 The user selected Ollama `qwen3:1.7b` and `nomic-embed-text`. Installed Ollama 0.40.10 reports `nomic-bert.context_length=2048`, `num_ctx=8192`, tokenizer family `bert`, vocabulary size 30522, CLS 101 and SEP 102. The embedding API clamps to the smaller context. Model digest and context are recorded in default settings; the generation tokenizer is not reused. With no exact provider tokenizer counter installed, characters are the effective size unit. For this verified WordPiece model, a conservative UTF-8 byte token upper bound includes `search_document: ` plus two special tokens, leaving 2,029 bytes. Chunks must satisfy both the 1000-character size and that byte limit, so only multibyte-heavy text is shortened. OpenAI `tiktoken` profiles use the same bound because each byte-level token covers at least one byte. Other model/tokenizer profiles require a verified implementation rather than an assumed conversion.
 
-The frozen public reference has 816 chunks, below the approximate 3,000 target. The separate private DDIA supplement adds 1,919, so all 21 together have 2,735 chunks; DDIA stays excluded from evaluation because its permissions are unverified. No corpus bytes, model weights or DDIA text are committed. See [Phase 4 evidence and remaining gates](PHASE_4_STATUS.md).
+The frozen public reference has 816 chunks, below the approximate 3,000 target. The separate private DDIA supplement adds 1,919, so all 21 together have 2,735 chunks; DDIA stays excluded from evaluation because its permissions are unverified. No corpus bytes, model weights or DDIA text are committed. See [Phase 4 evidence and remaining gates](PHASES.md#phase-4-status).
 
 ## Review corrections (2026-11-02)
 
@@ -572,7 +572,7 @@ A code and SDD review changed these implemented contracts. Earlier sections keep
 
 Status: proposed for review, 2026-10-09. Nothing in this document authorizes application implementation. Source: [requirements, contents Revision 3](../TechDocQA_Requirements_v2.md). Requirements and their defaults remain authoritative; engineering recommendations below are not additional FRs.
 
-Current update, 2026-10-22: the user explicitly requested Phase 3B on top of Phase 3A. LangChain remains selected; models were deferred at that point and selected in Phase 4. The implemented contracts below now cover local loading, normalization and finalization, resolving the Phase 3 portions of Q-02/Q-05/Q-06/Q-10/Q-11. Other later-phase decisions remain open. See [Phase 3B checkpoint](PHASE_3B_STATUS.md). The original proposal below is design history, not a claim that all proposed components exist.
+Current update, 2026-10-22: the user explicitly requested Phase 3B on top of Phase 3A. LangChain remains selected; models were deferred at that point and selected in Phase 4. The implemented contracts below now cover local loading, normalization and finalization, resolving the Phase 3 portions of Q-02/Q-05/Q-06/Q-10/Q-11. Other later-phase decisions remain open. See [Phase 3B checkpoint](PHASES.md#phase-3b-status). The original proposal below is design history, not a claim that all proposed components exist.
 
 ## Implemented Phase 2 contracts (2026-10-21)
 

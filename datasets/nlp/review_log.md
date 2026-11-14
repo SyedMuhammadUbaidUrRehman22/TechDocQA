@@ -102,4 +102,4 @@ Written before the round-2 freeze and before any round-2 score was computed. Nei
 
 ## Round 2 scored (2026-11-13)
 
-Scored once, after the freeze above was committed (2982ac8), in run [enrichment_5d0f6cdcc0bd41ddaa2a05dc5bf0f029](../../reports/evaluation/enrichment_5d0f6cdcc0bd41ddaa2a05dc5bf0f029.md), reported as not tuned. AC-07.4 is met at the point estimate only: precision 0.892 and recall 0.619. AC-08.3 is not met: 0.239. No rule, word list, setting or label was changed after the score was seen. Both rounds are now development data for any later change ([Phase 9 report](../../docs/PHASE_9_STATUS.md#round-2-held-out-2026-11-13)).
+Scored once, after the freeze above was committed (2982ac8), in run [enrichment_5d0f6cdcc0bd41ddaa2a05dc5bf0f029](../../reports/evaluation/enrichment_5d0f6cdcc0bd41ddaa2a05dc5bf0f029.md), reported as not tuned. AC-07.4 is met at the point estimate only: precision 0.892 and recall 0.619. AC-08.3 is not met: 0.239. No rule, word list, setting or label was changed after the score was seen. Both rounds are now development data for any later change ([Phase 9 report](../../docs/PHASES.md#phase-9-status-round-2-held-out-2026-11-13)).
