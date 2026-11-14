@@ -2,7 +2,7 @@
 
 Status: proposed, 2026-10-09. Primary source: [TechDocQA_Requirements_v2.md](../TechDocQA_Requirements_v2.md), whose contents identify **Revision 3**. [Traceability](requirements_traceability.md) preserves all original FR titles, priorities, dependencies and acceptance criteria. [Decisions](DECISIONS.md) distinguishes engineering proposals and unresolved questions from source requirements. Sections marked proposed remain later work; the phase status documents hold implemented behavior and measured evidence.
 
-Current checkpoint, 2026-11-02: roadmap Phases 1-5 and the selected Phase 3A URL slice are implemented: registration and local safety ([Phase 2](PHASE_2_STATUS.md)), controlled online HTML ([Phase 3A](PHASE_3A_STATUS.md)), parsing, normalization and finalized versions ([Phase 3B](PHASE_3B_STATUS.md)), segmentation and chunking ([Phase 4](PHASE_4_STATUS.md)), and embeddings, BM25 and vector search, withdrawal and deletion ([Phase 5](PHASE_5_STATUS.md)). QA and evaluation remain future work. Implemented contracts are in [DECISIONS](DECISIONS.md) and take precedence over historical proposal wording here.
+Current checkpoint, 2026-11-02: roadmap Phases 1-5 and the selected Phase 3A URL slice are implemented: registration and local safety ([Phase 2](PHASES.md#phase-2-status)), controlled online HTML ([Phase 3A](PHASES.md#phase-3a-status)), parsing, normalization and finalized versions ([Phase 3B](PHASES.md#phase-3b-status)), segmentation and chunking ([Phase 4](PHASES.md#phase-4-status)), and embeddings, BM25 and vector search, withdrawal and deletion ([Phase 5](PHASES.md#phase-5-status)). QA and evaluation remain future work. Implemented contracts are in [DECISIONS](DECISIONS.md) and take precedence over historical proposal wording here.
 
 ## 1. Overview and scope
 
@@ -44,7 +44,7 @@ All FR-01 through FR-24 are mapped in section 17; original pass/fail criteria ar
 | NFR-10 | Automated AC tests where practical; offline model mocks plus clearly identified real/human gates. |
 | NFR-11 | Separate replaceable components using framework abstractions. |
 
-NFR targets are initial source values pending reference-machine measurement. No default is weakened here. The local models and frozen corpus are selected ([Phase 4](PHASE_4_STATUS.md)); budget and the reference-hardware targets remain unset.
+NFR targets are initial source values pending reference-machine measurement. No default is weakened here. The local models and frozen corpus are selected ([Phase 4](PHASES.md#phase-4-status)); budget and the reference-hardware targets remain unset.
 
 ## 3. Proposed architecture
 
@@ -108,7 +108,7 @@ The source processing sequence is registered -> extracting -> normalized -> chun
 
 ## 6. Metadata and persistence
 
-Phase 3B update (2026-10-22): the [implemented normalization/finalization contract](DECISIONS.md#phase-3b-normalization-and-finalization-2026-10-22) supersedes the historical Phase 2 boundary below. The existing schema/JSON columns support code-safe normalized artifacts, resolved duplicate candidates and transactional active-version supersession. `process` completes local parsing or consumes saved online extraction offline; failed candidates preserve the prior active version. Stored bodies remain in private immutable files, never SQLite. See [verification and limits](PHASE_3B_STATUS.md). No chunk/index tables have been added.
+Phase 3B update (2026-10-22): the [implemented normalization/finalization contract](DECISIONS.md#phase-3b-normalization-and-finalization-2026-10-22) supersedes the historical Phase 2 boundary below. The existing schema/JSON columns support code-safe normalized artifacts, resolved duplicate candidates and transactional active-version supersession. `process` completes local parsing or consumes saved online extraction offline; failed candidates preserve the prior active version. Stored bodies remain in private immutable files, never SQLite. See [verification and limits](PHASES.md#phase-3b-status). No chunk/index tables have been added.
 
 Implemented Phase 2 tables are `documents`, `registrations`, `runs`, `attempts` and `events`. Registrations reserve a provisional `version_id`, retain raw hashes/metadata and predecessor/byte-duplicate relationships, and keep `content_hash=null`, `finalized=false`, `is_active=false`. No text body or disk snapshot is stored by this phase. Phase 3 must snapshot or verify bytes before framework loading and finalize normalized versions; chunk/embedding/entity/config tables remain unimplemented. Public records omit private paths and include sanitized source URL/license metadata. The later target below is not a claim that those tables or snapshots exist.
 
@@ -128,7 +128,7 @@ Store chunk_id, document_id, version_id, chunk_index, section_path, PDF page, si
 
 Configuration holds independent chat and embedding profiles, provider/model identifier/revision when available, dimension, normalization, batch size, timeout, input/context limits and tokenizer identity/version. Proposed factory constructs framework embedding/chat objects. OpenAI keys are environment-only; Ollama uses configured local base URL/model. A fully local profile uses local embeddings, chat and any enabled reranker/judge.
 
-Validate vectors for dimension, finite elements and nonzero norm before storing. Reuse identical chunk_key embeddings within approved identity semantics; repeat processing makes zero embedding calls for unchanged eligible artifacts. Record MODEL_CHANGED/CONTENT_CHANGED and paid token/request counts. Model/dimension changes require separate collection and rebuild. Provider-client transient retries are P0 FR-11 behavior; FR-24 adds optional health/manual recovery visibility. The selected models and their verified metadata are recorded in [Phase 4](PHASE_4_STATUS.md). Embedding inference, stored vectors and reruns with no model call are measured in [Phase 5](PHASE_5_STATUS.md); generation has not run.
+Validate vectors for dimension, finite elements and nonzero norm before storing. Reuse identical chunk_key embeddings within approved identity semantics; repeat processing makes zero embedding calls for unchanged eligible artifacts. Record MODEL_CHANGED/CONTENT_CHANGED and paid token/request counts. Model/dimension changes require separate collection and rebuild. Provider-client transient retries are P0 FR-11 behavior; FR-24 adds optional health/manual recovery visibility. The selected models and their verified metadata are recorded in [Phase 4](PHASES.md#phase-4-status). Embedding inference, stored vectors and reruns with no model call are measured in [Phase 5](PHASES.md#phase-5-status); generation has not run.
 
 ## 9. Vector and lexical retrieval
 
@@ -174,7 +174,7 @@ Unit tests use fake embeddings/chat/reranker and synthetic format fixtures. Inte
 
 Treat source/query/model output as untrusted. Enforce resolved allowlisted paths including traversal/symlink escapes, format sniffing, size/page/time bounds and archive rejection. Configuration validation checks positive limits, overlap<chunk_size, permissible units/model windows and explicit profile values. Use generated test secrets; scan output/logs/repository without committing literal secrets. Redact credentials in URLs, exception text and configuration before output. Prompt instructions mitigate injection; no tools/output execution further limits effects, without claiming a guarantee.
 
-Controlled URL ingestion ([Phase 3A](PHASE_3A_STATUS.md)) validates schemes and resolved destination IPs including redirects, blocks loopback/private/link-local/cloud-metadata addresses, and bounds redirects/time/bytes. OpenAI profile documentation must state text/questions sent externally; local mode uses only local providers. Raw snapshot/corpus access remains single-user local filesystem scope.
+Controlled URL ingestion ([Phase 3A](PHASES.md#phase-3a-status)) validates schemes and resolved destination IPs including redirects, blocks loopback/private/link-local/cloud-metadata addresses, and bounds redirects/time/bytes. OpenAI profile documentation must state text/questions sent externally; local mode uses only local providers. Raw snapshot/corpus access remains single-user local filesystem scope.
 
 ## 16. Deployment and dependencies
 
@@ -211,7 +211,7 @@ Deploy the CLI on one laptop-class machine; local files/SQLite/Chroma and option
 | FR-23 | input limits/path/secrets, untrusted prompt | 2–3,7; URL 3A |
 | FR-24 | CLI recovery/check/structured logs | 12 |
 
-Rows through roadmap Phase 8 and the 3A URL slice are implemented to the limits in their status documents; later phases are planned. Phase 6 implements the FR-19 smoke runner and metrics; its benchmark was reviewed on 2026-11-03. Phase 7 implements FR-16 and FR-17 answering and citations. Phase 8 implements FR-18 with per-mode relevance scales and thresholds calibrated on the smoke benchmark, and reconciles every P0 acceptance criterion; two remain open, so P0 is not released. See [Phase 8](PHASE_8_STATUS.md). Full original dependencies and acceptance coverage remain in traceability.
+Rows through roadmap Phase 8 and the 3A URL slice are implemented to the limits in their status documents; later phases are planned. Phase 6 implements the FR-19 smoke runner and metrics; its benchmark was reviewed on 2026-11-03. Phase 7 implements FR-16 and FR-17 answering and citations. Phase 8 implements FR-18 with per-mode relevance scales and thresholds calibrated on the smoke benchmark, and reconciles every P0 acceptance criterion; two remain open, so P0 is not released. See [Phase 8](PHASES.md#phase-8-status). Full original dependencies and acceptance coverage remain in traceability.
 
 ## 18. Decisions, trade-offs and unresolved questions
 

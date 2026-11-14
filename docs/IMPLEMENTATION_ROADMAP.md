@@ -1,22 +1,22 @@
 # TechDocQA implementation roadmap
 
-Phase 10 checkpoint 2026-11-13: [hybrid search, reranking and the full benchmark](PHASE_10_STATUS.md). `rrf-v1` hybrid search has a degraded path and its own calibrated gate. Optional reranking uses a pinned local ONNX cross-encoder, off by default. The reviewed full benchmark has 50 questions, 20 of them held out, and ran once in four configurations. Hybrid met the measured-benefit rule over vector (nDCG@5 +0.046, interval [+0.009, +0.085]) and the owner made it the default mode. Reranking did not meet the rule and stays off. FR-18 is met on smoke in the new modes. The owner rated 20 answers for FR-19.3: faithful 17 yes and 3 partly, relevant 20 of 20. **The OpenAI provider demo was withdrawn by owner decision** (local-only), so AC-22.4 and C-07's provider switch stay open.
+Phase 10 checkpoint 2026-11-13: [hybrid search, reranking and the full benchmark](PHASES.md#phase-10-status). `rrf-v1` hybrid search has a degraded path and its own calibrated gate. Optional reranking uses a pinned local ONNX cross-encoder, off by default. The reviewed full benchmark has 50 questions, 20 of them held out, and ran once in four configurations. Hybrid met the measured-benefit rule over vector (nDCG@5 +0.046, interval [+0.009, +0.085]) and the owner made it the default mode. Reranking did not meet the rule and stays off. FR-18 is met on smoke in the new modes. The owner rated 20 answers for FR-19.3: faithful 17 yes and 3 partly, relevant 20 of 20. **The OpenAI provider demo was withdrawn by owner decision** (local-only), so AC-22.4 and C-07's provider switch stay open.
 
-Phase 8 checkpoint 2026-11-04: [calibrated refusal and P0 reconciliation](PHASE_8_STATUS.md) records per-mode 0-1 relevance scales and thresholds calibrated on the reviewed smoke set (BM25 0.297285, vector 0.858223, run `eval_c4ab1f13...`). With the real model, each mode refused 10 of 10 out-of-domain questions without a model call (AC-18.1) and answered 19 of 20 answerable ones (AC-18.2). The real-model CLI script meets AC-22.3 and AC-21.1. **The P0 release gate passed on 2026-11-07** ([gate update](PHASE_8_STATUS.md#gate-update-2026-11-07)). AC-16.6 is rated 8 of 10 by the AI reviewer the owner designated, AC-12.1 is met as amended (index recall@3 against exact search 1.0), and the owner approved both changes and Q-07, Q-12 and Q-13.
+Phase 8 checkpoint 2026-11-04: [calibrated refusal and P0 reconciliation](PHASES.md#phase-8-status) records per-mode 0-1 relevance scales and thresholds calibrated on the reviewed smoke set (BM25 0.297285, vector 0.858223, run `eval_c4ab1f13...`). With the real model, each mode refused 10 of 10 out-of-domain questions without a model call (AC-18.1) and answered 19 of 20 answerable ones (AC-18.2). The real-model CLI script meets AC-22.3 and AC-21.1. **The P0 release gate passed on 2026-11-07** ([gate update](PHASES.md#phase-8-status-gate-update-2026-11-07)). AC-16.6 is rated 8 of 10 by the AI reviewer the owner designated, AC-12.1 is met as amended (index recall@3 against exact search 1.0), and the owner approved both changes and Q-07, Q-12 and Q-13.
 
-Phase 7 checkpoint 2026-11-03: [answering and citation evidence](PHASE_7_STATUS.md) records `ask` as a LangChain prompt and `ChatOllama` chain over the registry-gated search, with context fitted to an 8,192-token window, citations verified against stored metadata and provider failures returned as `generation_error`. On the real corpus, 10 of 10 smoke questions were answered with citations (AC-16.1), and `qwen3:1.7b` did not follow the injected instruction in 3 of 3 questions (AC-23.3) on the second attempt, after a cold-start timeout. **AC-16.6 human review is open.** No refusal threshold applies until Phase 8.
+Phase 7 checkpoint 2026-11-03: [answering and citation evidence](PHASES.md#phase-7-status) records `ask` as a LangChain prompt and `ChatOllama` chain over the registry-gated search, with context fitted to an 8,192-token window, citations verified against stored metadata and provider failures returned as `generation_error`. On the real corpus, 10 of 10 smoke questions were answered with citations (AC-16.1), and `qwen3:1.7b` did not follow the injected instruction in 3 of 3 questions (AC-23.3) on the second attempt, after a cold-start timeout. **AC-16.6 human review is open.** No refusal threshold applies until Phase 8.
 
-Phase 6 checkpoint 2026-11-03: [smoke benchmark evidence](PHASE_6_STATUS.md) records the runner, metrics and `eval` command on the 20-document public reference, with DDIA excluded. BM25 Recall@5 is 0.925 with MRR 0.708; vector Recall@5 is 0.925 with MRR 0.783. A run takes 35 to 40 s, and two runs give identical results. AC-21.3 deletion flags pass in tests. The project owner reviewed and accepted all 30 questions on 2026-11-03. Q-12/Q-13 remain unapproved.
+Phase 6 checkpoint 2026-11-03: [smoke benchmark evidence](PHASES.md#phase-6-status) records the runner, metrics and `eval` command on the 20-document public reference, with DDIA excluded. BM25 Recall@5 is 0.925 with MRR 0.708; vector Recall@5 is 0.925 with MRR 0.783. A run takes 35 to 40 s, and two runs give identical results. AC-21.3 deletion flags pass in tests. The project owner reviewed and accepted all 30 questions on 2026-11-03. Q-12/Q-13 remain unapproved.
 
-Phase 5 checkpoint 2026-11-02: [search and lifecycle evidence](PHASE_5_STATUS.md) records all 2,735 chunks embedded and indexed with `nomic-embed-text`, restart and rebuild reproducing identical top-5 results, and BM25 working without a provider. AC-12.1 on the real corpus (124 of 152) and the NFR-02 vector target (p95 1.377 s) are open. Next is Phase 6, which needs a second reviewer.
+Phase 5 checkpoint 2026-11-02: [search and lifecycle evidence](PHASES.md#phase-5-status) records all 2,735 chunks embedded and indexed with `nomic-embed-text`, restart and rebuild reproducing identical top-5 results, and BM25 working without a provider. AC-12.1 on the real corpus (124 of 152) and the NFR-02 vector target (p95 1.377 s) are open. Next is Phase 6, which needs a second reviewer.
 
-Phase 4 checkpoint 2026-10-24: [segmentation/chunking evidence](PHASE_4_STATUS.md) records the implemented offline chunk layer, 816 public-reference chunks, explicit character fallback and the verified local Ollama embedding input profile. Index-dependent acceptance remains Phase 5. The phase plans and earlier checkpoints below remain historical.
+Phase 4 checkpoint 2026-10-24: [segmentation/chunking evidence](PHASES.md#phase-4-status) records the implemented offline chunk layer, 816 public-reference chunks, explicit character fallback and the verified local Ollama embedding input profile. Index-dependent acceptance remains Phase 5. The phase plans and earlier checkpoints below remain historical.
 
 Corpus update 2026-10-24: [reference-corpus evidence](REFERENCE_CORPUS_STATUS.md) now covers 20 frozen public documents plus one private DDIA supplement, all successfully processed. The numeric format/size/technology selection gate is satisfied; DDIA permissions remain unverified and it is excluded from the public reference. Hardware, budget, human benchmark review, model selection and Phase 4 onward remain separate gates. Earlier zero-corpus statements below are historical.
 
 Status: roadmap proposed 2026-10-09; implementation checkpoint 2026-10-22. Source: [requirements](../TechDocQA_Requirements_v2.md), contents Revision 3. Phase 1 foundation, Phase 2 registration/local safety, the selected Phase 3A online HTML slice and Phase 3B parsing/normalization/version finalization are implemented. Phase 1 corpus/hardware/budget/reviewer gates and Phase 4 onward remain open. Source release stages and priorities are preserved; an early slice does not complete a whole FR.
 
-Current checkpoint: [Phase 3B](PHASE_3B_STATUS.md) completes the remaining Phase 3 implementation through an offline `process` step after registration/extraction. Phase 3A fetching/security and registration CLI behavior are retained. The optional URL slice does not complete the remaining Phase 12 features. Corpus/hardware/budget/reviewer decisions remain open; models, search and QA remain deferred. See [contracts](DECISIONS.md#phase-3b-normalization-and-finalization-2026-10-22) and [development log](../DEVELOPMENT_LOG.md).
+Current checkpoint: [Phase 3B](PHASES.md#phase-3b-status) completes the remaining Phase 3 implementation through an offline `process` step after registration/extraction. Phase 3A fetching/security and registration CLI behavior are retained. The optional URL slice does not complete the remaining Phase 12 features. Corpus/hardware/budget/reviewer decisions remain open; models, search and QA remain deferred. See [contracts](DECISIONS.md#phase-3b-normalization-and-finalization-2026-10-22) and [development log](../DEVELOPMENT_LOG.md).
 
 All future test paths are proposed in [traceability](requirements_traceability.md). See [repository structure](REPOSITORY_STRUCTURE.md) for component paths and [decisions](DECISIONS.md) for D/Q gates. Default tests run offline with mocks. Real provider/model/human benchmarks are separate recorded gates and never substituted by mock results.
 
@@ -42,9 +42,9 @@ All future test paths are proposed in [traceability](requirements_traceability.m
 
 ## Phase 2 — Registry, registration and local safety
 
-Detailed sequence, prerequisite decisions, acceptance boundaries and tests: [Phase 2 plan](PHASE_2_PLAN.md). This means roadmap Phase 2, not priority P2 optional scope.
+Detailed sequence, prerequisite decisions, acceptance boundaries and tests: [Phase 2 plan](PHASES.md#phase-2-plan). This means roadmap Phase 2, not priority P2 optional scope.
 
-Implementation checkpoint: registration, SQLite history/runs/attempts, local limits/containment, PDF page preflight, sanitized JSON errors and ingest/status/list/history are implemented. Current offline acceptance evidence is in [PHASE_2_STATUS.md](PHASE_2_STATUS.md). Raw-byte duplicate candidates remain separate from normalized finalization; no complete FR-02/05/20/22/23 claim. The Phase 1 corpus gate remains open independently.
+Implementation checkpoint: registration, SQLite history/runs/attempts, local limits/containment, PDF page preflight, sanitized JSON errors and ingest/status/list/history are implemented. Current offline acceptance evidence is in [Phase 2 report](PHASES.md#phase-2-status). Raw-byte duplicate candidates remain separate from normalized finalization; no complete FR-02/05/20/22/23 claim. The Phase 1 corpus gate remains open independently.
 
 - Objective: bounded per-file registration and traceable run/status records.
 - FRs: FR-01 (local), FR-02 registration, FR-20 registration/history, FR-22 ingest/status slices, FR-23 local limits/paths/secrets slice.
@@ -56,11 +56,11 @@ Implementation checkpoint: registration, SQLite history/runs/attempts, local lim
 
 ## Phase 3A — Controlled online HTML ingestion
 
-User-selected early URL slice of FR-01/FR-23, with online HTML extraction and FR-02/FR-20/FR-22 integration. The TOML catalog selects finite official Kafka/Airflow pages; four other approved sources start disabled. DNS/IP-pinned HTTPS fetching precedes local LangChain loading in a bounded worker. Existing SQLite JSON columns retain URL identity, raw/text snapshots and per-retrieval provenance; schema version 1 and local keys remain unchanged. No normalized versions, chunks or indexes are created. See [plan](PHASE_3A_PLAN.md), [implemented decisions](DECISIONS.md#phase-3a-online-contracts-2026-10-21) and [verification](PHASE_3A_STATUS.md).
+User-selected early URL slice of FR-01/FR-23, with online HTML extraction and FR-02/FR-20/FR-22 integration. The TOML catalog selects finite official Kafka/Airflow pages; four other approved sources start disabled. DNS/IP-pinned HTTPS fetching precedes local LangChain loading in a bounded worker. Existing SQLite JSON columns retain URL identity, raw/text snapshots and per-retrieval provenance; schema version 1 and local keys remain unchanged. No normalized versions, chunks or indexes are created. See [plan](PHASES.md#phase-3a-plan), [implemented decisions](DECISIONS.md#phase-3a-online-contracts-2026-10-21) and [verification](PHASES.md#phase-3a-status).
 
 ## Phase 3 — Parsing, normalization and versioning
 
-Phase 3B is the user's name for this remaining Phase 3 work; the original roadmap had no distinct 3B entry or indexing responsibility. Local LangChain loaders, code-safe deterministic normalization, immutable extracted/normalized artifacts and transactional finalization now implement this boundary. `ingest` retains byte registration; `process [version_ids ...]` completes it offline and can consume Phase 3A snapshots without a fetch. See [checkpoint and acceptance limits](PHASE_3B_STATUS.md). The original plan below remains the scope; no Phase 4 work is included.
+Phase 3B is the user's name for this remaining Phase 3 work; the original roadmap had no distinct 3B entry or indexing responsibility. Local LangChain loaders, code-safe deterministic normalization, immutable extracted/normalized artifacts and transactional finalization now implement this boundary. `ingest` retains byte registration; `process [version_ids ...]` completes it offline and can consume Phase 3A snapshots without a fetch. See [checkpoint and acceptance limits](PHASES.md#phase-3b-status). The original plan below remains the scope; no Phase 4 work is included.
 
 - Objective: source-preserving text extraction and deterministic duplicate/change decisions.
 - FRs: FR-03, FR-04, FR-05 P0; remaining title capture FR-02, processing history FR-20 and parsing limits FR-23.
@@ -112,7 +112,7 @@ Phase 3B is the user's name for this remaining Phase 3 work; the original roadma
 
 ## Phase 8 — Calibrated refusal and P0 release gate
 
-Implementation checkpoint 2026-11-04: FR-18 is implemented and met with the real model in both P0 modes, and every P0 acceptance criterion is reconciled in the [Phase 8 report](PHASE_8_STATUS.md#p0-acceptance-reconciliation). The release gate was blocked by AC-16.6 and AC-12.1 until it passed on 2026-11-07. The planned `answering/sufficiency.py` exists; context integration stayed inside `generation.py`.
+Implementation checkpoint 2026-11-04: FR-18 is implemented and met with the real model in both P0 modes, and every P0 acceptance criterion is reconciled in the [Phase 8 report](PHASES.md#phase-8-status-p0-acceptance-reconciliation). The release gate was blocked by AC-16.6 and AC-12.1 until it passed on 2026-11-07. The planned `answering/sufficiency.py` exists; context integration stayed inside `generation.py`.
 
 - Objective: complete trustworthy baseline QA and CLI.
 - FRs: FR-18, FR-19 calibration slice, FR-21 QA slice; complete P0 FR-16/17/22/23 and cumulative FR-01–06(minimal), FR-10–13/20.
@@ -124,7 +124,7 @@ Implementation checkpoint 2026-11-04: FR-18 is implemented and met with the real
 
 ## Phase 9 — P1 NLP enrichment
 
-Detailed plan proposed 2026-11-04, revised after a risk assessment and approved on 2026-11-07: [Phase 9 plan](PHASE_9_PLAN.md). Its entry gate, the P0 release, passed the same day. Implemented 2026-11-12 ([Phase 9 report](PHASE_9_STATUS.md)): `enrich`, entities, keyphrases, calibrated classification, the spaCy segmentation policy and `eval --enrichment`, run on the real corpus with retrieval unchanged. The gold sets were frozen the same day, with Fable 5.1 as the owner-approved AI annotator: AC-06.4 is met at the point estimate, and AC-07.4 and AC-08.3 are recorded as not met ([progress](PHASE_9_PLAN.md#progress-2026-11-12)). Their improvements, entity rules v2 and the `technical-ngrams-v1` keyphrase policy, were built as a separate task. On 2026-11-13 they were measured once on a held-out round 2, labeled blind by Fable 5.2. AC-07.4 is met at the point estimate only (precision 0.892, recall 0.619), and AC-08.3 is not met (0.239 against 0.50). **Phase 9 is complete.**
+Detailed plan proposed 2026-11-04, revised after a risk assessment and approved on 2026-11-07: [Phase 9 plan](PHASES.md#phase-9-plan). Its entry gate, the P0 release, passed the same day. Implemented 2026-11-12 ([Phase 9 report](PHASES.md#phase-9-status)): `enrich`, entities, keyphrases, calibrated classification, the spaCy segmentation policy and `eval --enrichment`, run on the real corpus with retrieval unchanged. The gold sets were frozen the same day, with Fable 5.1 as the owner-approved AI annotator: AC-06.4 is met at the point estimate, and AC-07.4 and AC-08.3 are recorded as not met ([progress](PHASES.md#phase-9-plan-progress-2026-11-12)). Their improvements, entity rules v2 and the `technical-ngrams-v1` keyphrase policy, were built as a separate task. On 2026-11-13 they were measured once on a held-out round 2, labeled blind by Fable 5.2. AC-07.4 is met at the point estimate only (precision 0.892, recall 0.619), and AC-08.3 is not met (0.239 against 0.50). **Phase 9 is complete.**
 
 - Objective: improve structured metadata without sacrificing technical text/provenance.
 - FRs: FR-06 full, FR-07, FR-08, FR-09; filter extensions FR-12/13.
@@ -146,9 +146,9 @@ Detailed plan proposed 2026-11-04, revised after a risk assessment and approved 
 
 ## Phase 11 — Required operational verification and delivery
 
-Detailed plan proposed and approved on 2026-11-14: [Phase 11 plan](PHASE_11_PLAN.md). TechDocQA is local-only, so the plan excludes every OpenAI step; C-07 and AC-22.4 stay open by owner decision.
+Detailed plan proposed and approved on 2026-11-14: [Phase 11 plan](PHASES.md#phase-11-plan). TechDocQA is local-only, so the plan excludes every OpenAI step; C-07 and AC-22.4 stay open by owner decision.
 
-**Closed early on 2026-11-14** ([Phase 11 report](PHASE_11_STATUS.md)). The laptop shut itself down from heat, and the owner asked to skip the remaining runs.
+**Closed early on 2026-11-14** ([Phase 11 report](PHASES.md#phase-11-status)). The laptop shut itself down from heat, and the owner asked to skip the remaining runs.
 - **Met:** NFR-02, NFR-03, NFR-05, NFR-08 and AC-23.4; NFR-04 for the reference and NFR-01 for search.
 - **Not measured:** whole-corpus ingestion, the rebuild, the clean clone (NFR-07), and the full suite and CLI smoke run after the Phase 11 changes.
 - **Not done:** the consolidated matrix (NFR-10, NFR-11).
@@ -164,7 +164,7 @@ Detailed plan proposed and approved on 2026-11-14: [Phase 11 plan](PHASE_11_PLAN
 
 ## Phase 12 — Separately approved P2 work
 
-**In progress since 2026-11-14** ([Phase 12 plan](PHASE_12_PLAN.md), [contracts](DECISIONS.md#phase-12-contracts-2026-11-14)).
+**Approved and stopped on 2026-11-14** ([Phase 12 plan](PHASES.md#phase-12-plan), [contracts](DECISIONS.md#phase-12-contracts-2026-11-14)). The owner ended the project after approving the plan; nothing implemented was committed.
 - **Selected:** FR-24, all four acceptance criteria, and evidence only for the URL slice, which Phase 3A built.
 - **Skipped by the owner:** the web UI and cross-version reuse. They stay deferred.
 
@@ -178,10 +178,10 @@ Detailed plan proposed and approved on 2026-11-14: [Phase 11 plan](PHASE_11_PLAN
 
 ## Recommended next action
 
-**As of 2026-11-14, the owner has closed Phase 11, and `main` holds it** ([release decision](PHASE_11_STATUS.md#release-decision)).
-- The [items not measured](PHASE_11_STATUS.md#not-measured) can be run later, one at a time, on AC power, with the laptop cool.
-- **Phase 12 is in progress:** FR-24 under the [Phase 12 plan](PHASE_12_PLAN.md), approved on 2026-11-14. The web UI and cross-version reuse are skipped.
+**As of 2026-11-14, the owner has closed Phase 11, and `main` holds it** ([release decision](PHASES.md#phase-11-status-release-decision)).
+- The [items not measured](PHASES.md#phase-11-status-not-measured) can be run later, one at a time, on AC power, with the laptop cool.
+- **Phase 12 was stopped on 2026-11-14:** the owner ended the project after approving the [Phase 12 plan](PHASES.md#phase-12-plan) for FR-24. The web UI and cross-version reuse were skipped.
 
 The paragraph below is the earlier history.
 
-The P0 release gate passed on 2026-11-07 ([approvals](DECISIONS.md#p0-approvals-2026-11-07)). Phase 9 is complete. Both gold rounds are frozen and scored ([review log](../datasets/nlp/review_log.md)). On the held-out round 2, AC-07.4 is met at the point estimate only and AC-08.3 is not met. On 2026-11-13 the owner accepted AC-07.4, closed AC-08.3 with no further work and moved the project to Phase 10. The points that carry forward are listed in [what remains](PHASE_9_STATUS.md#what-remains). Next is Phase 10. Cold-start timeouts are settled in [Phase 8](PHASE_8_STATUS.md#cold-start). Do not treat DDIA as part of the public reference or silently count it toward the approximate 3,000-chunk target. Performance gates, including NFR-02, are measured in Phase 11.
+The P0 release gate passed on 2026-11-07 ([approvals](DECISIONS.md#p0-approvals-2026-11-07)). Phase 9 is complete. Both gold rounds are frozen and scored ([review log](../datasets/nlp/review_log.md)). On the held-out round 2, AC-07.4 is met at the point estimate only and AC-08.3 is not met. On 2026-11-13 the owner accepted AC-07.4, closed AC-08.3 with no further work and moved the project to Phase 10. The points that carry forward are listed in [what remains](PHASES.md#phase-9-status-what-remains). Next is Phase 10. Cold-start timeouts are settled in [Phase 8](PHASES.md#phase-8-status-cold-start). Do not treat DDIA as part of the public reference or silently count it toward the approximate 3,000-chunk target. Performance gates, including NFR-02, are measured in Phase 11.

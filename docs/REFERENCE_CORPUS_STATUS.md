@@ -1,6 +1,6 @@
 # Reference corpus assembly and verification
 
-Later checkpoint: [Phase 4](PHASE_4_STATUS.md) has progressed the selected versions to `chunked`. Source selection and byte hashes remain frozen; dataset version 2 changed one PDF's content hash after a [normalization correction](DECISIONS.md#review-corrections-2026-11-02). Processing-status and runtime-storage figures below describe the earlier assembly checkpoint.
+Later checkpoint: [Phase 4](PHASES.md#phase-4-status) has progressed the selected versions to `chunked`. Source selection and byte hashes remain frozen; dataset version 2 changed one PDF's content hash after a [normalization correction](DECISIONS.md#review-corrections-2026-11-02). Processing-status and runtime-storage figures below describe the earlier assembly checkpoint.
 
 Reviewed 2026-10-24 on Windows/Python 3.13.3. Dataset: `techdocqa-reference-2026-10-24-v2`.
 
