@@ -18,6 +18,35 @@ The project owner approved the [Phase 11 plan](PHASE_11_PLAN.md#decisions-to-app
   - Chroma's server-side advisories, `pip`, `soupsieve` and `setuptools` are documented, not upgraded.
 - **Delivery (P11-12): local only.** Work is committed on `feat/phase-11`, created from `main` at `19c838b`, and merged into `main` locally. Nothing is pushed until the owner says so.
 
+Implementation, step 1 (run records and the profiler):
+
+- **Run hygiene (P11-11).** `research_notes/` is now in `.git/info/exclude`, so runs record `dirty: false`. The folder is unchanged and nothing is committed for it.
+- **Runtime record (P11-5).** Every eval, enrichment, answer and refusal run records the following, outside its fingerprint (`evaluation/runtime.py`):
+  - the Ollama server version, read from `/api/version`;
+  - each loaded model and where it sits, read from `/api/ps`, as `ollama ps` shows it;
+  - the logical CPUs, free RAM and AC power;
+  - five more library versions: `langchain-text-splitters`, `ollama`, `onnxruntime`, `tokenizers` and `pypdf`.
+
+  With `TECHDOCQA_OFFLINE=1`, as in the test suite, the server is not contacted. On the real index the smoke `eval` still gives `48ce89dc...a3af410` (`eval_ed8aa413e5034927a62451a21c1e4b39`, commit `c04fd7c`, `dirty: false`).
+- **Finding: the embedding model runs on the GPU.** That run recorded `nomic-embed-text:latest` at **100% GPU**, on the NVIDIA MX450. The Phase 10 report's "no GPU" is therefore wrong for embeddings. Where the chat model sits is recorded by the QA latency run.
+- **Profiler (P11-1).** `scripts/profile_latency.py` wraps the stage functions only while a profile runs and restores them afterwards; a test checks both.
+  - Its reports hold question IDs, counts and timings only.
+  - A test checks that a profile leaves the benchmark fingerprint unchanged, and that a whole-index report contains no chunk ID or text.
+  - It refuses to start with less than 1.5 GB of RAM free, or while a `pytest` process is running.
+
+Implementation, step 2 (dependencies, P11-8):
+
+- **Upgraded:** `pypdf` 6.21.1 to 6.21.4 and `certifi` 2026.7.22 to 2026.10.18.
+  - Both are pure-Python wheels whose SHA-256 matched PyPI's published digest. Neither adds a required dependency on Python 3.13, and their licences are unchanged (BSD-3-Clause, MPL-2.0).
+  - The lock keeps 142 hashed pins, and the venv matches all of them.
+  - The `pyproject.toml` floors were raised to `pypdf>=6.21.4` and `certifi>=2026.10.18`, so a fresh resolve cannot select the vulnerable versions.
+- **Extraction unchanged.** In a scratch data directory, the three corpus PDFs were registered and processed again, first under 6.21.1, which checks the method, and then under 6.21.4. Both times all three gave their manifest `content_hash`. `verify_corpus.py` passed (21 documents, 2,735 chunks, 816 in the reference), as did the `core` test group, and the smoke `eval` still gives `48ce89dc...a3af410`.
+- **`pip-audit` 2.10.1:** from 33 records in 6 packages down to 21 in 4. The rest stay documented, not upgraded:
+  - **chromadb 1.5.9** (4 advisories, no fix released): code injection through `trust_remote_code` in the server API, RBAC that ignores tenants, and cross-tenant access. All concern Chroma's HTTP server; TechDocQA uses only the embedded client.
+  - **pip 25.0.1** (6 advisories): each needs a malicious archive or index. Installing from the lock runs in hash-checking mode, which admits only the pinned files.
+  - **setuptools 82.0.1** (2): build-time only, in MANIFEST.in filtering and a Windows legacy wheel path. The project builds only its own source.
+  - **soupsieve 3.0.3** (1): slow matching of descendant-combinator selectors. `ingestion/html.py` has five `select()` calls, all lists of type and attribute selectors with no descendant combinator. Phase 10's "the one selector" was imprecise. soupsieve's version is also part of the recorded HTML extraction identity.
+
 ## Phase 10 contracts (2026-11-13)
 
 The project owner approved decisions P10-1 to P10-12 of the [Phase 10 plan](PHASE_10_PLAN.md#decisions-to-approve-before-coding) on 2026-11-13, as recommended. The plan's rows are the contracts, and they settle D-11 (fusion) and D-12 (reranking). This section records the owner's choices among the plan's options and, later, what implementation changed.
