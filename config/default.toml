@@ -114,6 +114,10 @@ max_question_characters = 1000
 strict_citations = true
 query_log = true
 
+# FR-24 (Phase 12): run, failure, retry and check events as JSON lines in <data>/logs/techdocqa.jsonl.
+[logs]
+enabled = true
+
 # FR-07 to FR-09 (Phase 9). The gazetteer path resolves against this file's directory.
 [enrichment]
 gazetteer = "gazetteer.toml"

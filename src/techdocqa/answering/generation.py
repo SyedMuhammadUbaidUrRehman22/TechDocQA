@@ -247,6 +247,8 @@ def write_query_log(settings, response: QAResponse, question: str, prompt_sha256
     """IDs, hashes and outcomes only: the question and all document text stay out of the log (FR-16.6, FR-23.4)."""
     entry = {
         "timestamp": datetime.now(timezone.utc).isoformat(), "request_id": response.request_id,
+        # The FR-24 fields every log line carries (P12-4); an answer belongs to no run or single document.
+        "level": "info", "component": "answering", "run_id": None, "document_id": None,
         "status": response.status, "reason": response.reason,
         "question_sha256": hashlib.sha256(question.encode("utf-8")).hexdigest(), "question_characters": len(question),
         "answer_sha256": hashlib.sha256(response.answer.encode("utf-8")).hexdigest() if response.answer else None,

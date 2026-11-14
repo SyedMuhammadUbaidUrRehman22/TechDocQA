@@ -2,7 +2,7 @@
 
 from typing import Literal
 
-from pydantic import Field, field_validator
+from pydantic import Field, SerializeAsAny, field_validator
 
 from techdocqa.settings import StrictModel
 
@@ -331,3 +331,43 @@ class RunSummary(StrictModel):
 class BatchResult(StrictModel):
     run: RunSummary
     outcomes: list[AttemptOutcome]
+
+
+class RetryItem(StrictModel):
+    """One failed attempt of the retried run and what `retry` did with it (FR-24, P12-1)."""
+    attempt_id: str
+    document_id: str | None = None
+    version_id: str | None = None
+    code: str
+    stage: str
+    failure: Literal["retryable", "permanent"]
+    # retried: rerun now; resolved: a later run succeeded, or the version is no longer current or eligible;
+    # none: permanent, never rerun; rerun_command: retryable, but retry cannot rerun it, so the named command must.
+    action: Literal["retried", "resolved", "none", "rerun_command"]
+    command: str | None = None
+
+
+class RetryResult(StrictModel):
+    retry_of: str | None = None
+    stage: str | None = None
+    items: list[RetryItem] = Field(default_factory=list)
+    # The new run of the same stage for the retried versions, as that stage's command reports it.
+    rerun: SerializeAsAny[BatchResult] | None = None
+    # Failures still standing: permanent ones, the ones left to another command, and any the rerun failed again.
+    remaining: int = 0
+
+
+class DependencyCheck(StrictModel):
+    name: Literal["registry", "vector_store", "bm25_index", "embedding_provider", "llm_provider", "reranker"]
+    status: Literal["ok", "down"]
+    code: str | None = None
+    # Documents in the registry, entries in the vector store, chunks in the BM25 index, or pinned reranker files.
+    count: int | None = None
+    latency_ms: int
+
+
+class HealthReport(StrictModel):
+    """FR-24 behaviour 2 (P12-3): down when no search can run, degraded when only some dependencies fail."""
+    status: Literal["ok", "degraded", "down"]
+    dependencies: list[DependencyCheck]
+    request_id: str

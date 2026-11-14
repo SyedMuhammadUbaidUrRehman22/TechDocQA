@@ -2116,7 +2116,10 @@ Not done, and not covered by the instruction: the consolidated per-AC matrix and
 
 ## <a id="phase-12-plan"></a><a id="phase-12-plan-phase-12-plan-retries-health-check-and-logs-fr-24"></a>Phase 12 plan: retries, health check and logs (FR-24)
 
-**Stopped on 2026-11-14, with nothing implemented committed.** The owner ended the project the same day the plan was approved, with *"that's enough for the project"*. Only this plan and its records were committed. Code for the logs, `retry` and `check` was written but never tested, and was not committed.
+**Stopped on 2026-11-14, with its code committed untested.** The owner ended the project the same day the plan was approved, with *"that's enough for the project"*.
+- **Written:** the JSON log module, the `retry` and `check` commands, and the four new `qa.jsonl` fields. The owner later asked for them to be committed as they were.
+- **Never tested:** `tests/test_observability.py` was never written, so AC-24.1 to AC-24.4 are not verified, and no test group has run on this code.
+- **Run by hand, read-only:** `ask` and `search` ran on it against the real index, using the new `qa.jsonl` fields. `check` and `retry` have never run.
 
 Status: **proposed and approved 2026-11-14.** The owner approved P12-1 to P12-6 with *"approved and push as you go"*, which amends P12-6: work is pushed as it proceeds. The decisions are recorded as [Phase 12 contracts](DECISIONS.md#phase-12-contracts-2026-11-14). The plan covers the part of [roadmap Phase 12](IMPLEMENTATION_ROADMAP.md#phase-12--separately-approved-p2-work) that the owner kept. On 2026-11-14 the owner was shown the four optional P2 items and said *"skip web ui and reuse"*. That keeps:
 - FR-24, all four acceptance criteria (AC-24.1 to AC-24.4);

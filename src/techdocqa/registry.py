@@ -3,6 +3,7 @@
 from contextlib import contextmanager
 from datetime import datetime, timezone
 import json
+import logging
 import os
 from pathlib import Path
 import sqlite3
@@ -11,6 +12,7 @@ from uuid import uuid4
 
 from techdocqa.errors import TechDocQAError
 from techdocqa.ingestion.safety import ValidatedSource
+from techdocqa.logs import failure_class, log_event
 from techdocqa.privacy import safe_text, safe_title
 from techdocqa.schemas import (
     AttemptOutcome, BatchResult, DocumentRecord, ErrorDetail, RegistrationMetadata,
@@ -392,6 +394,8 @@ class Registry:
                 self.execute("INSERT INTO attempts(attempt_id,run_id,input_index) VALUES (?,?,?)", (attempt_id, run_id, index))
             if stage in RUN_STARTED:
                 self.event(run_id=run_id, decision=RUN_STARTED[stage], reason="Offline candidate processing.", stage=stage)
+        # Logged after the commit, so a rolled-back run never appears in the log.
+        log_event("registry", "RUN_STARTED", run_id=run_id, stage=stage, attempts=input_count)
         return run_id, attempts
 
     def pending_attempt(self, attempt_id: str):
@@ -509,6 +513,10 @@ class Registry:
                        document_id=attempt["document_id"], version_id=attempt["version_id"], status=recorded,
                        decision="PROCESSING_FAILED" if attempt["version_id"] else "REGISTRATION_FAILED",
                        reason=error.message, stage=error.stage, error=error)
+        log_event("registry", "ATTEMPT_FAILED", level=logging.WARNING, run_id=attempt["run_id"],
+                  document_id=attempt["document_id"], request_id=error.request_id, attempt_id=attempt_id,
+                  version_id=attempt["version_id"], code=error.code, stage=error.stage, retryable=error.retryable,
+                  failure=failure_class(error.retryable))
 
     def get_version(self, version_id: str) -> DocumentRecord:
         row = self.execute("""SELECT r.*,d.source_key,d.filename FROM registrations r JOIN documents d USING(document_id)
@@ -981,6 +989,8 @@ class Registry:
                                  (status, utc_now(), counts.get("processed", 0), counts.get("skipped", 0), failed, run_id))
             if cursor.rowcount != 1:
                 raise TechDocQAError("INVALID_STATE", "Run is not active.", stage="registry")
+        log_event("registry", "RUN_FINISHED", run_id=run_id, status=status, processed=counts.get("processed", 0),
+                  skipped=counts.get("skipped", 0), failed=failed)
 
     def recover_interrupted_runs(self):
         """Caller must hold registration_lock; never infer process death from a PID."""
@@ -1008,8 +1018,48 @@ class Registry:
                 error=ErrorDetail.model_validate_json(attempt["error_json"]) if attempt["error_json"] else None,
                 online=OnlineProvenance.model_validate(online_values) if online_values is not None else None,
             ))
+        return BatchResult(run=RunSummary(**dict(row), stage=self.run_stage(run_id)), outcomes=outcomes)
+
+    def run_stage(self, run_id: str) -> str:
         processing = self.execute("SELECT stage FROM events WHERE run_id=? AND decision IN ('PROCESSING_RUN_STARTED','CHUNKING_RUN_STARTED','INDEXING_RUN_STARTED','ENRICHMENT_RUN_STARTED') LIMIT 1", (run_id,)).fetchone()
-        return BatchResult(run=RunSummary(**dict(row), stage=processing[0] if processing else "registration"), outcomes=outcomes)
+        return processing[0] if processing else "registration"
+
+    def failed_attempts(self, run_id: str) -> list[sqlite3.Row]:
+        return self.execute("SELECT attempt_id,document_id,version_id,error_json FROM attempts WHERE run_id=? AND status='failed' "
+                            "ORDER BY input_index", (run_id,)).fetchall()
+
+    def failure_outstanding(self, stage: str, version_id: str, run_id: str) -> bool:
+        """Whether a version's failure in a run still needs work (FR-24, P12-1).
+
+        It does not once a later run of the same stage processed or skipped the version. Nor does it once the version
+        stops being the document's current candidate (normalization) or eligible for retrieval (later stages): it was
+        withdrawn, deleted, superseded or replaced by a re-ingested file.
+        """
+        decision = RUN_STARTED.get(stage)
+        if decision is None:
+            return False
+        later = self.execute("""SELECT 1 FROM attempts a JOIN runs r USING(run_id)
+            WHERE a.version_id=? AND a.status IN ('processed','skipped') AND r.rowid > (SELECT rowid FROM runs WHERE run_id=?)
+              AND EXISTS (SELECT 1 FROM events e WHERE e.run_id=a.run_id AND e.decision=?) LIMIT 1""",
+            (version_id, run_id, decision)).fetchone()
+        if later is not None:
+            return False
+        if stage == "normalization":
+            current = ("SELECT 1 FROM registrations r JOIN documents d USING(document_id) "
+                       "WHERE r.version_id=? AND d.current_version_id=r.version_id AND r.status<>'withdrawn'")
+        else:
+            current = f"SELECT 1 FROM registrations r WHERE r.version_id=? AND {ELIGIBLE}"
+        return self.execute(current, (version_id,)).fetchone() is not None
+
+    def latest_outstanding_run(self) -> str | None:
+        """The most recent finished run with a failure that still needs work; failures with no version are skipped."""
+        runs = self.execute("SELECT run_id FROM runs WHERE status IN ('failed','completed_with_errors') ORDER BY rowid DESC").fetchall()
+        for (run_id,) in runs:
+            stage = self.run_stage(run_id)
+            if any(row["version_id"] and self.failure_outstanding(stage, row["version_id"], run_id)
+                   for row in self.failed_attempts(run_id)):
+                return run_id
+        return None
 
     def document_record(self, row) -> DocumentRecord:
         values = dict(row)

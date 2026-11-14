@@ -167,6 +167,11 @@ class AnsweringSettings(StrictModel):
     query_log: bool = True
 
 
+class LogSettings(StrictModel):
+    # FR-24 (P12-4): run, failure, retry and check events as JSON lines in <data>/logs/techdocqa.jsonl.
+    enabled: bool = True
+
+
 class CategorySpec(StrictModel):
     """One FR-09 category; its description is embedded once and frozen before any measurement (P9-6)."""
     name: str = Field(min_length=1, max_length=100, pattern=r"^[A-Za-z][A-Za-z0-9 &/-]*$")
@@ -263,6 +268,7 @@ class Settings(StrictModel):
     chunking: ChunkingSettings = Field(default_factory=ChunkingSettings)
     retrieval: RetrievalSettings = Field(default_factory=RetrievalSettings)
     answering: AnsweringSettings = Field(default_factory=AnsweringSettings)
+    logs: LogSettings = Field(default_factory=LogSettings)
     online: OnlineSettings = Field(default_factory=OnlineSettings)
     enrichment: EnrichmentSettings = Field(default_factory=EnrichmentSettings)
 

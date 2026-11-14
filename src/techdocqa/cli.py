@@ -103,6 +103,11 @@ def make_parser() -> argparse.ArgumentParser:
     commands = parser.add_subparsers(dest="command", required=True)
     check = commands.add_parser("config-check", help="validate settings without contacting providers")
     check.add_argument("--require-models", action="store_true")
+    health = commands.add_parser("check", help="report ok, degraded or down per dependency; lists the provider's models "
+                                               "without loading one")
+    retrying = commands.add_parser("retry", help="rerun a run's retryable failures; permanent ones are reported, not rerun "
+                                                 "(default: the latest run with a failure that still needs work)")
+    retrying.add_argument("--run-id")
     ingest = commands.add_parser("ingest", help="register local files or fetch/extract explicit approved HTML pages")
     ingest.add_argument("paths", type=Path, nargs="*", help="files or directories, expanded one level")
     online_selector = ingest.add_mutually_exclusive_group()
@@ -182,8 +187,8 @@ def make_parser() -> argparse.ArgumentParser:
                             help="frozen Phase 9 gold sets and out-of-topic fixtures, read by --enrichment")
     evaluation.add_argument("--fixtures", type=Path,
                             help="out-of-topic fixtures for --enrichment (default: out_of_topic.jsonl in --gold-dir)")
-    for command in (check, ingest, status, listing, history, processing, chunking, indexing, enriching, showing, searching, asking,
-                    withdrawal, deletion, evaluation):
+    for command in (check, health, retrying, ingest, status, listing, history, processing, chunking, indexing, enriching, showing,
+                    searching, asking, withdrawal, deletion, evaluation):
         command.add_argument("--config", type=Path, default=Path("config/default.toml"))
         command.add_argument("--profile", type=Path)
         command.add_argument("--json", action="store_true", default=argparse.SUPPRESS,
@@ -226,6 +231,14 @@ def main(argv: list[str] | None = None) -> int:
                 "sufficiency": calibration_status(settings),
             }))
             return 0
+        # Every command after config-check, which writes nothing, logs its runs, failures, retries and checks (FR-24).
+        from techdocqa.logs import configure
+        configure(settings)
+        if args.command == "check":
+            from techdocqa.health import run_check
+            report = run_check(settings)
+            emit(report)
+            return 0 if report.status == "ok" else 1
         if args.command == "delete" and not args.yes:
             raise TechDocQAError("CONFIRMATION_REQUIRED", "Deletion cannot be undone; repeat with --yes to confirm.", stage="arguments")
         if args.command == "eval" and args.record_review is not None:
@@ -255,6 +268,11 @@ def main(argv: list[str] | None = None) -> int:
             except ValidationError:
                 raise TechDocQAError("INVALID_METADATA", "Registration metadata is invalid.", stage="arguments") from None
         with Registry(Path(settings.data_directory) / "registry.sqlite3") as registry:
+            if args.command == "retry":
+                from techdocqa.recovery import retry_run
+                result = retry_run(args.run_id, settings, registry)
+                emit(result)
+                return 1 if result.remaining else 0
             if args.command == "chunk":
                 from techdocqa.ingestion.chunks import chunk_versions
                 result = chunk_versions(args.version_ids, settings, registry)
