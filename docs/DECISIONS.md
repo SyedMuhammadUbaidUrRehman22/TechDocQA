@@ -162,6 +162,15 @@ Owner instruction after the thermal shutdown (2026-11-14): *"My laptop has becom
   - A vector query with a stored embedding loaded the HNSW index and returned that chunk at rank 1, at distance 0.
   - Hybrid search and `ask` were not run after the shutdown, because Ollama was not running.
 
+Release decision (step 11, P11-12), 2026-11-14: **the owner closed Phase 11** with *"it's closed, push also"*.
+
+- **The items not measured are accepted as they are.** They stay recorded as not measured, and none is upgraded.
+- **AC-23.4 now covers the later commits.** Before the push, `scan_secrets.py`'s own functions ran over the 8 commits after `3e6df0e`, up to `4b96465`.
+  - They found 0 key-shaped strings, for all 9 patterns.
+  - They found no shared run of 160 or more characters with the private supplement's 1,919 chunks.
+- **Merged and pushed.** `feat/phase-11` is merged into `main` locally, and the owner asked for both to be pushed to `origin`. P11-12 required that instruction before any push.
+- **Phase 12 is not selected.** It needs its own scope approval.
+
 ## Phase 10 contracts (2026-11-13)
 
 The project owner approved decisions P10-1 to P10-12 of the [Phase 10 plan](PHASE_10_PLAN.md#decisions-to-approve-before-coding) on 2026-11-13, as recommended. The plan's rows are the contracts, and they settle D-11 (fusion) and D-12 (reranking). This section records the owner's choices among the plan's options and, later, what implementation changed.

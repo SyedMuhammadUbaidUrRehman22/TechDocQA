@@ -2,7 +2,7 @@
 
 Status checkpoint 2026-11-14 on Windows, Python 3.13.3, Ollama 0.40.16 with `qwen3:1.7b` and `nomic-embed-text`, on branch `feat/phase-11`. It follows the [Phase 11 plan](PHASE_11_PLAN.md), whose decisions P11-1 to P11-12 the owner approved on 2026-11-14. The [decisions](DECISIONS.md#phase-11-contracts-2026-11-14) record each run in full.
 
-**This phase was closed early, and it is not a release claim.**
+**This phase was closed early. The owner closed it on 2026-11-14, with the items below not measured** ([release decision](#release-decision)).
 - **The shutdown.** The whole-corpus ingestion run started at 10:08 local time on 2026-11-14. Windows rebooted at 10:14 after an unclean shutdown (Kernel-Power event 41). The owner reports that the laptop shut itself down from heat.
 - **The owner's instruction.** *"skip next phase or QA runs as long as the project runs."*
 - **What follows.**
@@ -36,7 +36,7 @@ Statuses are taken as measured, and none is upgraded. "Not measured" means the r
 | NFR-09 | A recorded budget | No API spend, by owner decision | **Met as zero API spend** |
 | NFR-10 | Tests for each FR's ACs, and a traceability matrix | Per-phase slices in [traceability](requirements_traceability.md) | **Not done:** the consolidated matrix (P11-10) was not built |
 | NFR-11 | Separate, replaceable components | Separate modules | **Not reviewed:** the component map (P11-10) was not built |
-| AC-23.4 | No secret in logs, output or files | 0 key-shaped strings in 188 files, 65 commits and 14 run outputs. 0 shared runs of the private supplement | **Met at `3e6df0e`.** The later commits, which add reports of counts and timings and documents, have not been scanned |
+| AC-23.4 | No secret in logs, output or files | At `3e6df0e`: 0 key-shaped strings in 188 files, 65 commits and 14 run outputs. In the 8 commits after it, up to `4b96465`: 0. Neither found a shared run with the private supplement | **Met** through `4b96465` |
 | DS-04 | Corpus and model licences | [Licences](#licences) | **Met for the public reference.** The private supplement's permissions are unverified, as recorded since Phase 5 |
 | C-06 | Hardware for one ingest plus one full benchmark | [Hardware and run times](#hardware-and-run-times-c-06) | **Met as a local hardware statement** |
 | C-07, AC-22.4 | Provider switch by configuration | None | **Open by owner decision** (local-only) |
@@ -110,7 +110,6 @@ Each item is the owner's to accept or to run later, one at a time, on AC power, 
 | Clean-clone setup | NFR-07 | The P11-6 steps in the plan |
 | Full grouped suite, about 44 minutes in Phase 10 | NFR-10 | `.venv\Scripts\python.exe scripts\run_tests.py`, or one group at a time, such as `scripts\run_tests.py core` |
 | CLI workflow with the real models | Regression | `scripts\cli_smoke.ps1` |
-| Secret scan of the commits after `3e6df0e` | AC-23.4 | `.venv\Scripts\python.exe scripts\scan_secrets.py` |
 
 Not done, and not covered by the instruction: the consolidated per-AC matrix and the NFR-11 component map (P11-10). Both are documentation only, with no machine load.
 
@@ -118,8 +117,7 @@ Not done, and not covered by the instruction: the consolidated per-AC matrix and
 
 ## Release decision
 
-This is for the owner to make; this report does not declare it. Under P11-12, delivery is local only.
-- **Accept the phase as closed,** with the items above not measured, and merge `feat/phase-11` into `main` locally.
-- **Or keep the branch open,** and run the items above later.
-
-Nothing has been pushed.
+**The owner closed Phase 11 on 2026-11-14:** *"it's closed, push also"*.
+- **Accepted as not measured.** The items under [Not measured](#not-measured) are not met and not waived. They can be run later.
+- **Scanned before the push.** `scan_secrets.py`'s checks ran over the 8 commits after `3e6df0e`, up to `4b96465`. They found 0 key-shaped strings, and no shared run of 160 or more characters with the private supplement's 1,919 chunks.
+- **Merged and pushed.** `feat/phase-11` is merged into `main`. The owner asked for both to be pushed to `origin`, which P11-12 required before any push.

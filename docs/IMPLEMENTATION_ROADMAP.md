@@ -150,9 +150,9 @@ Detailed plan proposed and approved on 2026-11-14: [Phase 11 plan](PHASE_11_PLAN
 
 **Closed early on 2026-11-14** ([Phase 11 report](PHASE_11_STATUS.md)). The laptop shut itself down from heat, and the owner asked to skip the remaining runs.
 - **Met:** NFR-02, NFR-03, NFR-05, NFR-08 and AC-23.4; NFR-04 for the reference and NFR-01 for search.
-- **Not measured:** whole-corpus ingestion, the rebuild, the clean clone (NFR-07), the full suite and the CLI smoke run after the Phase 11 changes, and a second secret scan.
+- **Not measured:** whole-corpus ingestion, the rebuild, the clean clone (NFR-07), and the full suite and CLI smoke run after the Phase 11 changes.
 - **Not done:** the consolidated matrix (NFR-10, NFR-11).
-- The release decision is with the owner. The Done criterion below is therefore not claimed.
+- **The owner closed the phase on 2026-11-14** and asked for it to be pushed. The owner accepted the items not measured, which stay documented, not met.
 
 - Objective: verify required safety, reproducibility, performance, cost/privacy and clean-machine setup; keep optional FR-24 separate.
 - FRs: cumulative P0/P1 regression, especially FR-11/12/19/20/21/22/23; C-06/07, NFR-01–NFR-11.
@@ -174,10 +174,10 @@ Detailed plan proposed and approved on 2026-11-14: [Phase 11 plan](PHASE_11_PLAN
 
 ## Recommended next action
 
-**As of 2026-11-14, Phase 11 is closed early, and the release decision is with the owner** ([release decision](PHASE_11_STATUS.md#release-decision)).
-- The owner can accept the phase and merge `feat/phase-11` into `main` locally.
-- Or the owner can run the [items not measured](PHASE_11_STATUS.md#not-measured) later, one at a time, on AC power, with the laptop cool.
+**As of 2026-11-14, the owner has closed Phase 11, and `main` holds it** ([release decision](PHASE_11_STATUS.md#release-decision)).
+- The [items not measured](PHASE_11_STATUS.md#not-measured) can be run later, one at a time, on AC power, with the laptop cool.
+- Phase 12, the P2 work, is not selected. It needs its own scope approval.
 
-Phase 12 is not started. The paragraph below is the earlier history.
+The paragraph below is the earlier history.
 
 The P0 release gate passed on 2026-11-07 ([approvals](DECISIONS.md#p0-approvals-2026-11-07)). Phase 9 is complete. Both gold rounds are frozen and scored ([review log](../datasets/nlp/review_log.md)). On the held-out round 2, AC-07.4 is met at the point estimate only and AC-08.3 is not met. On 2026-11-13 the owner accepted AC-07.4, closed AC-08.3 with no further work and moved the project to Phase 10. The points that carry forward are listed in [what remains](PHASE_9_STATUS.md#what-remains). Next is Phase 10. Cold-start timeouts are settled in [Phase 8](PHASE_8_STATUS.md#cold-start). Do not treat DDIA as part of the public reference or silently count it toward the approximate 3,000-chunk target. Performance gates, including NFR-02, are measured in Phase 11.
