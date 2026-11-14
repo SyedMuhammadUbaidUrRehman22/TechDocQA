@@ -150,7 +150,7 @@ Detailed plan proposed and approved on 2026-11-14: [Phase 11 plan](PHASE_11_PLAN
 
 **Closed early on 2026-11-14** ([Phase 11 report](PHASE_11_STATUS.md)). The laptop shut itself down from heat, and the owner asked to skip the remaining runs.
 - **Met:** NFR-02, NFR-03, NFR-05, NFR-08 and AC-23.4; NFR-04 for the reference and NFR-01 for search.
-- **Not measured:** whole-corpus ingestion, the rebuild, the clean clone (NFR-07) and the full suite after the Phase 11 changes.
+- **Not measured:** whole-corpus ingestion, the rebuild, the clean clone (NFR-07), the full suite and the CLI smoke run after the Phase 11 changes, and a second secret scan.
 - **Not done:** the consolidated matrix (NFR-10, NFR-11).
 - The release decision is with the owner. The Done criterion below is therefore not claimed.
 

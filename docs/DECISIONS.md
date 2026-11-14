@@ -135,7 +135,7 @@ Implementation, ingestion timing (NFR-04, P11-4):
   - It produced 816 chunks with 808 distinct texts, embedded in 35 requests. The empty cache was proved by those requests.
   - All 20 `content_hash` values equal the manifest, and no stage had a failure.
   - `nomic-embed-text` ran 100% on the GPU (Ollama 0.40.16).
-- **The whole-corpus run (21 documents, P11-3) did not finish.** It started at 10:08 local time, and the laptop shut itself down from heat while it ran. It wrote no report.
+- **The whole-corpus run (21 documents, P11-3) did not finish.** It started at 10:08 local time and wrote no report. Windows rebooted at 10:14 after an unclean shutdown (Kernel-Power event 41), and the owner reports that the laptop shut itself down from heat. Event 6008 dates the shutdown at 10:02, but files were written after that, so its timestamp is stale.
   - Its scratch folder `.tmp/p11-ingest` was left behind, because the script deletes it only when it finishes. The folder holds copies of the 21 source files, the private supplement included, and is not tracked.
   - Deleting it is left to the owner.
 
@@ -151,13 +151,15 @@ Owner instruction after the thermal shutdown (2026-11-14): *"My laptop has becom
   - The clean-clone setup (NFR-07).
   - The full grouped test suite after the Phase 11 code changes. The last full record is Phase 10's, 649 passed and 3 skipped. In Phase 11, only the `core` group is recorded, in step 2.
   - `scripts/cli_smoke.ps1` with the real models.
-  - The consolidated per-AC matrix (P11-10). The Phase 11 report has a table for NFR-01 to NFR-11 and the constraints instead.
+  - A second secret scan, covering the commits after `3e6df0e`. AC-23.4 is met at that commit.
+- **Not done, and not covered by the instruction:** the consolidated per-AC matrix and the NFR-11 component map (P11-10). Both are documentation only. The Phase 11 report has a table for NFR-01 to NFR-11 and the constraints instead.
 - **Checks after the shutdown that load no model.**
   - `config-check` exited 0.
-  - `list` exited 0. It shows 22 documents: the 21 indexed ones, and the Spark Data Sources overview rejected on 2026-10-24 ([corpus status](REFERENCE_CORPUS_STATUS.md#rejections-and-duplicate-checks)).
+  - `list` exited 0. It shows 22 documents: the 21 indexed ones, and the Spark Data Sources overview rejected in corpus review ([corpus status](REFERENCE_CORPUS_STATUS.md#rejections-and-duplicate-checks)).
   - A `bm25` `search` exited 0, and its first result was the PostgreSQL B-tree section.
   - `verify_corpus.py` passed: 21 documents, 2,735 chunks, 816 of them in the reference.
   - The Chroma collection holds 2,735 entries, and the git tree was clean.
+  - A vector query with a stored embedding loaded the HNSW index and returned that chunk at rank 1, at distance 0.
   - Hybrid search and `ask` were not run after the shutdown, because Ollama was not running.
 
 ## Phase 10 contracts (2026-11-13)

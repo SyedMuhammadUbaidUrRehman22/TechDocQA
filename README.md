@@ -12,7 +12,7 @@ Phases 1-10 are implemented. You can ingest local files and approved web pages, 
 - ingesting the reference from empty, 208.5 s against 30 min;
 - a clean secret scan.
 
-Not measured: whole-corpus ingestion, the rebuild check, a clean-clone setup and the full test suite after the Phase 11 changes. See the [Phase 11 report](docs/PHASE_11_STATUS.md).
+Not measured: whole-corpus ingestion, the rebuild check, a clean-clone setup, the full test suite and the CLI smoke run after the Phase 11 changes, and a second secret scan. See the [Phase 11 report](docs/PHASE_11_STATUS.md).
 
 **Phase 10 (P1 hybrid search, reranking and full evaluation) is implemented. Hybrid is now the default search mode.** `search --mode hybrid` fuses BM25 and vector rankings by reciprocal rank. If one retriever fails, it answers from the other and says so. `--rerank` reorders the candidates with a small local cross-encoder, which is pinned by hash and off by default. On the full benchmark of 50 reviewed questions, hybrid beat vector search on nDCG@5 by +0.046 (95% interval +0.009 to +0.085), and the owner made it the default for `search` and `ask`. Reranking added +0.035, but its interval includes 0, so it stays off. Both new modes refuse 10 of 10 out-of-domain smoke questions and answer 18 of 20 answerable ones. The owner rated 20 hybrid-mode answers: 17 fully faithful to their citations and 3 partly, with all 20 relevant. The OpenAI provider demo was withdrawn by the owner, so TechDocQA stays local-only. See the [Phase 10 report](docs/PHASE_10_STATUS.md).
 
@@ -84,7 +84,7 @@ stateDiagram-v2
 | 8 | [Calibrated refusal and P0 release gate](docs/PHASE_8_STATUS.md) | ✅ Built, P0 release gate passed 2026-11-07 |
 | 9 | [NLP enrichment](docs/PHASE_9_STATUS.md): entities, keyphrases, categories | 🟡 Complete; AC-08.3 not met |
 | 10 | [Hybrid search, reranking, full benchmark](docs/PHASE_10_STATUS.md) | ✅ Built and rated; hybrid is the default; OpenAI demo withdrawn |
-| 11 | [Operational verification and delivery](docs/PHASE_11_STATUS.md) | 🟡 Closed early; 5 items not measured; release decision with the owner |
+| 11 | [Operational verification and delivery](docs/PHASE_11_STATUS.md) | 🟡 Closed early; some runs not measured; release decision with the owner |
 | 12 | Separately approved P2 work | ⬜ Not selected |
 
 ## Measured results
