@@ -5,12 +5,15 @@ Each dependency is probed once and reported `ok` or `down` with an error code an
 - registry: opens the existing registry and counts its documents; a missing registry is not created;
 - vector_store: opens the active embedding profile's existing collection and counts its entries;
 - bm25_index: builds the BM25 index over the eligible chunks and answers one fixed query;
-- embedding_provider and llm_provider: list Ollama's installed models with a short timeout and compare the pinned
-  digests; no model is loaded;
+- embedding_provider and llm_provider: list Ollama's installed models with a short timeout and apply the same name
+  and digest rules as indexing and answering (`providers`); no model is loaded. The embedder needs a pinned digest,
+  as indexing does. Embeddings are Ollama-only, so another provider's embedding check is `down`. Another chat
+  provider is never called, since a check sends nothing off the machine: its package and key are checked, and it is
+  reported `not_probed`;
 - reranker, only when reranking is enabled: its pinned files are hashed, and the model is not loaded.
 
 The result is `down` when the registry or BM25 fails, since then no search can run; `degraded` when anything else
-fails, since BM25 search still works; otherwise `ok`. Nothing in the data directory changes except one log line.
+is down, since BM25 search still works; otherwise `ok`. Nothing in the data directory changes except one log line.
 """
 
 import logging
@@ -32,10 +35,20 @@ def unavailable(code: str, message: str) -> TechDocQAError:
     return TechDocQAError(code, message, stage="check")
 
 
+class NotProbed(Exception):
+    """Raised by a check that is ready as far as can be told without calling the dependency."""
+
+    def __init__(self, code: str):
+        super().__init__(code)
+        self.code = code
+
+
 def probe(name: str, function) -> DependencyCheck:
     started = time.perf_counter()
     try:
         count, status, code = function(), "ok", None
+    except NotProbed as skipped:
+        count, status, code = None, "not_probed", skipped.code
     except TechDocQAError as error:
         count, status, code = None, "down", error.response.error.code
     except Exception:
@@ -78,26 +91,52 @@ def bm25_chunks(settings, registry) -> int:
 
 def installed_models(settings) -> dict[str, str] | None:
     """Ollama's installed models and their digests, or None when Ollama cannot be reached."""
+    from techdocqa.providers import ollama_models
     model = settings.model
-    if model.provider != "ollama":
-        return None
     try:
-        import ollama
-        timeout = min(PROBE_TIMEOUT_SECONDS, model.timeout_seconds or PROBE_TIMEOUT_SECONDS)
-        return {item.model: item.digest for item in ollama.Client(host=model.base_url, timeout=timeout).list().models}
+        return ollama_models(model, min(PROBE_TIMEOUT_SECONDS, model.timeout_seconds or PROBE_TIMEOUT_SECONDS))
     except Exception:
         return None
 
 
-def model_present(installed, name, digest, prefix: str) -> None:
+def model_present(installed, name, digest, prefix: str, *, pinned: bool) -> None:
+    """The rules `build_embeddings` (pinned=True) and `check_installed` (pinned=False) apply before a model is used."""
+    from techdocqa.providers import installed_digest
     if installed is None:
         raise unavailable(f"{prefix}_PROVIDER_UNAVAILABLE", "The model provider is unreachable.")
     if not name:
         raise unavailable(f"{prefix}_MODEL_NOT_CONFIGURED", "No model is configured.")
-    if name not in installed:
+    found = installed_digest(installed, name)
+    if found is None:
         raise unavailable(f"{prefix}_MODEL_NOT_FOUND", "The configured model is not installed.")
-    if digest and installed[name] != digest:
+    if pinned and not digest:
+        raise unavailable(f"{prefix}_MODEL_NOT_PINNED", "The model's digest must be pinned before it is used.")
+    if digest and found != digest:
         raise unavailable(f"{prefix}_MODEL_CHANGED", "The installed model does not match the pinned digest.")
+
+
+def embedding_ready(settings, installed) -> None:
+    model = settings.model
+    if model.provider != "ollama":
+        raise unavailable("EMBEDDING_PROVIDER_NOT_AVAILABLE", "Only the local Ollama embedding provider is installed.")
+    model_present(installed, model.embedding_model, model.embedding_model_digest, "EMBEDDING", pinned=True)
+
+
+def llm_ready(settings, installed) -> None:
+    model = settings.model
+    if model.provider == "ollama":
+        model_present(installed, model.chat_model, model.chat_model_digest, "LLM", pinned=False)
+        return
+    # What build_chat_model needs before it would call the API; the API itself is not called.
+    import importlib.util
+    import os
+    if importlib.util.find_spec("langchain_openai") is None:
+        raise unavailable("PROVIDER_NOT_INSTALLED", "The configured provider's package is not installed.")
+    if not model.chat_model:
+        raise unavailable("LLM_MODEL_NOT_CONFIGURED", "No model is configured.")
+    if not os.environ.get("OPENAI_API_KEY"):
+        raise unavailable("LLM_CREDENTIALS_MISSING", "The provider's API key is not set.")
+    raise NotProbed("LLM_PROVIDER_NOT_PROBED")
 
 
 def reranker_files(settings) -> int:
@@ -105,11 +144,7 @@ def reranker_files(settings) -> int:
     from techdocqa.retrieval.rerank import require_configured
     require_configured(settings)
     pinned = settings.retrieval.reranker.files_sha256
-    directory = cross_encoder.model_directory(settings)
-    if not set(cross_encoder.REQUIRED_FILES) <= set(pinned) or any(
-            not (directory / name).is_file() or cross_encoder.sha256(directory / name) != expected
-            for name, expected in sorted(pinned.items())):
-        raise unavailable("RERANKER_UNAVAILABLE", "The reranker's files are missing or do not match their pinned hashes.")
+    cross_encoder.verify_files(cross_encoder.model_directory(settings), pinned)
     return len(pinned)
 
 
@@ -129,10 +164,9 @@ def run_check(settings) -> HealthReport:
     try:
         dependencies = [probe("registry", open_registry), probe("vector_store", lambda: vector_entries(settings)),
                         probe("bm25_index", lambda: bm25_chunks(settings, registry))]
-        installed = installed_models(settings)
-        dependencies += [
-            probe("embedding_provider", lambda: model_present(installed, model.embedding_model, model.embedding_model_digest, "EMBEDDING")),
-            probe("llm_provider", lambda: model_present(installed, model.chat_model, model.chat_model_digest, "LLM"))]
+        installed = installed_models(settings) if model.provider == "ollama" else None
+        dependencies += [probe("embedding_provider", lambda: embedding_ready(settings, installed)),
+                         probe("llm_provider", lambda: llm_ready(settings, installed))]
         if settings.retrieval.rerank:
             dependencies.append(probe("reranker", lambda: reranker_files(settings)))
     finally:

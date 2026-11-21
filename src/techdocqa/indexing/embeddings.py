@@ -57,14 +57,14 @@ def build_embeddings(settings: Settings):
     model = settings.model
     if model.provider != "ollama":
         raise TechDocQAError("PROVIDER_NOT_AVAILABLE", "Only the local Ollama embedding provider is installed.", stage="embedding")
-    import ollama
     from langchain_ollama import OllamaEmbeddings
+    from techdocqa.providers import installed_digest, ollama_models
     client_kwargs = {"timeout": model.timeout_seconds}
     try:
-        installed = {item.model: item.digest for item in ollama.Client(host=model.base_url, **client_kwargs).list().models}
+        installed = ollama_models(model, model.timeout_seconds)
     except Exception:
         raise TechDocQAError("EMBEDDING_PROVIDER_UNAVAILABLE", "The embedding provider is unreachable.", stage="embedding", retryable=True) from None
-    if installed.get(model.embedding_model) != model.embedding_model_digest:
+    if installed_digest(installed, model.embedding_model) != model.embedding_model_digest:
         raise TechDocQAError("EMBEDDING_MODEL_CHANGED", "The installed embedding model does not match the pinned digest.", stage="embedding")
     return OllamaEmbeddings(model=model.embedding_model, base_url=model.base_url, client_kwargs=client_kwargs)
 

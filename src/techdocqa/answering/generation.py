@@ -110,14 +110,15 @@ def check_installed(model) -> None:
     """A pinned digest is verified before use, so the recorded model_id is the model that answered."""
     if model.chat_model_digest is None:
         return
-    import ollama
+    from techdocqa.providers import installed_digest, ollama_models
     try:
-        installed = {item.model: item.digest for item in ollama.Client(host=model.base_url, timeout=model.timeout_seconds).list().models}
+        installed = ollama_models(model, model.timeout_seconds)
     except Exception as error:
         raise provider_failure(error) from None
-    if model.chat_model not in installed:
+    digest = installed_digest(installed, model.chat_model)
+    if digest is None:
         raise failure("LLM_MODEL_NOT_FOUND")
-    if installed[model.chat_model] != model.chat_model_digest:
+    if digest != model.chat_model_digest:
         raise failure("LLM_MODEL_CHANGED")
 
 

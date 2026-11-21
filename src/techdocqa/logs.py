@@ -60,6 +60,24 @@ class JsonLines(logging.Formatter):
         return json.dumps({key: clean(value) for key, value in entry.items()}, ensure_ascii=True, sort_keys=True)
 
 
+class LogFile(logging.FileHandler):
+    """A line that cannot be written is dropped: a log failure never breaks the operation it records.
+
+    With delay=True the file is opened by the first emit, outside the base handler's own error handling, so an
+    unwritable file would otherwise raise into a command right after its registry write was committed.
+    """
+    techdocqa_log = True
+
+    def emit(self, record: logging.LogRecord) -> None:
+        try:
+            super().emit(record)
+        except Exception:
+            pass
+
+    def handleError(self, record: logging.LogRecord) -> None:
+        pass
+
+
 def handlers(logger: logging.Logger) -> list[logging.Handler]:
     return [handler for handler in logger.handlers if getattr(handler, "techdocqa_log", False)]
 
@@ -73,16 +91,21 @@ def close() -> None:
 
 
 def configure(settings) -> Path | None:
-    """Send TechDocQA's records to <data>/logs/techdocqa.jsonl, replacing any earlier file; None when logs are off."""
+    """Send TechDocQA's records to <data>/logs/techdocqa.jsonl, replacing any earlier file.
+
+    None when logs are off or the log directory cannot be created; the command then runs without a log file.
+    """
     close()
     logger = logging.getLogger(LOGGER)
     logger.propagate = False
     if not settings.logs.enabled:
         return None
     path = Path(settings.data_directory) / "logs" / FILE
-    path.parent.mkdir(parents=True, exist_ok=True)
-    handler = logging.FileHandler(path, encoding="utf-8", delay=True)
-    handler.techdocqa_log = True
+    try:
+        path.parent.mkdir(parents=True, exist_ok=True)
+    except OSError:
+        return None
+    handler = LogFile(path, encoding="utf-8", delay=True)
     handler.setFormatter(JsonLines())
     logger.addHandler(handler)
     logger.setLevel(logging.INFO)

@@ -42,14 +42,19 @@ def sha256(path: Path) -> str:
     return digest.hexdigest()
 
 
+def verify_files(directory: Path, files_sha256: dict[str, str]) -> None:
+    """Every required file is pinned, present and matches its hash; used by loading and by `check` alike."""
+    if not set(REQUIRED_FILES) <= set(files_sha256):
+        raise unavailable("The reranker configuration does not pin every file it needs.")
+    for name, expected in sorted(files_sha256.items()):
+        path = directory / name
+        if not path.is_file() or sha256(path) != expected:
+            raise unavailable("The reranker's files are missing or do not match their pinned hashes.")
+
+
 class OnnxCrossEncoder:
     def __init__(self, directory: Path, files_sha256: dict[str, str], max_length: int):
-        if not set(REQUIRED_FILES) <= set(files_sha256):
-            raise unavailable("The reranker configuration does not pin every file it needs.")
-        for name, expected in sorted(files_sha256.items()):
-            path = directory / name
-            if not path.is_file() or sha256(path) != expected:
-                raise unavailable("The reranker's files are missing or do not match their pinned hashes.")
+        verify_files(directory, files_sha256)
         try:
             import numpy
             import onnxruntime

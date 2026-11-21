@@ -2118,8 +2118,16 @@ Not done, and not covered by the instruction: the consolidated per-AC matrix and
 
 **Stopped on 2026-11-14, with its code committed untested.** The owner ended the project the same day the plan was approved, with *"that's enough for the project"*.
 - **Written:** the JSON log module, the `retry` and `check` commands, and the four new `qa.jsonl` fields. The owner later asked for them to be committed as they were.
-- **Never tested:** `tests/test_observability.py` was never written, so AC-24.1 to AC-24.4 are not verified, and no test group has run on this code.
+- **Never tested as planned:** `tests/test_observability.py` was never written, so AC-24.1 to AC-24.4 are not verified.
 - **Run by hand, read-only:** `ask` and `search` ran on it against the real index, using the new `qa.jsonl` fields. `check` and `retry` have never run.
+- **Review fixes, 2026-11-21.** A code review of the branch found three bugs and five smaller issues, all fixed. Each fix has a model-free test in `tests/test_operations.py` (16 tests, in the `core` group).
+  - A log file or directory that cannot be written no longer crashes commands; the line is dropped.
+  - `retry` first recovers interrupted runs, so a crashed stage run is retried, not reported as nothing to do.
+  - A failure whose document was later deleted is `resolved`.
+  - Without `--run-id`, `retry` skips runs whose only outstanding failures are permanent.
+  - `check` applies the same model name and digest rules as indexing and answering, through the shared `providers.py`. Untagged names match `:latest`, and an unpinned embedder is `down`. A hosted chat provider is not called and is reported `not_probed`.
+  - The reranker's file check is shared with its loader (`cross_encoder.verify_files`).
+  - The `core` and `retrieval` groups and `test_generation.py` passed with the fixes. The rest of the `answering` group and the `enrichment` group were not run. `check` and `retry` have still not run against the real data.
 
 Status: **proposed and approved 2026-11-14.** The owner approved P12-1 to P12-6 with *"approved and push as you go"*, which amends P12-6: work is pushed as it proceeds. The decisions are recorded as [Phase 12 contracts](DECISIONS.md#phase-12-contracts-2026-11-14). The plan covers the part of [roadmap Phase 12](IMPLEMENTATION_ROADMAP.md#phase-12--separately-approved-p2-work) that the owner kept. On 2026-11-14 the owner was shown the four optional P2 items and said *"skip web ui and reuse"*. That keeps:
 - FR-24, all four acceptance criteria (AC-24.1 to AC-24.4);

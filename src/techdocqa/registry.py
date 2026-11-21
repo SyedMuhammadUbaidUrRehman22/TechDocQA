@@ -956,6 +956,14 @@ class Registry:
                 self.execute(f"""DELETE FROM embeddings WHERE chunk_key IN ({marks})
                                  AND chunk_key NOT IN (SELECT chunk_key FROM chunk_embeddings WHERE chunk_key IN ({marks}))""", (*batch, *batch))
             self.execute(f"DELETE FROM events WHERE document_id=? OR version_id IN ({versions})", (document_id, document_id))
+            # Clearing the attempts' IDs would leave their failures looking outstanding, so each failed one keeps an
+            # anonymous marker: retry then reports it resolved (FR-24, P12-1).
+            failed = self.execute(f"""SELECT run_id,attempt_id FROM attempts
+                                      WHERE status='failed' AND (document_id=? OR version_id IN ({versions}))""",
+                                  (document_id, document_id)).fetchall()
+            for run_id, attempt_id in failed:
+                self.event(run_id=run_id, attempt_id=attempt_id, decision="FAILED_ATTEMPT_DOCUMENT_DELETED",
+                           reason="The failed attempt's document was deleted.", stage="lifecycle")
             self.execute(f"""UPDATE attempts SET document_id=NULL,version_id=NULL,result_json=NULL
                              WHERE document_id=? OR version_id IN ({versions})""", (document_id, document_id))
             self.execute("UPDATE registrations SET duplicate_of=NULL WHERE duplicate_of=?", (document_id,))
@@ -992,9 +1000,9 @@ class Registry:
         log_event("registry", "RUN_FINISHED", run_id=run_id, status=status, processed=counts.get("processed", 0),
                   skipped=counts.get("skipped", 0), failed=failed)
 
-    def recover_interrupted_runs(self):
-        """Caller must hold registration_lock; never infer process death from a PID."""
-        runs = self.execute("SELECT run_id FROM runs WHERE status='running'").fetchall()
+    def recover_interrupted_runs(self) -> list[str]:
+        """Caller must hold registration_lock; never infer process death from a PID. Returns the recovered runs, oldest first."""
+        runs = self.execute("SELECT run_id FROM runs WHERE status='running' ORDER BY rowid").fetchall()
         for run in runs:
             stage = self.get_run(run[0]).run.stage
             attempts = self.execute("SELECT attempt_id FROM attempts WHERE run_id=? AND status='pending' ORDER BY input_index", (run[0],)).fetchall()
@@ -1003,6 +1011,7 @@ class Registry:
                                        stage=stage, retryable=True).response.error
                 self.fail_attempt(attempt[0], error)
             self.finish_run(run[0])
+        return [run[0] for run in runs]
 
     def get_run(self, run_id: str) -> BatchResult:
         row = self.execute("SELECT * FROM runs WHERE run_id=?", (run_id,)).fetchone()
@@ -1028,6 +1037,11 @@ class Registry:
         return self.execute("SELECT attempt_id,document_id,version_id,error_json FROM attempts WHERE run_id=? AND status='failed' "
                             "ORDER BY input_index", (run_id,)).fetchall()
 
+    def deleted_attempts(self, run_id: str) -> set[str]:
+        """Failed attempts of a run whose document was deleted afterwards."""
+        return {row[0] for row in self.execute("SELECT attempt_id FROM events WHERE run_id=? AND decision='FAILED_ATTEMPT_DOCUMENT_DELETED'",
+                                               (run_id,)).fetchall()}
+
     def failure_outstanding(self, stage: str, version_id: str, run_id: str) -> bool:
         """Whether a version's failure in a run still needs work (FR-24, P12-1).
 
@@ -1052,11 +1066,16 @@ class Registry:
         return self.execute(current, (version_id,)).fetchone() is not None
 
     def latest_outstanding_run(self) -> str | None:
-        """The most recent finished run with a failure that still needs work; failures with no version are skipped."""
+        """The most recent finished run with a failure retry can rerun: retryable, with a version, and outstanding.
+
+        A permanent failure stays outstanding until its version is superseded, and one with no version can only be
+        rerun by its command, so either would hold this choice on its run and hide older runs' retryable failures.
+        """
         runs = self.execute("SELECT run_id FROM runs WHERE status IN ('failed','completed_with_errors') ORDER BY rowid DESC").fetchall()
         for (run_id,) in runs:
             stage = self.run_stage(run_id)
-            if any(row["version_id"] and self.failure_outstanding(stage, row["version_id"], run_id)
+            if any(row["version_id"] and json.loads(row["error_json"]).get("retryable")
+                   and self.failure_outstanding(stage, row["version_id"], run_id)
                    for row in self.failed_attempts(run_id)):
                 return run_id
         return None

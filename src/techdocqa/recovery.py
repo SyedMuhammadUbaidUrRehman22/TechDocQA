@@ -8,8 +8,10 @@ Each failed attempt is classified by its stored `retryable` flag first, then by 
 - retryable otherwise, at registration or without a recorded version: reported with the command to rerun, because
   the original paths, URLs or version list are not recorded.
 
-A failure is resolved once a later run of the stage succeeded for its version, or once that version is no longer
-current or eligible. Without a run ID, the most recent run with an unresolved failure is retried.
+A failure is resolved once a later run of the stage succeeded for its version, once that version is no longer
+current or eligible, or once its document was deleted. Interrupted runs are recovered first, so their unfinished
+attempts are failures too. Without a run ID, the run retried is the newest one just recovered, or else the most
+recent run with an outstanding retryable failure that has a version.
 """
 
 import logging
@@ -38,10 +40,10 @@ def stage_function(stage: str):
     raise TechDocQAError("INVALID_STATE", "This stage has no retry.", stage="retry")
 
 
-def classify(row, stage: str, run_id: str, registry) -> RetryItem:
+def classify(row, stage: str, run_id: str, registry, deleted: set[str]) -> RetryItem:
     error = ErrorDetail.model_validate_json(row["error_json"])
     version_id = row["version_id"]
-    if version_id and not registry.failure_outstanding(stage, version_id, run_id):
+    if row["attempt_id"] in deleted or (version_id and not registry.failure_outstanding(stage, version_id, run_id)):
         action = "resolved"
     elif not error.retryable:
         action = "none"
@@ -55,14 +57,19 @@ def classify(row, stage: str, run_id: str, registry) -> RetryItem:
 
 
 def retry_run(run_id: str | None, settings, registry) -> RetryResult:
+    # A crashed or interrupted run is still `running` with pending attempts; finish it as failed before choosing. The
+    # lock is released before the stage function runs, since that takes it again.
+    with registry.registration_lock():
+        recovered = registry.recover_interrupted_runs()
     if run_id is None:
-        run_id = registry.latest_outstanding_run()
+        run_id = recovered[-1] if recovered else registry.latest_outstanding_run()
         if run_id is None:
             log_event("recovery", "RETRY_FINISHED", retry_of=None, rerun_run_id=None, remaining=0)
             return RetryResult()
     registry.get_run(run_id)  # NOT_FOUND for an unknown run.
     stage = registry.run_stage(run_id)
-    items = [classify(row, stage, run_id, registry) for row in registry.failed_attempts(run_id)]
+    deleted = registry.deleted_attempts(run_id)
+    items = [classify(row, stage, run_id, registry, deleted) for row in registry.failed_attempts(run_id)]
     for item in items:
         log_event("recovery", "RETRY_DECISION", level=logging.INFO if item.action in {"retried", "resolved"} else logging.WARNING,
                   run_id=run_id, document_id=item.document_id, attempt_id=item.attempt_id, version_id=item.version_id,

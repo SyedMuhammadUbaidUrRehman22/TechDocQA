@@ -359,7 +359,8 @@ class RetryResult(StrictModel):
 
 class DependencyCheck(StrictModel):
     name: Literal["registry", "vector_store", "bm25_index", "embedding_provider", "llm_provider", "reranker"]
-    status: Literal["ok", "down"]
+    # not_probed: ready as far as can be told without calling it (a hosted chat provider); it does not degrade the report.
+    status: Literal["ok", "down", "not_probed"]
     code: str | None = None
     # Documents in the registry, entries in the vector store, chunks in the BM25 index, or pinned reranker files.
     count: int | None = None
